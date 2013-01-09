@@ -1,4 +1,5 @@
-#!/usr/local/Gambit-C/bin/gsi
+#! /usr/bin/env gsi
+;#!/usr/local/Gambit-C/bin/gsi
 
 ; Copyright (C) 2004 by Marc Feeley, All Rights Reserved.
 
