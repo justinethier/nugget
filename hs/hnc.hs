@@ -24,11 +24,7 @@ main = do
     args <- getArgs
     case (null args) of
         True -> showBanner
-        _ -> do compileFile $ head args
---            result <- (LSC.runIOThrows $ liftM show $ compileFile $ head args)
---            case result of
---                Just errMsg -> putStrLn errMsg
---                _ -> putStrLn "TODO"
+        _ -> compileFile $ head args
 
 showBanner :: IO ()
 showBanner = putStrLn "Usage: hnc filename"
@@ -36,7 +32,19 @@ showBanner = putStrLn "Usage: hnc filename"
 compileFile :: String -> IO ()
 compileFile filename = do
     ast <- loadFile filename
+    putStrLn "-------------------------- AST:"
+    putStrLn $ show ast
+--
+-- TODO: may want to think about doing code generation first,
+-- and just passing in code in the proper format. otherwise
+-- it may be more painful later if the cps/closure code needs
+-- to be reworked later on...
+--
+--    astAfterCPS <- cpsConvert ast
+--    putStrLn "-------------------------- AST AFTER CPS-CONVERSION:"
+--    putStrLn $ show astAfterCPS
     System.Exit.exitSuccess
+
 
 loadFile :: String -> IO [LispVal]
 loadFile filename = do
@@ -46,6 +54,12 @@ loadFile filename = do
             putStrLn $ show err
             System.Exit.exitFailure
         Right ast -> do
-            putStrLn "-------------------------- AST:"
-            putStrLn $ show ast
             return $ ast
+
+cpsConvert :: [LispVal] -> IO [LispVal]
+cpsConvert ast = cps ast []
+
+cps :: [LispVal] -> [LispVal] -> IO [LispVal] 
+cps (a : as) = cps as [] -- TODO
+cps [] result = return result
+
