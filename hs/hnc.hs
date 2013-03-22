@@ -43,6 +43,10 @@ compileFile filename = do
 --    astAfterCPS <- cpsConvert ast
 --    putStrLn "-------------------------- AST AFTER CPS-CONVERSION:"
 --    putStrLn $ show astAfterCPS
+
+    code <- codeGenerate ast
+    putStrLn "-------------------------- C CODE:"
+    putStrLn $ show code
     System.Exit.exitSuccess
 
 
@@ -60,6 +64,22 @@ cpsConvert :: [LispVal] -> IO [LispVal]
 cpsConvert ast = cps ast []
 
 cps :: [LispVal] -> [LispVal] -> IO [LispVal] 
-cps (a : as) = cps as [] -- TODO
+cps (a : as) acc = cps as [] -- TODO
 cps [] result = return result
 
+codeGenerate :: [LispVal] -> IO [String]
+codeGenerate ast = do
+   let codePrefix = "   \n\
+          \TODO: PREFIX \n\
+          \PREFIX line 2 "
+       codeSuffix = "TODO: SUFFIX"
+
+   code <- gen ast []
+   return $ [
+      "#define NB_GLOBALS \n" , -- TODO: (length global-vars) "\n"
+      "#define MAX_STACK 100 \n" , -- could be computed...
+      codePrefix ] ++ code ++ [codeSuffix]
+
+gen :: [LispVal] -> [String] -> IO [String]
+gen (a : as) acc = gen as [] -- TODO
+gen [] result = return result
