@@ -12,8 +12,8 @@ An experimental port of the 90 minute scheme compiler to Haskell.
 module Main where
 import qualified Language.Scheme.Core as LSC
 import qualified Language.Scheme.Primitives as LSP
-import Language.Scheme.Types     -- Scheme data types
--- import qualified Language.Scheme.Variables -- Scheme variable operations
+import Language.Scheme.Types
+import qualified Language.Scheme.Variables as LSV
 import Control.Monad.Error
 import qualified System.Exit
 import System.IO
@@ -44,7 +44,7 @@ compileFile filename = do
 --    putStrLn "-------------------------- AST AFTER CPS-CONVERSION:"
 --    putStrLn $ show astAfterCPS
 
-    code <- codeGenerate ast
+    code <- generateCode ast
     putStrLn "-------------------------- C CODE:"
     putStrLn $ show code
     System.Exit.exitSuccess
@@ -59,6 +59,15 @@ loadFile filename = do
             System.Exit.exitFailure
         Right ast -> do
             return $ ast
+-- TODO: consolidate common code w/above func
+generateCode ast = do
+    result <- runErrorT $ codeGenerate ast
+    case result of
+        Left err -> do
+            putStrLn $ show err
+            System.Exit.exitFailure
+        Right code -> do
+            return code
 
 cpsConvert :: [LispVal] -> IO [LispVal]
 cpsConvert ast = cps ast []
@@ -67,12 +76,28 @@ cps :: [LispVal] -> [LispVal] -> IO [LispVal]
 cps (a : as) acc = cps as [] -- TODO
 cps [] result = return result
 
-codeGenerate :: [LispVal] -> IO [String]
+---------------------------------------------------------------------
+-- Free variables
+-- TODO: port fv 
+freeVars :: 
+    --Env -> 
+    [LispVal] -> 
+    IOThrowsError LispVal
+
+---------------------------------------------------------------------
+-- code generation section
+
+codeGenerate :: [LispVal] -> IOThrowsError [String]
 codeGenerate ast = do
    let codePrefix = "   \n\
           \TODO: PREFIX \n\
           \PREFIX line 2 "
        codeSuffix = "TODO: SUFFIX"
+
+   cgEnv <- liftIO $ nullEnv -- Local Env for code generation phase
+   _ <- LSV.defineVar cgEnv "lambda-todo" $ List []
+   _ <- LSV.defineVar cgEnv "lambda-count" $ Number 0
+
 
    code <- gen ast []
    return $ [
@@ -80,6 +105,6 @@ codeGenerate ast = do
       "#define MAX_STACK 100 \n" , -- could be computed...
       codePrefix ] ++ code ++ [codeSuffix]
 
-gen :: [LispVal] -> [String] -> IO [String]
+gen :: [LispVal] -> [String] -> IOThrowsError [String]
 gen (a : as) acc = gen as [] -- TODO
 gen [] result = return result
