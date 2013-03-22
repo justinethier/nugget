@@ -79,31 +79,27 @@ cps [] result = return result
 ---------------------------------------------------------------------
 -- Free variables
 -- TODO: port fv 
-freeVars :: 
-    --Env -> 
-    [LispVal] -> 
-    IOThrowsError LispVal
+--freeVars :: 
+--    --Env -> 
+--    [LispVal] -> 
+--    IOThrowsError LispVal
 
 ---------------------------------------------------------------------
 -- code generation section
 
 codeGenerate :: [LispVal] -> IOThrowsError [String]
 codeGenerate ast = do
-   let codePrefix = "   \n\
-          \TODO: PREFIX \n\
-          \PREFIX line 2 "
-       codeSuffix = "TODO: SUFFIX"
 
-   cgEnv <- liftIO $ nullEnv -- Local Env for code generation phase
-   _ <- LSV.defineVar cgEnv "lambda-todo" $ List []
-   _ <- LSV.defineVar cgEnv "lambda-count" $ Number 0
-
+   cgEnv <- liftIO $ LSC.r5rsEnv -- Local Env for code generation phase
+   _ <- LSC.evalLisp cgEnv $ List [Atom "load", String "code-gen.scm"]
+   String codeSuffix <- LSV.getVar cgEnv "code-suffix"
 
    code <- gen ast []
    return $ [
       "#define NB_GLOBALS \n" , -- TODO: (length global-vars) "\n"
-      "#define MAX_STACK 100 \n" , -- could be computed...
-      codePrefix ] ++ code ++ [codeSuffix]
+      "#define MAX_STACK 100 \n" ] -- could be computed...
+      --codePrefix] 
+      ++ code ++ [codeSuffix]
 
 gen :: [LispVal] -> [String] -> IOThrowsError [String]
 gen (a : as) acc = gen as [] -- TODO
