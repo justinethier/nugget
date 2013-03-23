@@ -20,6 +20,7 @@ import qualified Data.Set as DS
 import qualified System.Exit
 import System.IO
 import System.Environment
+import Debug.Trace
 
 main :: IO ()
 main = do 
@@ -83,31 +84,33 @@ cps [] result = return result
 -- TODO: port fv 
 freeVars :: 
     --Env -> 
-    [LispVal] -> 
+    LispVal -> 
     [LispVal] -- TODO: [String]?
-freeVars v@[Atom _] = v
-freeVars (Atom "set!" : v@(Atom _) : rest) = do
+freeVars v@(Atom _) = [v]
+freeVars (List (Atom "set!" : v@(Atom _) : rest)) = do
     DS.toList $ DS.union (DS.fromList [v]) 
-                         (DS.fromList (freeVars rest))
-freeVars (Atom "lambda" : List vs : body) =
-    DS.toList $ DS.difference (DS.fromList (freeVars body) 
+                         (DS.fromList (freeVars $ List rest))
+freeVars (List (Atom "lambda" : List vs : body)) =
+    DS.toList $ DS.difference (DS.fromList (freeVars $ List body))
                               (DS.fromList vs)
-freeVars ast = do
-fvs <- map freeVars ast
-TODO: use DS.unions to join everything back up
---union-multi $ map freeVars ast
+freeVars (List ast) = do
+    let fvs = map (\ l -> DS.fromList $ freeVars l) ast
+    DS.toList $ DS.unions fvs
+    --union-multi $ map freeVars ast
+freeVars _ = []
 
 ---------------------------------------------------------------------
 -- code generation section
 
 codeGenerate :: [LispVal] -> IOThrowsError [String]
 codeGenerate ast = do
+   let fv = freeVars $ List ast
 
    cgEnv <- liftIO $ LSC.r5rsEnv -- Local Env for code generation phase
    _ <- LSC.evalLisp cgEnv $ List [Atom "load", String "code-gen.scm"]
    String codeSuffix <- LSV.getVar cgEnv "code-suffix"
 
-   code <- gen ast []
+   code <- (trace ("fv = " ++ show fv) gen ast [])
    return $ [
       "#define NB_GLOBALS \n" , -- TODO: (length global-vars) "\n"
       "#define MAX_STACK 100 \n" ] -- could be computed...
