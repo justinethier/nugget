@@ -15,6 +15,8 @@ import qualified Language.Scheme.Primitives as LSP
 import Language.Scheme.Types
 import qualified Language.Scheme.Variables as LSV
 import Control.Monad.Error
+import qualified Data.List as DL
+import qualified Data.Set as DS
 import qualified System.Exit
 import System.IO
 import System.Environment
@@ -79,10 +81,21 @@ cps [] result = return result
 ---------------------------------------------------------------------
 -- Free variables
 -- TODO: port fv 
---freeVars :: 
---    --Env -> 
---    [LispVal] -> 
---    IOThrowsError LispVal
+freeVars :: 
+    --Env -> 
+    [LispVal] -> 
+    [LispVal] -- TODO: [String]?
+freeVars v@[Atom _] = v
+freeVars (Atom "set!" : v@(Atom _) : rest) = do
+    DS.toList $ DS.union (DS.fromList [v]) 
+                         (DS.fromList (freeVars rest))
+freeVars (Atom "lambda" : List vs : body) =
+    DS.toList $ DS.difference (DS.fromList (freeVars body) 
+                              (DS.fromList vs)
+freeVars ast = do
+fvs <- map freeVars ast
+TODO: use DS.unions to join everything back up
+--union-multi $ map freeVars ast
 
 ---------------------------------------------------------------------
 -- code generation section
@@ -98,7 +111,7 @@ codeGenerate ast = do
    return $ [
       "#define NB_GLOBALS \n" , -- TODO: (length global-vars) "\n"
       "#define MAX_STACK 100 \n" ] -- could be computed...
-      --codePrefix] 
+      --TODO: codePrefix] 
       ++ code ++ [codeSuffix]
 
 gen :: [LispVal] -> [String] -> IOThrowsError [String]
