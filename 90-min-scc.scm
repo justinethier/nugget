@@ -652,6 +652,7 @@
            (compile-all-lambdas)))))
 
   (add-lambda! ast)
+(write (list 'debug 'fv: global-vars))
 
   (let ((code (compile-all-lambdas)))
     (list

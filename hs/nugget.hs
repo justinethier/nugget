@@ -30,7 +30,7 @@ main = do
         _ -> compileFile $ head args
 
 showBanner :: IO ()
-showBanner = putStrLn "Usage: hnc filename"
+showBanner = putStrLn "Usage: nugget filename"
 
 compileFile :: String -> IO ()
 compileFile filename = do

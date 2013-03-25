@@ -1,6 +1,6 @@
-hnc: hnc.hs
-	ghc hnc.hs
+nugget: nugget.hs
+	ghc nugget.hs
 
 .PHONY: clean
 clean:
-	rm -rf *.o *.hi hnc
+	rm -rf *.o *.hi nugget
