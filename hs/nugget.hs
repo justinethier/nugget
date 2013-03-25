@@ -119,6 +119,30 @@ codeGenerate ast = do
       --TODO: codePrefix] 
       ++ code ++ [codeSuffix]
 
+compileAllLambdas ::
+    Env -> 
+    LispVal ->
+    IOThrowsError [String]
+compileAllLambdas env ast = do
+    todo <- LSV.getVar env "lambda-todo"
+    isTodo <- LSP.isNull [todo]
+    case isTodo of
+       Bool True -> return [] 
+       _ -> do
+        x <- LSP.car [todo]
+        asp <- LSP.cdr [x]
+        LSP.cdr [x] >>= LSV.setVar env "lambda-todo" 
+       -- TODO:
+       -- (let* ((x (car lambda-todo))
+       --        (ast (cdr x)))
+       --   (set! lambda-todo (cdr lambda-todo))
+       --   (list
+       --    "case " (car x) ": /* " (object->string (source ast) 60) " */\n\n"
+       --    (code-gen (car (ast-subx ast))
+       --              (reverse (lam-params ast)))
+       --    "\n\n"
+       --    (compile-all-lambdas)))))
+
 gen :: [LispVal] -> [String] -> IOThrowsError [String]
 gen (a : as) acc = gen as [] -- TODO
 gen [] result = return result
