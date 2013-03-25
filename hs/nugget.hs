@@ -81,11 +81,14 @@ cps [] result = return result
 
 ---------------------------------------------------------------------
 -- Free variables
--- TODO: port fv 
+-- TODO: this is a port of fv, although it needs to filter
+--       out primitive functions, maybe other things
+-- Also TBD if strings are good enough, since output from gambit
+-- seemed to contain more information
 freeVars :: 
-    --Env -> 
+    -- ? Env -> 
     LispVal -> 
-    [LispVal] -- TODO: [String]?
+    [LispVal] 
 freeVars v@(Atom _) = [v]
 freeVars (List (Atom "set!" : v@(Atom _) : rest)) = do
     DS.toList $ DS.union (DS.fromList [v]) 
@@ -96,7 +99,6 @@ freeVars (List (Atom "lambda" : List vs : body)) =
 freeVars (List ast) = do
     let fvs = map (\ l -> DS.fromList $ freeVars l) ast
     DS.toList $ DS.unions fvs
-    --union-multi $ map freeVars ast
 freeVars _ = []
 
 ---------------------------------------------------------------------
@@ -120,3 +122,14 @@ codeGenerate ast = do
 gen :: [LispVal] -> [String] -> IOThrowsError [String]
 gen (a : as) acc = gen as [] -- TODO
 gen [] result = return result
+
+
+cg ::
+   Env -> 
+   LispVal ->
+   IOThrowsError [String]
+cg _ (Bool False) = return [" PUSH(FALSEOBJ));"]
+cg _ (Bool True) = return [" PUSH(TRUEOBJ));"]
+-- TODO: (else (list " PUSH(INT2OBJ(" val "));")))))
+cg _ e = throwError $ Default $ "Unexpected input to cg: " ++ show e
+
