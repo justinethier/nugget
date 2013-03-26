@@ -133,7 +133,7 @@ compileAllLambdas env = do
         x <- LSP.car [todo]
         caseNum <- LSP.car [x]
         -- TODO: is ast always a lambda here? what if it is something else?
-        ast@(List (Atom "lambda" : List vs : body)) <- LSP.cdr [x]
+        ast@(List [List (Atom "lambda" : List vs : body)]) <- LSP.cdr [x]
         LSP.cdr [todo] >>= LSV.setVar env "lambda-todo" 
        
         -- TODO: how to differentiate ast and ast-subx???
