@@ -119,29 +119,36 @@ codeGenerate ast = do
       --TODO: codePrefix] 
       ++ code ++ [codeSuffix]
 
+-- |A port of (compile-all-lambdas) from "90 minutes"
 compileAllLambdas ::
     Env -> 
     LispVal ->
     IOThrowsError [String]
-compileAllLambdas env ast = do
+compileAllLambdas env = do
     todo <- LSV.getVar env "lambda-todo"
     isTodo <- LSP.isNull [todo]
     case isTodo of
        Bool True -> return [] 
        _ -> do
         x <- LSP.car [todo]
-        asp <- LSP.cdr [x]
-        LSP.cdr [x] >>= LSV.setVar env "lambda-todo" 
+        caseNum <- LSP.car [x]
+        ast <- LSP.cdr [x]
+        LSP.cdr [todo] >>= LSV.setVar env "lambda-todo" 
+       
+        -- TODO: how to differentiate ast and ast-subx???
+        --astH <- LSP.car [ast]
+        --astT <- LSP.cdr [ast]
+
+        g <- gen 
+        rest <- compileAllLambdas env
+        return [
+            "case " ++ caseNum ++ ": /* " ++ show ast ++ " */\n\n", -- " (object->string (source ast) 60) " */\n\n"
+
        -- TODO:
-       -- (let* ((x (car lambda-todo))
-       --        (ast (cdr x)))
-       --   (set! lambda-todo (cdr lambda-todo))
-       --   (list
-       --    "case " (car x) ": /* " (object->string (source ast) 60) " */\n\n"
        --    (code-gen (car (ast-subx ast))
        --              (reverse (lam-params ast)))
-       --    "\n\n"
-       --    (compile-all-lambdas)))))
+
+            "\n\n"] ++ rest
 
 gen :: [LispVal] -> [String] -> IOThrowsError [String]
 gen (a : as) acc = gen as [] -- TODO
