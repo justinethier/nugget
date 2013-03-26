@@ -62,7 +62,15 @@ loadFile filename = do
             System.Exit.exitFailure
         Right ast -> do
             return $ ast
--- TODO: consolidate common code w/above func
+
+-- |Build symbol table (IE, GLOBAL / LOCAL), possibly
+--  expand macros at this phase
+--
+-- This would handle functions that "90" performs in the
+-- xe (expand expression) phase
+semanticAnalysis :: Env -> [LispVal] -> IOThrowsError [LispVal]
+
+-- TODO: consolidate common code w/loadFile func above
 generateCode ast = do
     result <- runErrorT $ codeGenerate ast
     case result of
