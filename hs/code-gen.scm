@@ -7,33 +7,21 @@
   (define lambda-count 0)
 
   (define (add-lambda! lam)
+    ;(write `(debug ,lam))
     (let ((i lambda-count))
       (set! lambda-count (+ i 1))
       (set! lambda-todo (cons (cons i lam) lambda-todo))
       i))
 
-
-;  (define (compile-all-lambdas)
-;    (if (null? lambda-todo)
-;        ""
-;        (let* ((x (car lambda-todo))
-;               (ast (cdr x)))
-;          (set! lambda-todo (cdr lambda-todo))
-;          (list
-;           "case " (car x) ": /* " (object->string (source ast) 60) " */\n\n"
-;           (code-gen (car (ast-subx ast))
-;                     (reverse (lam-params ast)))
-;           "\n\n"
-;           (compile-all-lambdas)))))
-;
-;  (let ((code (compile-all-lambdas)))
-;    (list
-;     (list
-;      "#define NB_GLOBALS " (length global-vars) "\n"
-;      "#define MAX_STACK " 100 "\n" ; could be computed...
-;      code-prefix)
-;     code
-;     code-suffix))
+; TODO:
+;  (define (access-var var stack-env)
+;    (if (global-var? var)
+;        (let ((i (pos-in-list var global-vars)))
+;          (list "GLOBAL(" i "/*" (var-uid var) "*/)"))
+;        (let ((i (- (length stack-env)
+;                    (pos-in-list var stack-env)
+;                    1)))
+;          (list "LOCAL(" i "/*" (var-uid var) "*/)"))))
 
 (define code-prefix "
 #include <stdio.h>
