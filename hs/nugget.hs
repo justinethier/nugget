@@ -110,9 +110,10 @@ codeGenerate ast = do
 
    cgEnv <- liftIO $ LSC.r5rsEnv -- Local Env for code generation phase
    _ <- LSC.evalLisp cgEnv $ List [Atom "load", String "code-gen.scm"]
+   _ <- LSC.evalLisp cgEnv $ List [Atom "add-lambda!", List [Atom "quote", List ast]]
    String codeSuffix <- LSV.getVar cgEnv "code-suffix"
 
-   code <- (trace ("fv = " ++ show fv) gen ast [])
+   code <- (trace ("fv = " ++ show fv) compileAllLambdas cgEnv)
    return $ [
       "#define NB_GLOBALS \n" , -- TODO: (length global-vars) "\n"
       "#define MAX_STACK 100 \n" ] -- could be computed...
@@ -122,7 +123,6 @@ codeGenerate ast = do
 -- |A port of (compile-all-lambdas) from "90 minutes"
 compileAllLambdas ::
     Env -> 
-    LispVal ->
     IOThrowsError [String]
 compileAllLambdas env = do
     todo <- LSV.getVar env "lambda-todo"
@@ -132,35 +132,43 @@ compileAllLambdas env = do
        _ -> do
         x <- LSP.car [todo]
         caseNum <- LSP.car [x]
-        ast <- LSP.cdr [x]
+        -- TODO: is ast always a lambda here? what if it is something else?
+        ast@(List (Atom "lambda" : List vs : body)) <- LSP.cdr [x]
         LSP.cdr [todo] >>= LSV.setVar env "lambda-todo" 
        
         -- TODO: how to differentiate ast and ast-subx???
         --astH <- LSP.car [ast]
         --astT <- LSP.cdr [ast]
 
-        g <- gen 
+        code <- cg env (List body) $ reverse vs
         rest <- compileAllLambdas env
-        return [
-            "case " ++ caseNum ++ ": /* " ++ show ast ++ " */\n\n", -- " (object->string (source ast) 60) " */\n\n"
+        return $
+            ["case " ++ show caseNum ++ ": /* " ++ show ast ++ " */\n\n"] -- " (object->string (source ast) 60) " */\n\n"
+            ++ code ++ ["\n\n"] ++ rest
 
-       -- TODO:
-       --    (code-gen (car (ast-subx ast))
-       --              (reverse (lam-params ast)))
+-- TODO: a port of cg-list
+--cgList :: 
+--    Env -> 
 
-            "\n\n"] ++ rest
-
-gen :: [LispVal] -> [String] -> IOThrowsError [String]
-gen (a : as) acc = gen as [] -- TODO
-gen [] result = return result
-
+--    (define (cg-list asts vars stack-env sep cont)
+--      (if (null? asts)
+--          (cont "" stack-env)
+--          (let ((x (code-gen (car asts) stack-env)))
+--            (cg-list (cdr asts)
+--                     (cdr vars)
+--                     (cons (car vars) stack-env)
+--                     sep
+--                     (lambda (code stack-env)
+--                       (cont (list x sep code)
+--                             stack-env))))))
 
 cg ::
    Env -> 
-   LispVal ->
+   LispVal ->  -- ^ ast
+   [LispVal] -> -- ^ stackEnv
    IOThrowsError [String]
-cg _ (Bool False) = return [" PUSH(FALSEOBJ));"]
-cg _ (Bool True) = return [" PUSH(TRUEOBJ));"]
+cg _ (Bool False) _ = return [" PUSH(FALSEOBJ));"]
+cg _ (Bool True) _ = return [" PUSH(TRUEOBJ));"]
 -- TODO: (else (list " PUSH(INT2OBJ(" val "));")))))
-cg _ e = throwError $ Default $ "Unexpected input to cg: " ++ show e
+cg _ e _ = throwError $ Default $ "Unexpected input to cg: " ++ show e
 
