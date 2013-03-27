@@ -35,8 +35,9 @@ showBanner = putStrLn "Usage: nugget filename"
 compileFile :: String -> IO ()
 compileFile filename = do
     env <- LSC.r5rsEnv -- Local Env for code generation phase
+    symEnv <- nullEnv
     ast <- loadFile filename
-    _ <- run env ast semanticAnalysis 
+    _ <- run symEnv ast semanticAnalysis 
 
     putStrLn "-------------------------- AST:"
     putStrLn $ show ast
@@ -55,9 +56,11 @@ compileFile filename = do
     putStrLn $ show code
     System.Exit.exitSuccess
 
-run :: Env -> [LispVal] -> (Env -> [LispVal] -> IOThrowsError [LispVal]) -> IO [LispVal]
+
+-- TODO: this is a real mess, not general purpose at all
+run :: Env -> [LispVal] -> (Env -> LispVal -> IOThrowsError LispVal) -> IO LispVal
 run env dat func = do
-    result <- runErrorT $ func env dat
+    result <- runErrorT $ func env $ List dat
     case result of
         Left err -> do
             putStrLn $ show err
@@ -80,10 +83,23 @@ loadFile filename = do
 --
 -- This would handle functions that "90" performs in the
 -- xe (expand expression) phase
-semanticAnalysis :: Env -> [LispVal] -> IOThrowsError [LispVal]
-semanticAnalysis env ast = do
-    --_ <- LSV.defineVar env "TEST" $ String "TESTING"
-    return [Nil "TODO"]
+semanticAnalysis :: Env -> LispVal -> IOThrowsError LispVal
+semanticAnalysis env (List [Atom "define", Atom var, form]) = do
+  isV <- saLookup env var 
+  case isV of
+    Bool True -> semanticAnalysis env form
+    _ -> throwError $ Default $ "cannot set a nonvariable " ++ var
+semanticAnalysis env _ = return $ Nil ""
+--semanticAnalysis env ast = 
+--    throwError $ Default $ "SA Unrecognized form: " ++ show ast
+
+-- Port of xe-lookup
+saLookup :: Env -> String -> IOThrowsError LispVal
+saLookup env var = do
+ isV <- liftIO $ isVar env var
+ if isV
+    then newGlobalVar env var
+    else return $ Bool False
 
 -- TODO: consolidate common code w/loadFile func above
 generateCode env ast = do
