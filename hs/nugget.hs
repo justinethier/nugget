@@ -34,7 +34,10 @@ showBanner = putStrLn "Usage: nugget filename"
 
 compileFile :: String -> IO ()
 compileFile filename = do
+    env <- LSC.r5rsEnv -- Local Env for code generation phase
     ast <- loadFile filename
+    _ <- run env ast semanticAnalysis 
+
     putStrLn "-------------------------- AST:"
     putStrLn $ show ast
 --
@@ -47,11 +50,20 @@ compileFile filename = do
 --    putStrLn "-------------------------- AST AFTER CPS-CONVERSION:"
 --    putStrLn $ show astAfterCPS
 
-    code <- generateCode ast
+    code <- generateCode env ast
     putStrLn "-------------------------- C CODE:"
     putStrLn $ show code
     System.Exit.exitSuccess
 
+run :: Env -> [LispVal] -> (Env -> [LispVal] -> IOThrowsError [LispVal]) -> IO [LispVal]
+run env dat func = do
+    result <- runErrorT $ func env dat
+    case result of
+        Left err -> do
+            putStrLn $ show err
+            System.Exit.exitFailure
+        Right val -> do
+            return val
 
 loadFile :: String -> IO [LispVal]
 loadFile filename = do
@@ -69,10 +81,13 @@ loadFile filename = do
 -- This would handle functions that "90" performs in the
 -- xe (expand expression) phase
 semanticAnalysis :: Env -> [LispVal] -> IOThrowsError [LispVal]
+semanticAnalysis env ast = do
+    --_ <- LSV.defineVar env "TEST" $ String "TESTING"
+    return [Nil "TODO"]
 
 -- TODO: consolidate common code w/loadFile func above
-generateCode ast = do
-    result <- runErrorT $ codeGenerate ast
+generateCode env ast = do
+    result <- runErrorT $ codeGenerate env ast
     case result of
         Left err -> do
             putStrLn $ show err
@@ -112,11 +127,10 @@ freeVars _ = []
 ---------------------------------------------------------------------
 -- code generation section
 
-codeGenerate :: [LispVal] -> IOThrowsError [String]
-codeGenerate ast = do
+codeGenerate :: Env -> [LispVal] -> IOThrowsError [String]
+codeGenerate cgEnv ast = do
    let fv = freeVars $ List ast
 
-   cgEnv <- liftIO $ LSC.r5rsEnv -- Local Env for code generation phase
    _ <- LSC.evalLisp cgEnv $ List [Atom "load", String "code-gen.scm"]
    _ <- LSC.evalLisp cgEnv $ List [Atom "add-lambda!", List [Atom "quote", List ast]]
    String codeSuffix <- LSV.getVar cgEnv "code-suffix"
@@ -144,6 +158,7 @@ compileAllLambdas env = do
         ast@(List [List (Atom "lambda" : List vs : body)]) <- LSP.cdr [x]
         LSP.cdr [todo] >>= LSV.setVar env "lambda-todo" 
        
+--test <- LSV.getVar env "TEST"
         -- TODO: how to differentiate ast and ast-subx???
         --astH <- LSP.car [ast]
         --astT <- LSP.cdr [ast]
