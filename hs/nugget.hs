@@ -103,6 +103,38 @@ cps (a : as) acc = cps as [] -- TODO
 cps [] result = return result
 
 ---------------------------------------------------------------------
+-- Environments
+--
+-- TODO: expand this into a separate module
+globalNamespace :: Char
+globalNamespace = 'g'
+localNamespace :: Char
+localNamespace = 'l'
+
+initSymEnv :: Env -> IOThrowsError LispVal
+initSymEnv symEnv = do
+    LSV.defineVar symEnv "seq-num" $ Number 0
+
+newVar :: Env -> String -> IOThrowsError LispVal
+newVar symEnv id = do
+    Number seqNum <- LSV.getVar symEnv "seq-num"
+    _ <- LSV.setVar symEnv "seq-num" $ Number (seqNum + 1)
+    LSV.defineNamespacedVar symEnv localNamespace id $ Number (seqNum + 1)
+
+newGlobalVar :: Env -> String -> IOThrowsError LispVal
+newGlobalVar symEnv id = do
+    LSV.defineNamespacedVar symEnv globalNamespace id $ Atom id
+
+isVar, isGlobalVar :: Env -> String -> IO Bool
+isVar symEnv var = do
+    found <- LSV.isNamespacedRecBound symEnv localNamespace var
+    if found
+       then return True
+       else isGlobalVar symEnv var
+isGlobalVar symEnv var = LSV.isNamespacedRecBound symEnv globalNamespace var
+
+
+---------------------------------------------------------------------
 -- Free variables
 -- TODO: this is a port of fv, although it needs to filter
 --       out primitive functions, maybe other things
