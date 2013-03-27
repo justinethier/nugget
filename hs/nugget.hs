@@ -51,7 +51,7 @@ compileFile filename = do
 --    putStrLn "-------------------------- AST AFTER CPS-CONVERSION:"
 --    putStrLn $ show astAfterCPS
 
-    code <- generateCode env ast
+    code <- generateCode env symEnv ast
     putStrLn "-------------------------- C CODE:"
     putStrLn $ show code
     System.Exit.exitSuccess
@@ -98,12 +98,12 @@ saLookup :: Env -> String -> IOThrowsError LispVal
 saLookup env var = do
  isV <- liftIO $ isVar env var
  if isV
-    then newGlobalVar env var
+    then (trace ("DEBUG: adding global: " ++ var) newGlobalVar) env var
     else return $ Bool False
 
 -- TODO: consolidate common code w/loadFile func above
-generateCode env ast = do
-    result <- runErrorT $ codeGenerate env ast
+generateCode env symEnv ast = do
+    result <- runErrorT $ codeGenerate env symEnv ast
     case result of
         Left err -> do
             putStrLn $ show err
@@ -175,15 +175,15 @@ freeVars _ = []
 ---------------------------------------------------------------------
 -- code generation section
 
-codeGenerate :: Env -> [LispVal] -> IOThrowsError [String]
-codeGenerate cgEnv ast = do
+codeGenerate :: Env -> Env -> [LispVal] -> IOThrowsError [String]
+codeGenerate cgEnv symEnv ast = do
    let fv = freeVars $ List ast
 
    _ <- LSC.evalLisp cgEnv $ List [Atom "load", String "code-gen.scm"]
    _ <- LSC.evalLisp cgEnv $ List [Atom "add-lambda!", List [Atom "quote", List ast]]
    String codeSuffix <- LSV.getVar cgEnv "code-suffix"
 
-   code <- (trace ("fv = " ++ show fv) compileAllLambdas cgEnv)
+   code <- (trace ("fv = " ++ show fv) compileAllLambdas cgEnv symEnv)
    return $ [
       "#define NB_GLOBALS \n" , -- TODO: (length global-vars) "\n"
       "#define MAX_STACK 100 \n" ] -- could be computed...
@@ -193,8 +193,9 @@ codeGenerate cgEnv ast = do
 -- |A port of (compile-all-lambdas) from "90 minutes"
 compileAllLambdas ::
     Env -> 
+    Env ->
     IOThrowsError [String]
-compileAllLambdas env = do
+compileAllLambdas env symEnv = do
     todo <- LSV.getVar env "lambda-todo"
     isTodo <- LSP.isNull [todo]
     case isTodo of
@@ -211,8 +212,8 @@ compileAllLambdas env = do
         --astH <- LSP.car [ast]
         --astT <- LSP.cdr [ast]
 
-        code <- cg env (List body) $ reverse vs
-        rest <- compileAllLambdas env
+        code <- cg env symEnv (List body) $ reverse vs
+        rest <- compileAllLambdas env symEnv
         return $
             ["case " ++ show caseNum ++ ": /* " ++ show ast ++ " */\n\n"] -- " (object->string (source ast) 60) " */\n\n"
             ++ code ++ ["\n\n"] ++ rest
@@ -233,13 +234,33 @@ compileAllLambdas env = do
 --                       (cont (list x sep code)
 --                             stack-env))))))
 
+-- TODO:
+--    (define (access-var var stack-env)
+--      (if (global-var? var)
+--          (let ((i (pos-in-list var global-vars)))
+--            (list "GLOBAL(" i "/*" (var-uid var) "*/)"))
+--          (let ((i (- (length stack-env)
+--                      (pos-in-list var stack-env)
+--                      1)))
+--            (list "LOCAL(" i "/*" (var-uid var) "*/)"))))
+accessVar ::
+
 cg ::
+   Env -> 
    Env -> 
    LispVal ->  -- ^ ast
    [LispVal] -> -- ^ stackEnv
    IOThrowsError [String]
-cg _ (Bool False) _ = return [" PUSH(FALSEOBJ));"]
-cg _ (Bool True) _ = return [" PUSH(TRUEOBJ));"]
+--cg _ symEnv (List [Atom "define", Atom var, form]) _ = do
+-- TODO:
+--            ((set? ast)
+--             (let ((var (set-var ast)))
+--               (list
+--                (cg (car (ast-subx ast)))
+--                " " (access-var var stack-env) " = TOS();")))
+
+cg _ _ (Bool False) _ = return [" PUSH(FALSEOBJ));"]
+cg _ _ (Bool True) _ = return [" PUSH(TRUEOBJ));"]
 -- TODO: (else (list " PUSH(INT2OBJ(" val "));")))))
-cg _ e _ = throwError $ Default $ "Unexpected input to cg: " ++ show e
+cg _ _ e _ = throwError $ Default $ "Unexpected input to cg: " ++ show e
 
