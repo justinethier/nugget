@@ -213,7 +213,7 @@ compileAllLambdas env symEnv globalVars = do
         --astH <- LSP.car [ast]
         --astT <- LSP.cdr [ast]
 
-        code <- cg env symEnv (List body) globalVars $ reverse vs
+        code <- cg env symEnv body globalVars $ reverse vs
         rest <- compileAllLambdas env symEnv globalVars
         return $
             ["case " ++ show caseNum ++ ": /* " ++ show ast ++ " */\n\n"] -- " (object->string (source ast) 60) " */\n\n"
@@ -255,21 +255,30 @@ accessVar env symEnv var globalVars stackEnv = do
 cg ::
    Env -> 
    Env -> 
+   [LispVal] ->  -- ^ ast
+   [LispVal] -> -- ^ globalVars
+   [LispVal] -> -- ^ stackEnv
+   IOThrowsError [String] -- TODO: String probably makes more sense
+cg env symEnv (a : as) globalVars stack = do
+    h <- cg' env symEnv a globalVars stack
+    t <- cg env symEnv as globalVars stack
+    return $ h ++ t
+cg env symEnv [] globalVars stack = return []
+
+cg' ::
+   Env -> 
+   Env -> 
    LispVal ->  -- ^ ast
    [LispVal] -> -- ^ globalVars
    [LispVal] -> -- ^ stackEnv
-   IOThrowsError [String]
---cg _ symEnv (List [Atom "define", Atom var, form]) _ = do
--- TODO:
---            ((set? ast)
---             (let ((var (set-var ast)))
---               (list
---                (cg (car (ast-subx ast)))
---                " " (access-var var stack-env) " = TOS();")))
---  accessVar env symEnv var globalVars stackEnv
+   IOThrowsError [String] -- TODO: String probably makes more sense
+cg' env symEnv (List [Atom "define", Atom var, form]) globalVars stack = do
+  h <- cg' env symEnv form globalVars stack
+  t <- accessVar env symEnv var globalVars stack
+  return $ h ++ [" " ++ t ++ " = TOS();"]
 
-cg _ _ (Bool False) _ _ = return [" PUSH(FALSEOBJ));"]
-cg _ _ (Bool True) _ _ = return [" PUSH(TRUEOBJ));"]
+cg' _ _ (Bool False) _ _ = return [" PUSH(FALSEOBJ));"]
+cg' _ _ (Bool True) _ _ = return [" PUSH(TRUEOBJ));"]
 -- TODO: (else (list " PUSH(INT2OBJ(" val "));")))))
-cg _ _ e _ _ = throwError $ Default $ "Unexpected input to cg: " ++ show e
+cg' _ _ e _ _ = throwError $ Default $ "Unexpected input to cg: " ++ show e
 
