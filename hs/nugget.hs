@@ -177,13 +177,13 @@ freeVars _ = []
 
 codeGenerate :: Env -> Env -> [LispVal] -> IOThrowsError [String]
 codeGenerate cgEnv symEnv ast = do
-   let fv = freeVars $ List ast
+   let globalVars = freeVars $ List ast
 
    _ <- LSC.evalLisp cgEnv $ List [Atom "load", String "code-gen.scm"]
    _ <- LSC.evalLisp cgEnv $ List [Atom "add-lambda!", List [Atom "quote", List ast]]
    String codeSuffix <- LSV.getVar cgEnv "code-suffix"
 
-   code <- (trace ("fv = " ++ show fv) compileAllLambdas cgEnv symEnv)
+   code <- (trace ("fv = " ++ show globalVars) compileAllLambdas cgEnv symEnv globalVars)
    return $ [
       "#define NB_GLOBALS \n" , -- TODO: (length global-vars) "\n"
       "#define MAX_STACK 100 \n" ] -- could be computed...
@@ -194,8 +194,9 @@ codeGenerate cgEnv symEnv ast = do
 compileAllLambdas ::
     Env -> 
     Env ->
+    [LispVal] -> 
     IOThrowsError [String]
-compileAllLambdas env symEnv = do
+compileAllLambdas env symEnv globalVars = do
     todo <- LSV.getVar env "lambda-todo"
     isTodo <- LSP.isNull [todo]
     case isTodo of
@@ -212,8 +213,8 @@ compileAllLambdas env symEnv = do
         --astH <- LSP.car [ast]
         --astT <- LSP.cdr [ast]
 
-        code <- cg env symEnv (List body) $ reverse vs
-        rest <- compileAllLambdas env symEnv
+        code <- cg env symEnv (List body) globalVars $ reverse vs
+        rest <- compileAllLambdas env symEnv globalVars
         return $
             ["case " ++ show caseNum ++ ": /* " ++ show ast ++ " */\n\n"] -- " (object->string (source ast) 60) " */\n\n"
             ++ code ++ ["\n\n"] ++ rest
@@ -234,21 +235,28 @@ compileAllLambdas env symEnv = do
 --                       (cont (list x sep code)
 --                             stack-env))))))
 
--- TODO:
---    (define (access-var var stack-env)
---      (if (global-var? var)
---          (let ((i (pos-in-list var global-vars)))
---            (list "GLOBAL(" i "/*" (var-uid var) "*/)"))
---          (let ((i (- (length stack-env)
---                      (pos-in-list var stack-env)
---                      1)))
---            (list "LOCAL(" i "/*" (var-uid var) "*/)"))))
-accessVar ::
+-- A port of (access-var)
+accessVar :: Env -> Env -> String -> [LispVal] -> [LispVal] -> IOThrowsError String
+accessVar env symEnv var globalVars stackEnv = do
+    isGV <- liftIO $ isGlobalVar symEnv var
+    if isGV
+       then do
+         Number i <- LSC.evalLisp env $ List [Atom "pos-in-list", Atom var, List globalVars]
+         varUID <- LSV.getNamespacedVar symEnv globalNamespace var
+         return $ "GLOBAL(" ++ show i ++ "/*" ++ var ++ "." ++ show varUID ++ "*/)"
+         -- (list "GLOBAL(" i "/*" (var-uid var) "*/)"))
+       else do
+         Number pos <- LSC.evalLisp env $ List [Atom "pos-in-list", Atom var, List stackEnv]
+         varUID <- LSV.getNamespacedVar symEnv localNamespace var
+         let i = (length stackEnv) - (fromInteger pos) - 1 
+         return $ "LOCAL(" ++ show i ++ "/*" ++ var ++ "." ++ show varUID ++ "*/)"
+         -- (list "LOCAL(" i "/*" (var-uid var) "*/)"))))
 
 cg ::
    Env -> 
    Env -> 
    LispVal ->  -- ^ ast
+   [LispVal] -> -- ^ globalVars
    [LispVal] -> -- ^ stackEnv
    IOThrowsError [String]
 --cg _ symEnv (List [Atom "define", Atom var, form]) _ = do
@@ -258,9 +266,10 @@ cg ::
 --               (list
 --                (cg (car (ast-subx ast)))
 --                " " (access-var var stack-env) " = TOS();")))
+--  accessVar env symEnv var globalVars stackEnv
 
-cg _ _ (Bool False) _ = return [" PUSH(FALSEOBJ));"]
-cg _ _ (Bool True) _ = return [" PUSH(TRUEOBJ));"]
+cg _ _ (Bool False) _ _ = return [" PUSH(FALSEOBJ));"]
+cg _ _ (Bool True) _ _ = return [" PUSH(TRUEOBJ));"]
 -- TODO: (else (list " PUSH(INT2OBJ(" val "));")))))
-cg _ _ e _ = throwError $ Default $ "Unexpected input to cg: " ++ show e
+cg _ _ e _ _ = throwError $ Default $ "Unexpected input to cg: " ++ show e
 
