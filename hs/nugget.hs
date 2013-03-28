@@ -276,7 +276,11 @@ cg' env symEnv (List [Atom "define", Atom var, form]) globalVars stack = do
   h <- cg' env symEnv form globalVars stack
   t <- accessVar env symEnv var globalVars stack
   return $ h ++ [" " ++ t ++ " = TOS();"]
-
+-- this case is impossible after CPS-conversion
+cg' env symEnv ast@(List (Atom "lambda" : List vs : body)) globalVars stack = do
+   Number i <- LSC.evalLisp env $ 
+        List [Atom "add-lambda!", List [Atom "quote", List [ast]]]
+   return $ [" PUSH(INT2OBJ(" ++ show i ++ "));"]
 cg' _ _ (Bool False) _ _ = return [" PUSH(FALSEOBJ));"]
 cg' _ _ (Bool True) _ _ = return [" PUSH(TRUEOBJ));"]
 -- TODO: (else (list " PUSH(INT2OBJ(" val "));")))))
