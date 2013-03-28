@@ -84,11 +84,17 @@ loadFile filename = do
 -- This would handle functions that "90" performs in the
 -- xe (expand expression) phase
 semanticAnalysis :: Env -> LispVal -> IOThrowsError LispVal
-semanticAnalysis env (List [Atom "define", Atom var, form]) = do
+semanticAnalysis env (List (List (Atom "lambda" : List vs : body) : as)) = do
+    semanticAnalysis env $ List body
+    semanticAnalysis env $ List as
+semanticAnalysis env (List (List [Atom "define", Atom var, form] : as)) = do
   isV <- saLookup env var 
   case isV of
     Bool True -> semanticAnalysis env form
     _ -> throwError $ Default $ "cannot set a nonvariable " ++ var
+  semanticAnalysis env $ List as
+semanticAnalysis env (List (a : as)) = (trace ("a = " ++ show a ) semanticAnalysis) env $ List as
+semanticAnalysis env (List []) = return $ Nil ""
 semanticAnalysis env _ = return $ Nil ""
 --semanticAnalysis env ast = 
 --    throwError $ Default $ "SA Unrecognized form: " ++ show ast
