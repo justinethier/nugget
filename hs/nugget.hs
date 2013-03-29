@@ -88,10 +88,11 @@ semanticAnalysis env (List (List (Atom "lambda" : List vs : body) : as)) = do
     semanticAnalysis env $ List body
     semanticAnalysis env $ List as
 semanticAnalysis env (List (List [Atom "define", Atom var, form] : as)) = do
+  --penv <- liftIO $ LSV.printEnv env
   isV <- saLookup env var 
   case isV of
-    Bool True -> semanticAnalysis env form
-    _ -> throwError $ Default $ "cannot set a nonvariable " ++ var
+    Bool False -> throwError $ Default $ "cannot set a nonvariable " ++ var -- ++ " - " ++ show isV ++ " - " ++ show penv
+    _ -> semanticAnalysis env form
   semanticAnalysis env $ List as
 semanticAnalysis env (List (a : as)) = (trace ("a = " ++ show a ) semanticAnalysis) env $ List as
 semanticAnalysis env (List []) = return $ Nil ""
@@ -104,8 +105,8 @@ saLookup :: Env -> String -> IOThrowsError LispVal
 saLookup env var = do
  isV <- liftIO $ isVar env var
  if isV
-    then (trace ("DEBUG: adding global: " ++ var) newGlobalVar) env var
-    else return $ Bool False
+    then LSV.getVar env var
+    else (trace ("DEBUG: adding global: " ++ var) newGlobalVar) env var
 
 -- TODO: consolidate common code w/loadFile func above
 generateCode env symEnv ast = do
@@ -244,8 +245,10 @@ compileAllLambdas env symEnv globalVars = do
 -- A port of (access-var)
 accessVar :: Env -> Env -> String -> [LispVal] -> [LispVal] -> IOThrowsError String
 accessVar env symEnv var globalVars stackEnv = do
+    -- TODO: WTF is square not bound in jae-test????
+    penv <- liftIO $ LSV.printEnv symEnv
     isGV <- liftIO $ isGlobalVar symEnv var
-    if isGV
+    if (trace ("isGV = " ++ show isGV ++ " " ++ show penv ++ " var = " ++ show var) isGV)
        then do
          Number i <- LSC.evalLisp env $ List [Atom "pos-in-list", Atom var, List globalVars]
          varUID <- LSV.getNamespacedVar symEnv globalNamespace var
