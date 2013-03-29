@@ -250,14 +250,16 @@ accessVar env symEnv var globalVars stackEnv = do
     isGV <- liftIO $ isGlobalVar symEnv var
     if (trace ("isGV = " ++ show isGV ++ " " ++ show penv ++ " var = " ++ show var) isGV)
        then do
-         Number i <- LSC.evalLisp env $ List [Atom "pos-in-list", Atom var, List globalVars]
+         let Just i = DL.elemIndex (Atom var) globalVars
          varUID <- LSV.getNamespacedVar symEnv globalNamespace var
          return $ "GLOBAL(" ++ show i ++ "/*" ++ var ++ "." ++ show varUID ++ "*/)"
          -- (list "GLOBAL(" i "/*" (var-uid var) "*/)"))
        else do
-         Number pos <- LSC.evalLisp env $ List [Atom "pos-in-list", Atom var, List stackEnv]
+         -- TODO: pos-in-list call below is probably broken, replaced w/Haskell below...
+         --Number pos <- LSC.evalLisp env $ List [Atom "pos-in-list", Atom var, List stackEnv]
+         let Just pos = DL.elemIndex (Atom var) stackEnv
          varUID <- LSV.getNamespacedVar symEnv localNamespace var
-         let i = (length stackEnv) - (fromInteger pos) - 1 
+         let i = (length stackEnv) - pos - 1 
          return $ "LOCAL(" ++ show i ++ "/*" ++ var ++ "." ++ show varUID ++ "*/)"
          -- (list "LOCAL(" i "/*" (var-uid var) "*/)"))))
 
