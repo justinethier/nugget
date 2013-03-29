@@ -3,4 +3,4 @@ nugget: nugget.hs
 
 .PHONY: clean
 clean:
-	rm -rf *.o *.hi nugget
+	rm -rf *.o *.c *.hi nugget a.out
