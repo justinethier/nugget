@@ -16,6 +16,7 @@ import Language.Scheme.Types
 import qualified Language.Scheme.Variables as LSV
 import Control.Monad.Error
 import qualified Data.List as DL
+import qualified Data.Map as DM
 import qualified Data.Set as DS
 import qualified System.Exit
 import System.IO
@@ -185,6 +186,7 @@ freeVars _ = []
 codeGenerate :: Env -> Env -> [LispVal] -> IOThrowsError [String]
 codeGenerate cgEnv symEnv ast = do
    let globalVars = freeVars $ List ast
+-- TODO: ^ need to filter out primitives
 
    _ <- LSC.evalLisp cgEnv $ List [Atom "load", String "code-gen.scm"]
    _ <- LSC.evalLisp cgEnv $ List [Atom "add-lambda!", List [Atom "quote", List ast]]
@@ -292,8 +294,25 @@ cg' env symEnv ast@(List (Atom "lambda" : List vs : body)) globalVars stack = do
    Number i <- LSC.evalLisp env $ 
         List [Atom "add-lambda!", List [Atom "quote", List [ast]]]
    return $ [" PUSH(INT2OBJ(" ++ show i ++ "));"]
+cg' env symEnv (List (Atom fnc : args)) globalVars stack = do
+    TODO: cg-args
+    case DM.lookup fnc primitives of
+        Just prim -> return $ [prim]
+        Nothing -> 
+            -- TODO: could be a closure
+            throwError $ Default $ "Unknown primitive: " ++ show fnc
 cg' _ _ (Bool False) _ _ = return [" PUSH(FALSEOBJ));"]
 cg' _ _ (Bool True) _ _ = return [" PUSH(TRUEOBJ));"]
 -- TODO: (else (list " PUSH(INT2OBJ(" val "));")))))
 cg' _ _ e _ _ = throwError $ Default $ "Unexpected input to cg: " ++ show e
+
+primitives = DM.fromList
+  [ ("=", " EQ();")
+  , ("<", " LT();")
+  , ("+", " ADD();")
+  , ("-", " SUB();")
+  , ("*", " MUL();")
+  , ("display", " DISPLAY();")
+  , ("halt", " HALT();")
+  ]
 
