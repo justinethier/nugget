@@ -1,4 +1,4 @@
-{- |
+{- | 
 Module      : Main
 Copyright   : Justin Ethier
 Licence     : MIT (see LICENSE in the distribution)
