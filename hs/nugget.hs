@@ -10,17 +10,18 @@ An experimental port of the 90 minute scheme compiler to Haskell.
 -}
 
 module Main where
-import qualified Language.Scheme.Core as LSC
-import qualified Language.Scheme.Primitives as LSP
-import Language.Scheme.Types
-import qualified Language.Scheme.Variables as LSV
 import Control.Monad.Error
 import qualified Data.List as DL
 import qualified Data.Map as DM
 import qualified Data.Set as DS
-import qualified System.Exit
-import System.IO
+import qualified Language.Scheme.Core as LSC
+import qualified Language.Scheme.Primitives as LSP
+import Language.Scheme.Types
+import qualified Language.Scheme.Variables as LSV
 import System.Environment
+import qualified System.Exit
+import System.FilePath (dropExtension)
+import System.IO
 import Debug.Trace
 
 main :: IO ()
@@ -55,8 +56,22 @@ compileFile filename = do
     code <- generateCode env symEnv ast
     putStrLn "-------------------------- C CODE:"
     putStrLn $ show code
+    writeOutputFile ((dropExtension filename) ++ ".c")
+                    code
     System.Exit.exitSuccess
 
+writeOutputFile :: String -> [String] -> IO ()
+writeOutputFile filename code = do
+  outH <- liftIO $ openFile filename WriteMode
+  writeList outH code
+  hClose outH
+  
+-- |Helper function to write code to file
+writeList outH (l : ls) = do
+  hPutStrLn outH l
+  writeList outH ls
+writeList outH _ = do
+  hPutStr outH ""
 
 -- TODO: this is a real mess, not general purpose at all
 run :: Env -> [LispVal] -> (Env -> LispVal -> IOThrowsError LispVal) -> IO LispVal
@@ -190,14 +205,14 @@ codeGenerate cgEnv symEnv ast = do
 
    _ <- LSC.evalLisp cgEnv $ List [Atom "load", String "code-gen.scm"]
    _ <- LSC.evalLisp cgEnv $ List [Atom "add-lambda!", List [Atom "quote", List ast]]
+   String codePrefix <- LSV.getVar cgEnv "code-prefix"
    String codeSuffix <- LSV.getVar cgEnv "code-suffix"
 
    code <- (trace ("fv = " ++ show globalVars) compileAllLambdas cgEnv symEnv globalVars)
    return $ [
-      "#define NB_GLOBALS \n" , -- TODO: (length global-vars) "\n"
-      "#define MAX_STACK 100 \n" ] -- could be computed...
-      --TODO: codePrefix] 
-      ++ code ++ [codeSuffix]
+      "#define NB_GLOBALS " ++ show (length globalVars) ++ "\n" ,
+      "#define MAX_STACK 100 \n" , -- could be computed...
+      codePrefix] ++ code ++ [codeSuffix]
 
 -- |A port of (compile-all-lambdas) from "90 minutes"
 compileAllLambdas ::
