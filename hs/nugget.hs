@@ -295,15 +295,16 @@ cg' env symEnv ast@(List (Atom "lambda" : List vs : body)) globalVars stack = do
         List [Atom "add-lambda!", List [Atom "quote", List [ast]]]
    return $ [" PUSH(INT2OBJ(" ++ show i ++ "));"]
 cg' env symEnv (List (Atom fnc : args)) globalVars stack = do
-    TODO: cg-args
     case DM.lookup fnc primitives of
-        Just prim -> return $ [prim]
+        Just prim -> do
+            argStr <- cg env symEnv args globalVars stack
+            return $ argStr ++ [prim]
         Nothing -> 
             -- TODO: could be a closure
             throwError $ Default $ "Unknown primitive: " ++ show fnc
 cg' _ _ (Bool False) _ _ = return [" PUSH(FALSEOBJ));"]
 cg' _ _ (Bool True) _ _ = return [" PUSH(TRUEOBJ));"]
--- TODO: (else (list " PUSH(INT2OBJ(" val "));")))))
+cg' _ _ (Number n) _ _ = return [" PUSH(INT2OBJ(" ++ show n ++ "));"]
 cg' _ _ e _ _ = throwError $ Default $ "Unexpected input to cg: " ++ show e
 
 primitives = DM.fromList
