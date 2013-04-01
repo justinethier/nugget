@@ -68,7 +68,7 @@ writeOutputFile filename code = do
   
 -- |Helper function to write code to file
 writeList outH (l : ls) = do
-  hPutStrLn outH l
+  hPutStr outH l
   writeList outH ls
 writeList outH _ = do
   hPutStr outH ""
