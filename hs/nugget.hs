@@ -131,12 +131,16 @@ generateCode env symEnv ast = do
 
 ------------------------------------------------------------------------------
 -- CPS conversion
+
+TODO: need to move to the IOThrowsError monad...
 cpsConvert :: Env -> Env -> [LispVal] -> IO [LispVal]
-cpsConvert env symEnv ast = cps env symEnv ast []
+cpsConvert env symEnv ast = do
+    _ <- liftIO $ newVar symEnv "r"
+    cps env symEnv ast $ List (Atom "lambda" : List [Atom "r"] : List [Atom "halt", Atom "r"])
 
 cps :: Env -> Env -> [LispVal] -> [LispVal] -> IO [LispVal] 
-cps (a : as) acc = cps as [] -- TODO
-cps [] result = return result
+cps env symEnv (a : as) acc = cps env symEnv as acc -- TODO
+cps _ _ [] result = return result
 
 ---------------------------------------------------------------------
 -- Environments
