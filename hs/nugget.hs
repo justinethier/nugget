@@ -282,9 +282,9 @@ accessVar env symEnv var globalVars stackEnv = do
          -- TODO: pos-in-list call below is probably broken, replaced w/Haskell below...
          --Number pos <- LSC.evalLisp env $ List [Atom "pos-in-list", Atom var, List stackEnv]
          let Just pos = DL.elemIndex (Atom var) stackEnv
-         varUID <- LSV.getNamespacedVar symEnv localNamespace var
+         --varUID <- LSV.getNamespacedVar symEnv localNamespace var
          let i = (length stackEnv) - pos - 1 
-         return $ "LOCAL(" ++ show i ++ "/*" ++ var ++ "." ++ show varUID ++ "*/)"
+         return $ "LOCAL(" ++ show i ++ "/*" ++ var ++ {-"." ++ show varUID ++-} "*/)"
          -- (list "LOCAL(" i "/*" (var-uid var) "*/)"))))
 
 cg ::
@@ -321,7 +321,7 @@ cg' env symEnv (List (Atom fnc : args)) globalVars stack = do
         Just prim -> do
             argStr <- cg env symEnv args globalVars stack
             return $ argStr ++ [prim]
---        Nothing -> do
+        Nothing -> do
             -- TODO: could be a closure
             --throwError $ Default $ "Unknown primitive: " ++ show fnc
 
@@ -329,15 +329,15 @@ cg' env symEnv (List (Atom fnc : args)) globalVars stack = do
 
 -- TODO: this is a WIP
             -- the app / not lam? case
-            code <- cg' env symEnv args globalVars stack
+            code <- cg env symEnv args globalVars stack
             let n = length args
-                s = "JUMP(" ++ n ++ ");"
-            return $ code ++ " BEGIN_" ++ s
-             TODO:
-            --(map (lambda (j)
-            --(list " PUSH(LOCAL(" (+ j start) "));"))
-            --(interval 0 (- n 1))) ; Use the Haskell interval from above
-                     ++ " END_" ++ s
+                start = length stack
+                s = "JUMP(" ++ show n ++ ");"
+                frame = map (\ j -> " PUSH(LOCAL(" ++ show (j + start) ++ "));") $ interval 0 (n - 1)
+            return $ code 
+                     ++ [" BEGIN_" ++ s]
+                     ++ frame
+                     ++ [" END_" ++ s]
 --                   (cg-list args
 --                            (interval 1 n)
 --                            stack-env
