@@ -314,12 +314,44 @@ cg' env symEnv (List (Atom fnc : args)) globalVars stack = do
         Just prim -> do
             argStr <- cg env symEnv args globalVars stack
             return $ argStr ++ [prim]
-        Nothing -> 
+        Nothing -> do
             -- TODO: could be a closure
-            throwError $ Default $ "Unknown primitive: " ++ show fnc
+            --throwError $ Default $ "Unknown primitive: " ++ show fnc
+
+            -- TODO: lambda - lam?
+
+-- TODO: this is a WIP
+            -- the app / not lam? case
+            code <- cg' env symEnv args globalVars stack
+            let n = length args
+                s = "JUMP(" ++ n ++ ");"
+            return $ code ++ " BEGIN_" ++ s
+             TODO:
+            --(map (lambda (j)
+            --(list " PUSH(LOCAL(" (+ j start) "));"))
+            --(interval 0 (- n 1)))
+                     ++ " END_" ++ s
+--                   (cg-list args
+--                            (interval 1 n)
+--                            stack-env
+--                            "\n"
+--                            (lambda (code new-stack-env)
+--                              (let* ((start (length stack-env))
+--                                     (s (list "JUMP(" n ");")))
+--                              (list
+--                               code
+--                               " BEGIN_" s
+--                               (map (lambda (j)
+--                                      (list " PUSH(LOCAL(" (+ j start) "));"))
+--                                    (interval 0 (- n 1)))
+--                               " END_" s)))))))
+
 cg' _ _ (Bool False) _ _ = return [" PUSH(FALSEOBJ));"]
 cg' _ _ (Bool True) _ _ = return [" PUSH(TRUEOBJ));"]
 cg' _ _ (Number n) _ _ = return [" PUSH(INT2OBJ(" ++ show n ++ "));"]
+cg' env symEnv (Atom var) globalVars stack = do
+    code <- accessVar env symEnv var globalVars stack
+    return [" PUSH(" ++ code ++ ");"]
 cg' _ _ e _ _ = throwError $ Default $ "Unexpected input to cg: " ++ show e
 
 primitives = DM.fromList
