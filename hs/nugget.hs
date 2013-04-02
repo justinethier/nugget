@@ -174,6 +174,13 @@ isGlobalVar symEnv var = LSV.isNamespacedRecBound symEnv globalNamespace var
 
 
 ---------------------------------------------------------------------
+-- utilities
+interval :: Int -> Int -> [Int]
+interval n m 
+    | n <= m = (n : interval (n + 1) m)
+    | otherwise = []
+
+---------------------------------------------------------------------
 -- Free variables
 -- TODO: this is a port of fv, although it needs to filter
 --       out primitive functions, maybe other things
@@ -314,7 +321,7 @@ cg' env symEnv (List (Atom fnc : args)) globalVars stack = do
         Just prim -> do
             argStr <- cg env symEnv args globalVars stack
             return $ argStr ++ [prim]
-        Nothing -> do
+--        Nothing -> do
             -- TODO: could be a closure
             --throwError $ Default $ "Unknown primitive: " ++ show fnc
 
@@ -329,7 +336,7 @@ cg' env symEnv (List (Atom fnc : args)) globalVars stack = do
              TODO:
             --(map (lambda (j)
             --(list " PUSH(LOCAL(" (+ j start) "));"))
-            --(interval 0 (- n 1)))
+            --(interval 0 (- n 1))) ; Use the Haskell interval from above
                      ++ " END_" ++ s
 --                   (cg-list args
 --                            (interval 1 n)
