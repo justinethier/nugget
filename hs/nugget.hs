@@ -43,17 +43,12 @@ compileFile filename = do
 
     putStrLn "-------------------------- AST:"
     putStrLn $ show ast
---
--- TODO: may want to think about doing code generation first,
--- and just passing in code in the proper format. otherwise
--- it may be more painful later if the cps/closure code needs
--- to be reworked later on...
---
---    astAfterCPS <- cpsConvert ast
---    putStrLn "-------------------------- AST AFTER CPS-CONVERSION:"
---    putStrLn $ show astAfterCPS
 
-    code <- generateCode env symEnv ast
+    astAfterCPS <- cpsConvert env symEnv ast
+    putStrLn "-------------------------- AST AFTER CPS-CONVERSION:"
+    putStrLn $ show astAfterCPS
+
+    code <- generateCode env symEnv astAfterCPS
     putStrLn "-------------------------- C CODE:"
     putStrLn $ show code
     writeOutputFile ((dropExtension filename) ++ ".c")
@@ -134,10 +129,12 @@ generateCode env symEnv ast = do
         Right code -> do
             return code
 
-cpsConvert :: [LispVal] -> IO [LispVal]
-cpsConvert ast = cps ast []
+------------------------------------------------------------------------------
+-- CPS conversion
+cpsConvert :: Env -> Env -> [LispVal] -> IO [LispVal]
+cpsConvert env symEnv ast = cps env symEnv ast []
 
-cps :: [LispVal] -> [LispVal] -> IO [LispVal] 
+cps :: Env -> Env -> [LispVal] -> [LispVal] -> IO [LispVal] 
 cps (a : as) acc = cps as [] -- TODO
 cps [] result = return result
 
