@@ -39,6 +39,7 @@ compileFile filename = do
     env <- LSC.r5rsEnv -- Local Env for code generation phase
     symEnv <- nullEnv
     ast <- loadFile filename
+    _ <- initEnv symEnv
     _ <- run symEnv ast semanticAnalysis 
 
     putStrLn "-------------------------- AST:"
@@ -68,26 +69,25 @@ writeList outH (l : ls) = do
 writeList outH _ = do
   hPutStr outH ""
 
+handleResult (Left err) = do
+  putStrLn $ show err
+  System.Exit.exitFailure
+handleResult (Right val) = return val
+
 -- TODO: this is a real mess, not general purpose at all
 run :: Env -> [LispVal] -> (Env -> LispVal -> IOThrowsError LispVal) -> IO LispVal
 run env dat func = do
-    result <- runErrorT $ func env $ List dat
-    case result of
-        Left err -> do
-            putStrLn $ show err
-            System.Exit.exitFailure
-        Right val -> do
-            return val
+    result <- runErrorT $ func env $ List dat 
+    handleResult result
 
 loadFile :: String -> IO [LispVal]
 loadFile filename = do
     result <- runErrorT $ LSP.load filename
-    case result of
-        Left err -> do
-            putStrLn $ show err
-            System.Exit.exitFailure
-        Right ast -> do
-            return $ ast
+    handleResult result
+
+initEnv symEnv = do
+    result <- runErrorT $ initSymEnv symEnv
+    handleResult result
 
 -- |Build symbol table (IE, GLOBAL / LOCAL), possibly
 --  expand macros at this phase
@@ -131,16 +131,19 @@ generateCode env symEnv ast = do
 
 ------------------------------------------------------------------------------
 -- CPS conversion
-
-TODO: need to move to the IOThrowsError monad...
-cpsConvert :: Env -> Env -> [LispVal] -> IO [LispVal]
 cpsConvert env symEnv ast = do
-    _ <- liftIO $ newVar symEnv "r"
-    cps env symEnv ast $ List (Atom "lambda" : List [Atom "r"] : List [Atom "halt", Atom "r"])
+  result <- runErrorT $ cpsConvert' env symEnv ast
+  handleResult result
+cpsConvert' :: Env -> Env -> [LispVal] -> IOThrowsError [LispVal]
+cpsConvert' env symEnv ast = do
+  _ <- newVar symEnv "r"
+  cps env symEnv 
+    (List ast) 
+    (List [List (Atom "lambda" : List [Atom "r"] : [Atom "halt", Atom "r"])])
 
-cps :: Env -> Env -> [LispVal] -> [LispVal] -> IO [LispVal] 
-cps env symEnv (a : as) acc = cps env symEnv as acc -- TODO
-cps _ _ [] result = return result
+cps :: Env -> Env -> LispVal -> LispVal -> IOThrowsError [LispVal] 
+cps env symEnv (List (a : as)) acc = cps env symEnv (List as) acc -- TODO
+cps _ _ (List []) (List result) = return result
 
 ---------------------------------------------------------------------
 -- Environments
@@ -273,7 +276,7 @@ accessVar env symEnv var globalVars stackEnv = do
     -- TODO: WTF is square not bound in jae-test????
     penv <- liftIO $ LSV.printEnv symEnv
     isGV <- liftIO $ isGlobalVar symEnv var
-    if (trace ("isGV = " ++ show isGV ++ " " ++ show penv ++ " var = " ++ show var) isGV)
+    if (trace ("isGV = " ++ show isGV ++ " " ++ show penv ++ " var = " ++ show var ++ " stack = " ++ show stackEnv) isGV)
        then do
          let Just i = DL.elemIndex (Atom var) globalVars
          varUID <- LSV.getNamespacedVar symEnv globalNamespace var
