@@ -139,7 +139,7 @@ cpsConvert' env symEnv ast = do
   _ <- newVar symEnv "r"
   cps env symEnv 
     (List ast) 
-    (List [List (Atom "lambda" : List [Atom "r"] : [Atom "halt", Atom "r"])])
+    (List [List (Atom "lambda" : List [Atom "r"] : [List [Atom "halt", Atom "r"]])])
 
 cps :: Env -> Env -> LispVal -> LispVal -> IOThrowsError [LispVal] 
 cps env symEnv (List (a : as)) acc = cps env symEnv (List as) acc -- TODO
