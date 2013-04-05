@@ -136,7 +136,8 @@ cpsConvert' env symEnv ast = do
     (List (Atom "lambda" : List [Atom "r"] : [List [Atom "halt", Atom "r"]]))
 
 cps :: Env -> Env -> LispVal -> LispVal -> IOThrowsError [LispVal] 
-cps env symEnv (List (List (Atom "lambda" : List vs : body) : as)) (contAST) = do
+cps env symEnv (List (Atom "lambda" : List vs : body)) (contAST) = do
+-- OBSOLETE - the old code for above - cps env symEnv (List (List (Atom "lambda" : List vs : body) : as)) (contAST) = do
     _ <- newVar symEnv "k" -- TODO: will this clobber an old k?
                         -- may need to rethink var type, may even need to
                         -- use a new data type that can pass along metadata
@@ -144,9 +145,25 @@ cps env symEnv (List (List (Atom "lambda" : List vs : body) : as)) (contAST) = d
     b <- cpsSeq env symEnv body $ Atom "k"
     return $ [List [contAST, 
                    (List (Atom "lambda" : List (Atom "k" : vs) : b))]]
-cps env symEnv (List (a : as)) acc = cps env symEnv (List as) acc -- TODO
+--cps env symEnv (List (List [Atom "define", Atom var, form] : as)) contAst = do
+-- TODO:
+--         ((set? ast)
+--          (cps-list (ast-subx ast)
+--                    (lambda (val)
+--                      (make-app
+--                       (list cont-ast
+--                             (make-set val
+--                                       (set-var ast)))))))
+-- TODO: prim
+-- TODO: cond (really if)
+-- TODO: function app (will cause problems with below, which is really the seq case)
+cps env symEnv (List (a : as)) contAst =
+    cpsSeq env symEnv (a : as) contAst
 cps _ _ (List []) result = return [result]
-cps _ _ err contAst = throwError $ Default $ "Unexpected error in cps, ast = " ++ (show err) ++ ", cont ast = " ++ show contAst
+cps env symEnv ast@(Bool _) contAst = return $ [List [contAst, ast]]
+cps env symEnv ast@(Number _) contAst = return $ [List [contAst, ast]]
+cps env symEnv ast@(Atom _) contAst = return $ [List [contAst, ast]]
+cps _ _ err contAst = throwError $ Default $ "Unexpected input to cps, ast = " ++ (show err) ++ ", cont ast = " ++ show contAst
 
 -- |Convert a list (sequence) of code into CPS
 --cpsSeq env symEnv asts contAst
