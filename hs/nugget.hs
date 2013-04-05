@@ -137,31 +137,23 @@ cpsConvert' env symEnv ast = do
 
 cps :: Env -> Env -> LispVal -> LispVal -> IOThrowsError [LispVal] 
 cps env symEnv (List (List (Atom "lambda" : List vs : body) : as)) (contAST) = do
-    k <- newVar symEnv "k" -- TODO: will this clobber an old k?
+    _ <- newVar symEnv "k" -- TODO: will this clobber an old k?
                         -- may need to rethink var type, may even need to
                         -- use a new data type that can pass along metadata
                         -- such as var, id, uid, etc
     b <- cpsSeq env symEnv body $ Atom "k"
     return $ [List [contAST, 
-                   (List (Atom "lambda" : List (k : vs) : b))]]
--- above is a port of:
---          ((lam? ast)
---           (let ((k (new-var 'k)))
---             (make-app
---              (list cont-ast
---                    (make-lam
---                     (list (cps-seq (ast-subx ast)
---                                    (make-ref '() k)))
---                     (cons k (lam-params ast)))))))
+                   (List (Atom "lambda" : List (Atom "k" : vs) : b))]]
 cps env symEnv (List (a : as)) acc = cps env symEnv (List as) acc -- TODO
-cps _ _ (List []) (List result) = return result
+cps _ _ (List []) result = return [result]
+cps _ _ err contAst = throwError $ Default $ "Unexpected error in cps, ast = " ++ (show err) ++ ", cont ast = " ++ show contAst
 
 -- |Convert a list (sequence) of code into CPS
 --cpsSeq env symEnv asts contAst
 cpsSeq env symEnv [] contAst = return [List [contAst, Bool False]]
 cpsSeq env symEnv [ast] contAst = cps env symEnv ast contAst
 cpsSeq env symEnv (a : as) contAst = do
-    r <- newVar symEnv "r"
+    _ <- newVar symEnv "r"
     b <- cpsSeq env symEnv as contAst
     cps env symEnv a (List (Atom "lambda" : List [Atom "r"] : b)) 
 ---------------------------------------------------------------------
