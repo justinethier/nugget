@@ -119,15 +119,9 @@ saLookup env var = do
     then LSV.getVar env var
     else (trace ("DEBUG: adding global: " ++ var) newGlobalVar) env var
 
--- TODO: consolidate common code w/loadFile func above
 generateCode env symEnv ast = do
     result <- runErrorT $ codeGenerate env symEnv ast
-    case result of
-        Left err -> do
-            putStrLn $ show err
-            System.Exit.exitFailure
-        Right code -> do
-            return code
+    handleResult result
 
 ------------------------------------------------------------------------------
 -- CPS conversion
@@ -139,9 +133,27 @@ cpsConvert' env symEnv ast = do
   _ <- newVar symEnv "r"
   cps env symEnv 
     (List ast) 
-    (List [List (Atom "lambda" : List [Atom "r"] : [List [Atom "halt", Atom "r"]])])
+    (List (Atom "lambda" : List [Atom "r"] : [List [Atom "halt", Atom "r"]]))
 
 cps :: Env -> Env -> LispVal -> LispVal -> IOThrowsError [LispVal] 
+cps env symEnv (List (List (Atom "lambda" : List vs : body) : as)) (contAST) = do
+    k <- newVar sym "k" -- TODO: will this clobber an old k?
+                        -- may need to rethink var type, may even need to
+                        -- use a new data type that can pass along metadata
+                        -- such as var, id, uid, etc
+    return $ (contAST : 
+        (List (Atom "lambda" : List (k : vs) : 
+            cpsSeq env symEnv $ body ++ [Atom "r"]
+        )
+    )
+--          ((lam? ast)
+--           (let ((k (new-var 'k)))
+--             (make-app
+--              (list cont-ast
+--                    (make-lam
+--                     (list (cps-seq (ast-subx ast)
+--                                    (make-ref '() k)))
+--                     (cons k (lam-params ast)))))))
 cps env symEnv (List (a : as)) acc = cps env symEnv (List as) acc -- TODO
 cps _ _ (List []) (List result) = return result
 
