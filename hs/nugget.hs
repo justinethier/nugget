@@ -145,7 +145,7 @@ cps env symEnv (List (Atom "lambda" : List vs : body)) (contAST) = do
     b <- cpsSeq env symEnv body $ Atom "k"
     return $ [List [contAST, 
                    (List (Atom "lambda" : List (Atom "k" : vs) : b))]]
---cps env symEnv (List (List [Atom "define", Atom var, form] : as)) contAst = do
+--cps env symEnv (List [Atom "define", Atom var, form]) contAst = do
 -- TODO:
 --         ((set? ast)
 --          (cps-list (ast-subx ast)
@@ -173,6 +173,9 @@ cpsSeq env symEnv (a : as) contAst = do
     _ <- newVar symEnv "r"
     b <- cpsSeq env symEnv as contAst
     cps env symEnv a (List (Atom "lambda" : List [Atom "r"] : b)) 
+
+TODO: port cps-list (which does... ????)
+    
 ---------------------------------------------------------------------
 -- Environments
 --
