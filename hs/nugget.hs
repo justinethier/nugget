@@ -174,8 +174,23 @@ cpsSeq env symEnv (a : as) contAst = do
     b <- cpsSeq env symEnv as contAst
     cps env symEnv a (List (Atom "lambda" : List [Atom "r"] : b)) 
 
-TODO: port cps-list (which does... ????)
-    
+--TODO: port cps-list (which does... ????)
+cpsList :: Env -> Env -> [LispVal] ->
+          (Env -> Env -> [LispVal] -> IOThrowsError [LispVal]) ->
+           IOThrowsError [LispVal]
+cpsList env symEnv [] inner = inner env symEnv []
+cpsList env symEnv (Atom a : as) inner = cpsListBody env symEnv (Atom a : as) inner
+cpsList env symEnv (a : as) inner = do
+    _ <- newVar symEnv "r"
+    b <- cpsListBody env symEnv (Atom "r" : as) inner
+    cps env symEnv a (List (Atom "lambda" : List [Atom "r"] : b))
+
+cpsListBody :: Env -> Env -> [LispVal] ->
+              (Env -> Env -> [LispVal] -> IOThrowsError [LispVal]) ->
+              IOThrowsError [LispVal]
+cpsListBody env symEnv (a : as) inner = do
+    cpsList env symEnv as (\ e se newAsts -> inner e se (a : newAsts))
+
 ---------------------------------------------------------------------
 -- Environments
 --
