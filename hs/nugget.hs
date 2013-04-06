@@ -145,7 +145,14 @@ cps env symEnv (List (Atom "lambda" : List vs : body)) (contAST) = do
     b <- cpsSeq env symEnv body $ Atom "k"
     return $ [List [contAST, 
                    (List (Atom "lambda" : List (Atom "k" : vs) : b))]]
---cps env symEnv (List [Atom "define", Atom var, form]) contAst = do
+cps env symEnv (List [Atom "define", Atom var, form]) contAst = do
+    cpsList env symEnv [form] inner
+  where 
+    inner env symEnv [val] = do
+      --throwError $ Default $ "val = " ++ show val
+      (trace ("val = " ++ show val) return) [List [contAst,
+                     List [Atom "define", Atom var, val]]]
+--
 -- TODO:
 --         ((set? ast)
 --          (cps-list (ast-subx ast)
@@ -174,7 +181,7 @@ cpsSeq env symEnv (a : as) contAst = do
     b <- cpsSeq env symEnv as contAst
     cps env symEnv a (List (Atom "lambda" : List [Atom "r"] : b)) 
 
---TODO: port cps-list (which does... ????)
+--TODO: this is a port of cps-list, but what exactly does it do??
 cpsList :: Env -> Env -> [LispVal] ->
           (Env -> Env -> [LispVal] -> IOThrowsError [LispVal]) ->
            IOThrowsError [LispVal]
