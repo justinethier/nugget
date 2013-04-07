@@ -152,18 +152,20 @@ cps env symEnv (List [Atom "define", Atom var, form]) contAst = do
       --throwError $ Default $ "val = " ++ show val
       (trace ("val = " ++ show val) return) [List [contAst,
                      List [Atom "define", Atom var, val]]]
---
--- TODO:
---         ((set? ast)
---          (cps-list (ast-subx ast)
---                    (lambda (val)
---                      (make-app
---                       (list cont-ast
---                             (make-set val
---                                       (set-var ast)))))))
 -- TODO: prim
 -- TODO: cond (really if)
 -- TODO: function app (will cause problems with below, which is really the seq case)
+--
+-- maybe need to move this to process lambda body, since that is the only
+-- place that can have a sequence anyway, except the top-level which is
+-- a special case
+--
+-- so we then need to change this to accept either an anonymous function
+-- (lambda), primitive function application, or general function application.
+-- 
+-- TBD: probably should search the primitives list to determine if prim, 
+-- structure so it is a good foundation to extend later
+-- 
 cps env symEnv (List (a : as)) contAst =
     cpsSeq env symEnv (a : as) contAst
 cps _ _ (List []) result = return [result]
