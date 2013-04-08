@@ -131,8 +131,8 @@ cpsConvert env symEnv ast = do
 cpsConvert' :: Env -> Env -> [LispVal] -> IOThrowsError [LispVal]
 cpsConvert' env symEnv ast = do
   _ <- newVar symEnv "r"
-  cps env symEnv 
-    (List ast) 
+  cpsSeq env symEnv  -- Top-level is a sequence of expr's, so use cpsSeq
+    ast
     (List (Atom "lambda" : List [Atom "r"] : [List [Atom "halt", Atom "r"]]))
 
 cps :: Env -> Env -> LispVal -> LispVal -> IOThrowsError [LispVal] 
@@ -152,6 +152,7 @@ cps env symEnv (List [Atom "define", Atom var, form]) contAst = do
       --throwError $ Default $ "val = " ++ show val
       (trace ("val = " ++ show val) return) [List [contAst,
                      List [Atom "define", Atom var, val]]]
+
 -- TODO: prim
 -- TODO: cond (really if)
 -- TODO: function app (will cause problems with below, which is really the seq case)
@@ -166,8 +167,10 @@ cps env symEnv (List [Atom "define", Atom var, form]) contAst = do
 -- TBD: probably should search the primitives list to determine if prim, 
 -- structure so it is a good foundation to extend later
 -- 
-cps env symEnv (List (a : as)) contAst =
-    cpsSeq env symEnv (a : as) contAst
+--cps env symEnv (List (a : as)) contAst =
+--    cpsSeq env symEnv (a : as) contAst
+
+
 cps _ _ (List []) result = return [result]
 cps env symEnv ast@(Bool _) contAst = return $ [List [contAst, ast]]
 cps env symEnv ast@(Number _) contAst = return $ [List [contAst, ast]]
