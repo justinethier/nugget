@@ -167,8 +167,24 @@ cps env symEnv (List [Atom "define", Atom var, form]) contAst = do
 -- TBD: probably should search the primitives list to determine if prim, 
 -- structure so it is a good foundation to extend later
 -- 
---cps env symEnv (List (a : as)) contAst =
---    cpsSeq env symEnv (a : as) contAst
+cps env symEnv (List ast@(Atom a : as)) contAst = do
+   case DM.member a (trace ("app, ast = " ++ show ast) primitives) of
+        True -> cpsList env symEnv as innerPrim
+        _ -> cpsList env symEnv as innerFunc
+   
+ where 
+   innerPrim env symEnv args = do
+     (trace ("innerPrim, args = " ++ show args) return)
+     --return
+        [List [contAst,
+               List (Atom a : args)]]
+   innerFunc env symEnv args = do
+     (trace ("innerFunc, args = " ++ show args) return)
+     --return 
+        [List (Atom a : contAst : args)]
+-- TODO: application of an anonymous lambda
+--cps env symEnv (List (??? : as)) contAst = do
+    
 
 
 cps _ _ (List []) result = return [result]
