@@ -208,6 +208,8 @@ cpsList :: Env -> Env -> [LispVal] ->
            IOThrowsError [LispVal]
 cpsList env symEnv [] inner = inner env symEnv []
 cpsList env symEnv (Atom a : as) inner = cpsListBody env symEnv (Atom a : as) inner
+cpsList env symEnv (Number a : as) inner = cpsListBody env symEnv (Number a : as) inner
+cpsList env symEnv (Bool a : as) inner = cpsListBody env symEnv (Bool a : as) inner
 cpsList env symEnv (a : as) inner = do
     _ <- newVar symEnv "r"
     b <- cpsListBody env symEnv (Atom "r" : as) inner
