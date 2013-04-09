@@ -49,7 +49,12 @@ compileFile filename = do
     putStrLn "-------------------------- AST AFTER CPS-CONVERSION:"
     putStrLn $ show astAfterCPS
 
-    code <- generateCode env symEnv astAfterCPS
+-- TODO:
+--    astAfterCC <- closureConvert env symEnv astAfterCPS
+--    putStrLn "-------------------------- AST AFTER CLOSURE-CONVERSION:"
+--    putStrLn $ show astAfterCC
+
+    code <- generateCode env symEnv astAfterCPS -- TODO: astAfterCC
     putStrLn "-------------------------- C CODE:"
     putStrLn $ show code
     writeOutputFile ((dropExtension filename) ++ ".c")
