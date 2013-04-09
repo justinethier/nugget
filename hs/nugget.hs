@@ -291,7 +291,7 @@ codeGenerate cgEnv symEnv ast = do
 -- TODO: ^ need to filter out primitives
 
    _ <- LSC.evalLisp cgEnv $ List [Atom "load", String "code-gen.scm"]
-   _ <- LSC.evalLisp cgEnv $ List [Atom "add-lambda!", List [Atom "quote", List ast]]
+   _ <- LSC.evalLisp cgEnv $ List [Atom "add-lambda!", List [Atom "quote", List (Atom "lambda" : List [] : ast)]]
    String codePrefix <- LSV.getVar cgEnv "code-prefix"
    String codeSuffix <- LSV.getVar cgEnv "code-suffix"
 
@@ -316,7 +316,9 @@ compileAllLambdas env symEnv globalVars = do
         x <- LSP.car [todo]
         caseNum <- LSP.car [x]
         -- TODO: is ast always a lambda here? what if it is something else?
-        ast@(List [List (Atom "lambda" : List vs : body)]) <- LSP.cdr [x]
+        debug <- LSP.cdr [x]
+
+        ast@(List (Atom "lambda" : List vs : body)) <- (trace ("ast = " ++ show debug) LSP.cdr) [x]
         LSP.cdr [todo] >>= LSV.setVar env "lambda-todo" 
        
 --test <- LSV.getVar env "TEST"
