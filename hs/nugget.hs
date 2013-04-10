@@ -321,9 +321,10 @@ compileAllLambdas env symEnv globalVars = do
         x <- LSP.car [todo]
         caseNum <- LSP.car [x]
         -- TODO: is ast always a lambda here? what if it is something else?
+-- TODO: at least refactor this to use case/throw and eliminate the trace
         debug <- LSP.cdr [x]
 
-        ast@(List (Atom "lambda" : List vs : body)) <- (trace ("ast = " ++ show debug) LSP.cdr) [x]
+        ast@(List (Atom "lambda" : List vs : body)) <- (trace ("\n\nDEBUG, ast = " ++ show debug ++ "\n\n") LSP.cdr) [x]
         LSP.cdr [todo] >>= LSV.setVar env "lambda-todo" 
        
 --test <- LSV.getVar env "TEST"
@@ -403,6 +404,22 @@ cg' env symEnv ast@(List (Atom "lambda" : List vs : body)) globalVars stack = do
    Number i <- LSC.evalLisp env $ 
         List [Atom "add-lambda!", List [Atom "quote", List [ast]]]
    return $ [" PUSH(INT2OBJ(" ++ show i ++ "));"]
+-- Application of an anonymous lambda
+cg' env symEnv (List (lam@(List (Atom "lambda" : List vs : body)) : args)) globalVars stack = do
+    code <- cg env symEnv args globalVars stack
+    lambdaCG <- cg' env symEnv lam globalVars stack
+    return $ code ++ lambdaCG
+-- Above is a port of the following:
+-- (cg-list args
+--          (lam-params fn)
+--          stack-env
+--          "\n"
+--          (lambda (code new-stack-env)
+--            (list
+--             code
+--             (code-gen (car (ast-subx fn))
+--                       new-stack-env))))
+
 cg' env symEnv (List (Atom fnc : args)) globalVars stack = do
     case DM.lookup fnc primitives of
         Just prim -> do
@@ -411,8 +428,6 @@ cg' env symEnv (List (Atom fnc : args)) globalVars stack = do
         Nothing -> do
             -- TODO: could be a closure
             --throwError $ Default $ "Unknown primitive: " ++ show fnc
-
-            -- TODO: lambda - lam?
 
 -- TODO: this is a WIP
             -- the app / not lam? case
@@ -425,6 +440,7 @@ cg' env symEnv (List (Atom fnc : args)) globalVars stack = do
                      ++ [" BEGIN_" ++ s]
                      ++ frame
                      ++ [" END_" ++ s]
+-- Above is a port of the following:
 --                   (cg-list args
 --                            (interval 1 n)
 --                            stack-env
