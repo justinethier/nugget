@@ -199,7 +199,6 @@ cps env symEnv ast@(Atom _) contAst = return $ [List [contAst, ast]]
 cps _ _ err contAst = throwError $ Default $ "Unexpected input to cps, ast = " ++ (show err) ++ ", cont ast = " ++ show contAst
 
 -- |Convert a list (sequence) of code into CPS
---cpsSeq env symEnv asts contAst
 cpsSeq env symEnv [] contAst = return [List [contAst, Bool False]]
 cpsSeq env symEnv [ast] contAst = cps env symEnv ast contAst
 cpsSeq env symEnv (a : as) contAst = do
@@ -324,7 +323,7 @@ compileAllLambdas env symEnv globalVars = do
 -- TODO: at least refactor this to use case/throw and eliminate the trace
         debug <- LSP.cdr [x]
 
-        ast@(List (Atom "lambda" : List vs : body)) <- (trace ("\n\nDEBUG, ast = " ++ show debug ++ "\n\n") LSP.cdr) [x]
+        ast@(List (Atom "lambda" : List vs : body)) <- (trace ("\n\nDEBUG, ast = " ++ show debug ++ "\ntodo = " ++ show todo ++ "\n") LSP.cdr) [x]
         LSP.cdr [todo] >>= LSV.setVar env "lambda-todo" 
        
 --test <- LSV.getVar env "TEST"
@@ -400,6 +399,9 @@ cg' env symEnv (List [Atom "define", Atom var, form]) globalVars stack = do
   t <- accessVar env symEnv var globalVars stack
   return $ h ++ [" " ++ t ++ " = TOS();"]
 -- this case is impossible after CPS-conversion
+TODO: for some reason we are getting in here even though it is supposed
+to be impossible after CPS conversion. have a look at the TODO's in 
+the debug output:
 cg' env symEnv ast@(List (Atom "lambda" : List vs : body)) globalVars stack = do
    Number i <- LSC.evalLisp env $ 
         List [Atom "add-lambda!", List [Atom "quote", List [ast]]]
