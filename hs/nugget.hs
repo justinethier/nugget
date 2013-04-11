@@ -337,22 +337,6 @@ compileAllLambdas env symEnv globalVars = do
             ["case " ++ show caseNum ++ ": /* " ++ show ast ++ " */\n\n"] -- " (object->string (source ast) 60) " */\n\n"
             ++ code ++ ["\n\n"] ++ rest
 
--- TODO: a port of cg-list
---cgList :: 
---    Env -> 
-
---    (define (cg-list asts vars stack-env sep cont)
---      (if (null? asts)
---          (cont "" stack-env)
---          (let ((x (code-gen (car asts) stack-env)))
---            (cg-list (cdr asts)
---                     (cdr vars)
---                     (cons (car vars) stack-env)
---                     sep
---                     (lambda (code stack-env)
---                       (cont (list x sep code)
---                             stack-env))))))
-
 -- A port of (access-var)
 accessVar :: Env -> Env -> String -> [LispVal] -> [LispVal] -> IOThrowsError String
 accessVar env symEnv var globalVars stackEnv = do
@@ -373,6 +357,35 @@ accessVar env symEnv var globalVars stackEnv = do
          let i = (length stackEnv) - pos - 1 
          return $ "LOCAL(" ++ show i ++ "/*" ++ var ++ {-"." ++ show varUID ++-} "*/)"
          -- (list "LOCAL(" i "/*" (var-uid var) "*/)"))))
+
+
+-- A port of cg-list
+-- TODO: which is used to...?
+cgList :: 
+    Env -> 
+    Env ->
+    [LispVal] -> -- ^ AST's
+    [LispVal] -> -- ^ Vars 
+    [LispVal] -> -- ^ globals
+    [LispVal] -> -- ^ stack
+    String -> -- ^ separators
+    (Env -> Env -> String -> [LispVal] -> [LispVal] -> IOThrowsError [String]) -> -- ^ Continuation
+    IOThrowsError [String]
+cgList env symEnv [] _ globalVars stackEnv sep cont = 
+    cont env symEnv "" globalVars stackEnv 
+
+
+--    (define (cg-list asts vars stack-env sep cont)
+--      (if (null? asts)
+--          (cont "" stack-env)
+--          (let ((x (code-gen (car asts) stack-env)))
+--            (cg-list (cdr asts)
+--                     (cdr vars)
+--                     (cons (car vars) stack-env)
+--                     sep
+--                     (lambda (code stack-env)
+--                       (cont (list x sep code)
+--                             stack-env))))))
 
 cg ::
    Env -> 
@@ -399,9 +412,10 @@ cg' env symEnv (List [Atom "define", Atom var, form]) globalVars stack = do
   t <- accessVar env symEnv var globalVars stack
   return $ h ++ [" " ++ t ++ " = TOS();"]
 -- this case is impossible after CPS-conversion
-TODO: for some reason we are getting in here even though it is supposed
-to be impossible after CPS conversion. have a look at the TODO's in 
-the debug output:
+----TODO: for some reason we are getting in here even though it is supposed
+----to be impossible after CPS conversion. have a look at the TODO's in 
+----the debug output:
+------ NOTE: above should be fixed after adding cpsList and *using* it
 cg' env symEnv ast@(List (Atom "lambda" : List vs : body)) globalVars stack = do
    Number i <- LSC.evalLisp env $ 
         List [Atom "add-lambda!", List [Atom "quote", List [ast]]]
