@@ -49,12 +49,11 @@ compileFile filename = do
     putStrLn "-------------------------- AST AFTER CPS-CONVERSION:"
     putStrLn $ show astAfterCPS
 
--- TODO:
---    astAfterCC <- closureConvert env symEnv astAfterCPS
---    putStrLn "-------------------------- AST AFTER CLOSURE-CONVERSION:"
---    putStrLn $ show astAfterCC
+    astAfterCC <- closureConvert env symEnv astAfterCPS
+    putStrLn "-------------------------- AST AFTER CLOSURE-CONVERSION:"
+    putStrLn $ show astAfterCC
 
-    code <- generateCode env symEnv astAfterCPS -- TODO: astAfterCC
+    code <- generateCode env symEnv astAfterCC
     putStrLn "-------------------------- C CODE:"
     putStrLn $ show code
     writeOutputFile ((dropExtension filename) ++ ".c")
@@ -224,6 +223,14 @@ cpsListBody :: Env -> Env -> [LispVal] ->
               IOThrowsError [LispVal]
 cpsListBody env symEnv (a : as) inner = do
     cpsList env symEnv as (\ e se newAsts -> inner e se (a : newAsts))
+
+------------------------------------------------------------------------------
+-- Closure conversion
+closureConvert env symEnv ast = do
+  result <- runErrorT $ closureConvert' env symEnv ast
+  handleResult result
+closureConvert' :: Env -> Env -> [LispVal] -> IOThrowsError [LispVal]
+closureConvert' env symEnv ast = return ast 
 
 ---------------------------------------------------------------------
 -- Environments
