@@ -369,23 +369,16 @@ cgList ::
     [LispVal] -> -- ^ globals
     [LispVal] -> -- ^ stack
     String -> -- ^ separators
-    (Env -> Env -> String -> [LispVal] -> [LispVal] -> IOThrowsError [String]) -> -- ^ Continuation
+    (Env -> Env -> [String] -> [LispVal] -> IOThrowsError [String]) -> -- ^ Continuation
     IOThrowsError [String]
-cgList env symEnv [] _ globalVars stackEnv sep cont = 
-    cont env symEnv "" globalVars stackEnv 
+cgList env symEnv [] _ globalVars stackEnv sep cont = do
+    cont env symEnv [""] stackEnv 
 
-
---    (define (cg-list asts vars stack-env sep cont)
---      (if (null? asts)
---          (cont "" stack-env)
---          (let ((x (code-gen (car asts) stack-env)))
---            (cg-list (cdr asts)
---                     (cdr vars)
---                     (cons (car vars) stack-env)
---                     sep
---                     (lambda (code stack-env)
---                       (cont (list x sep code)
---                             stack-env))))))
+cgList env symEnv (ast : as) (var : vs) globalVars stackEnv sep cont = do
+    x <- cg' env symEnv ast globalVars stackEnv
+    cgList env symEnv as vs globalVars (var : stackEnv) sep $
+        (\ e se code stack -> do 
+            cont e se (x ++ [sep] ++ code) stack)
 
 cg ::
    Env -> 
@@ -422,9 +415,14 @@ cg' env symEnv ast@(List (Atom "lambda" : List vs : body)) globalVars stack = do
    return $ [" PUSH(INT2OBJ(" ++ show i ++ "));"]
 -- Application of an anonymous lambda
 cg' env symEnv (List (lam@(List (Atom "lambda" : List vs : body)) : args)) globalVars stack = do
-    code <- cg env symEnv args globalVars stack
-    lambdaCG <- cg' env symEnv lam globalVars stack
-    return $ code ++ lambdaCG
+    --code <- cg env symEnv args globalVars stack
+    --lambdaCG <- cg' env symEnv lam globalVars stack
+    --return $ code ++ lambdaCG
+    cgList env symEnv args vs globalVars stack "\n" cont
+--           (\ e se code newStack -> do
+  where cont e se code newStack = do
+          rest <- cg e se body globalVars newStack
+          return $ code ++ rest
 -- Above is a port of the following:
 -- (cg-list args
 --          (lam-params fn)
