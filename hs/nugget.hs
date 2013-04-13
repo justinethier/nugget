@@ -338,23 +338,18 @@ compileAllLambdas env symEnv globalVars = do
        _ -> do
         x <- LSP.car [todo]
         caseNum <- LSP.car [x]
-        -- TODO: is ast always a lambda here? what if it is something else?
--- TODO: at least refactor this to use case/throw and eliminate the trace
-        debug <- LSP.cdr [x]
 
-        ast@(List (Atom "lambda" : List vs : body)) <- (trace ("\n\nDEBUG, ast = " ++ show debug ++ "\ntodo = " ++ show todo ++ "\n") LSP.cdr) [x]
-        LSP.cdr [todo] >>= LSV.setVar env "lambda-todo" 
-       
---test <- LSV.getVar env "TEST"
-        -- TODO: how to differentiate ast and ast-subx???
-        --astH <- LSP.car [ast]
-        --astT <- LSP.cdr [ast]
-
-        code <- cg env symEnv body globalVars $ reverse vs
-        rest <- compileAllLambdas env symEnv globalVars
-        return $
-            ["case " ++ show caseNum ++ ": /* " ++ show ast ++ " */\n\n"] -- " (object->string (source ast) 60) " */\n\n"
-            ++ code ++ ["\n\n"] ++ rest
+        ast <- LSP.cdr [x]
+        case ast of
+          -- TODO: is ast always a lambda here? what if it is something else?
+          (List (Atom "lambda" : List vs : body)) -> do
+            LSP.cdr [todo] >>= LSV.setVar env "lambda-todo" 
+            code <- cg env symEnv body globalVars $ reverse vs
+            rest <- compileAllLambdas env symEnv globalVars
+            return $
+                ["case " ++ show caseNum ++ ": /* " ++ show ast ++ " */\n\n"] -- " (object->string (source ast) 60) " */\n\n"
+                ++ code ++ ["\n\n"] ++ rest
+          err -> throwError $ Default $ "Unexpected pattern in compileAllLambdas: " ++ show err
 
 -- A port of (access-var)
 accessVar :: Env -> Env -> String -> [LispVal] -> [LispVal] -> IOThrowsError String
