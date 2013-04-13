@@ -233,9 +233,12 @@ closureConvert env symEnv asts = do
 ccSeq env symEnv asts = mapM (cc env symEnv) asts
 
 cc :: Env -> Env -> LispVal -> IOThrowsError LispVal
---cc env symEnv ast@(List [Atom "define", Atom var, form]) = do
-  
-cc env symEnv ast@(Atom _) = return ast 
+cc env symEnv ast@(List [Atom "define", Atom var, form]) = do
+    val <- cc env symEnv form
+    return $ List [Atom "define", Atom var, val]
+cc env symEnv ast@(List (Atom fnc : args)) = return ast  -- TODO: app, prim cases
+cc env symEnv ast@(Atom _) = return ast  -- TODO: ref case?
+-- TODO: lambda case
 cc env symEnv ast@(Bool _) = return ast 
 cc env symEnv ast@(Number _) = return ast 
 cc env symEnv ast = 
