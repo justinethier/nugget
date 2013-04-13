@@ -226,11 +226,20 @@ cpsListBody env symEnv (a : as) inner = do
 
 ------------------------------------------------------------------------------
 -- Closure conversion
-closureConvert env symEnv ast = do
-  result <- runErrorT $ closureConvert' env symEnv ast
+closureConvert env symEnv asts = do
+  result <- runErrorT $ ccSeq env symEnv asts
   handleResult result
-closureConvert' :: Env -> Env -> [LispVal] -> IOThrowsError [LispVal]
-closureConvert' env symEnv ast = return ast 
+
+ccSeq env symEnv asts = mapM (cc env symEnv) asts
+
+cc :: Env -> Env -> LispVal -> IOThrowsError LispVal
+--cc env symEnv ast@(List [Atom "define", Atom var, form]) = do
+  
+cc env symEnv ast@(Atom _) = return ast 
+cc env symEnv ast@(Bool _) = return ast 
+cc env symEnv ast@(Number _) = return ast 
+cc env symEnv ast = 
+  throwError $ Default $ "Unrecognized ast in closure conversion: " ++ show ast
 
 ---------------------------------------------------------------------
 -- Environments
