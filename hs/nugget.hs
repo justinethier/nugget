@@ -230,18 +230,24 @@ closureConvert env symEnv asts = do
   result <- runErrorT $ ccSeq env symEnv asts
   handleResult result
 
-ccSeq env symEnv asts = mapM (cc env symEnv) asts
+ccSeq env symEnv asts = mapM (cc env symEnv (Bool False) []) asts
 
-cc :: Env -> Env -> LispVal -> IOThrowsError LispVal
-cc env symEnv ast@(List [Atom "define", Atom var, form]) = do
-    val <- cc env symEnv form
+cc :: Env -> Env -> LispVal -> [LispVal] -> LispVal -> IOThrowsError LispVal
+cc env symEnv _ _ ast@(Bool _) = return ast 
+cc env symEnv _ _ ast@(Number _) = return ast 
+cc env symEnv selfVar freeVarLst ast@(List [Atom "define", Atom var, form]) = do
+    val <- cc env symEnv selfVar freeVarLst form
     return $ List [Atom "define", Atom var, val]
-cc env symEnv ast@(List (Atom fnc : args)) = return ast  -- TODO: app, prim cases
-cc env symEnv ast@(Atom _) = return ast  -- TODO: ref case?
+cc env symEnv selfVar freeVarLst ast@(Atom a) = do
+  case DL.elemIndex ast freeVarLst of
+    Just i -> do
+        return $ List [Atom "%closure-ref", selfVar, Number $ toInteger (i + 1)]
+    Nothing -> return ast
+-- TODO: cnd (if)  
+-- TODO: app, prim cases (based on case below)
+cc env symEnv _ _ ast@(List (Atom fnc : args)) = return ast
 -- TODO: lambda case
-cc env symEnv ast@(Bool _) = return ast 
-cc env symEnv ast@(Number _) = return ast 
-cc env symEnv ast = 
+cc env symEnv _ _ ast = 
   throwError $ Default $ "Unrecognized ast in closure conversion: " ++ show ast
 
 ---------------------------------------------------------------------
