@@ -6,6 +6,10 @@
 ;    (cond ((not (pair? lst)) #f)
 ;          ((eq? (car lst) x) i)
 ;          (else              (loop (cdr lst) (+ i 1))))))
+(define (keep f lst)
+  (cond ((null? lst)   '())
+        ((f (car lst)) (cons (car lst) (keep f (cdr lst))))
+        (else          (keep f (cdr lst)))))
 
 ;------------------------------------------------------------------------------
 

@@ -244,14 +244,22 @@ cc env symEnv selfVar freeVarLst ast@(Atom a) = do
         return $ List [Atom "%closure-ref", selfVar, Number $ toInteger (i + 1)]
     Nothing -> return ast
 -- TODO: cnd (if)  
--- TODO: app, prim cases (based on case below)
-cc env symEnv _ _ ast@(List (Atom fnc : args)) = return ast
 
 -- TODO: lambda case
 cc env symEnv selfVar freeVarLst ast@(List (Atom "lambda" : List vs : body)) = do
   -- TODO: newFreeVars
+  let fv = freeVars ast
+      filterFV (Atom v) = do
+        is <- isGlobalVar symEnv v
+        return $ not is 
+  newFreeVars <- liftIO $ filterM filterFV fv
   _ <- newVar symEnv "self"
-  return $ List [Atom "%closure", ...]
+
+-- TODO: is it really 'body'?? how to package into a lispval????
+  bodyConv <- cc env symEnv (Atom "self") newFreeVars body
+  l <- List (Atom "lambda" : List (Atom "self" : vs) : bodyConv)
+  v <- mapM (\ v -> cc env symEnv selfVar freeVarLst v) newFreeVars
+  return $ List (Atom "%closure" : v : l)
 -- TODO: above needs to be a conversion of below:
 --            ((lam? ast)
 --             (let ((new-free-vars
@@ -272,6 +280,8 @@ cc env symEnv selfVar freeVarLst ast@(List (Atom "lambda" : List vs : body)) = d
 --                           new-free-vars))
 --                '%closure)))
 
+-- TODO: app, prim cases (based on case below)
+cc env symEnv _ _ ast@(List (Atom fnc : args)) = return ast
 cc env symEnv _ _ ast = 
   throwError $ Default $ "Unrecognized ast in closure conversion: " ++ show ast
 
