@@ -246,7 +246,32 @@ cc env symEnv selfVar freeVarLst ast@(Atom a) = do
 -- TODO: cnd (if)  
 -- TODO: app, prim cases (based on case below)
 cc env symEnv _ _ ast@(List (Atom fnc : args)) = return ast
+
 -- TODO: lambda case
+cc env symEnv selfVar freeVarLst ast@(List (Atom "lambda" : List vs : body)) = do
+  -- TODO: newFreeVars
+  _ <- newVar symEnv "self"
+  return $ List [Atom "%closure", ...]
+-- TODO: above needs to be a conversion of below:
+--            ((lam? ast)
+--             (let ((new-free-vars
+--                    (keep (lambda (v)
+--                            (not (global-var? v)))
+--                          (fv ast)))
+--                   (new-self-var
+--                    (new-var 'self)))
+--               (make-prim
+--                (cons (make-lam
+--                       (list (convert (car (ast-subx ast))
+--                                      new-self-var
+--                                      new-free-vars))
+--                       (cons new-self-var
+--                             (lam-params ast)))
+--                      (map (lambda (v)
+--                             (cc (make-ref '() v)))
+--                           new-free-vars))
+--                '%closure)))
+
 cc env symEnv _ _ ast = 
   throwError $ Default $ "Unrecognized ast in closure conversion: " ++ show ast
 
