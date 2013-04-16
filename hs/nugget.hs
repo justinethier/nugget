@@ -268,7 +268,13 @@ cc env symEnv selfVar freeVarLst ast@(List (Atom "lambda" : List vs : body)) = d
   return $ List [Atom "%closure", List (l : v)]
 
 -- TODO: app, prim cases (based on case below)
-cc env symEnv _ _ ast@(List (Atom fnc : args)) = return ast
+cc env symEnv _ _ ast@(List (Atom fnc : args)) = do
+    case DM.member a primitives of
+        True -> TODO: 
+--            ((prim? ast)
+--             (make-prim (map cc (ast-subx ast))
+--                        (prim-op ast)))
+        False -> return ast -- TODO: this is the (app?) case
 cc env symEnv _ _ ast = 
   throwError $ Default $ "Unrecognized ast in closure conversion: " ++ show ast
 
