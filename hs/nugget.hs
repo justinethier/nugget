@@ -500,6 +500,29 @@ cg' env symEnv (List (lam@(List (Atom "lambda" : List vs : body)) : args)) globa
 --             (code-gen (car (ast-subx fn))
 --                       new-stack-env))))
 
+cg' env symEnv (List (Atom "%closure" : args)) globalVars stack = do
+   Number i <- LSC.evalLisp env $ 
+        List [Atom "add-lambda!", head args]
+   let n = length $ tail args
+       s = ["CLOSURE(" ++ show i ++ "," ++ show n ++ ");"]
+   
+--   code <- TODO: call into cg-args
+
+   return $ code ++ 
+            (" BEGIN_" : s) ++ 
+            (map (\ j -> " INICLO(" ++ show j ++ ");") 
+                 (reverse $ interval 1 n)) ++
+            (" END_" : s)
+-- (list
+--  (cg-args (cdr args) stack-env)
+--  " BEGIN_" s
+--  (map (lambda (j)
+--         (list " INICLO(" j ");"))
+--       (reverse (interval 1 n)))
+--  " END_" s)))
+
+-- TODO: cg' env symEnv (List (Atom "%closure-ref" : args)) globalVars stack = do
+
 cg' env symEnv (List (Atom fnc : args)) globalVars stack = do
     case DM.lookup fnc primitives of
         Just prim -> do
