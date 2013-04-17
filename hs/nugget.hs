@@ -274,7 +274,15 @@ cc env symEnv selfVar freeVarLst ast@(List (Atom fnc : args)) = do
   case DM.member fnc primitives of
     True -> do
       return $ List (Atom fnc : args')
---    False -> do
+    False -> do
+      f <- cc env symEnv selfVar freeVarLst (Atom fnc)
+   -- TODO: need to clean this up below, double-check it is correct.
+   --       then need to test everything!!
+      return $ 
+        List [
+             List (Atom "%closure-ref", List [f, Number 0])
+            , List (f : args')
+             ]
 -- TODO: port this code from 90-mins:      
 --                   (let ((f (cc fn)))
 --                     (make-app
