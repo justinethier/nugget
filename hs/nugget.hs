@@ -446,6 +446,14 @@ cgList env symEnv (ast : as) (var : vs) globalVars stackEnv sep cont = do
         (\ e se code stack -> do 
             cont e se (x ++ [sep] ++ code) stack)
 
+-- |Uses cgList to generate code for function arguments
+-- TODO: or at least, I think so. need to analyse both funcs more
+cgArgs :: Env -> Env -> [LispVal] -> [LispVal] -> [LispVal] -> IOThrowsError [String]
+cgArgs env symEnv args globalVars stackEnv = do
+    let vars = map (\ n -> Number $ toInteger n) (interval 1 $ length args)
+        cont _ _ code _ = return code
+    cgList env symEnv args vars globalVars stackEnv "" cont
+
 cg ::
    Env -> 
    Env -> 
@@ -505,21 +513,13 @@ cg' env symEnv (List (Atom "%closure" : args)) globalVars stack = do
         List [Atom "add-lambda!", head args]
    let n = length $ tail args
        s = ["CLOSURE(" ++ show i ++ "," ++ show n ++ ");"]
-   
---   code <- TODO: call into cg-args
+   code <- cgArgs env symEnv (tail args) globalVars stack
 
    return $ code ++ 
             (" BEGIN_" : s) ++ 
             (map (\ j -> " INICLO(" ++ show j ++ ");") 
                  (reverse $ interval 1 n)) ++
             (" END_" : s)
--- (list
---  (cg-args (cdr args) stack-env)
---  " BEGIN_" s
---  (map (lambda (j)
---         (list " INICLO(" j ");"))
---       (reverse (interval 1 n)))
---  " END_" s)))
 
 -- TODO: cg' env symEnv (List (Atom "%closure-ref" : args)) globalVars stack = do
 
