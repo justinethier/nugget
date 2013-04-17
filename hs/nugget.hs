@@ -255,17 +255,10 @@ cc env symEnv selfVar freeVarLst ast@(List (Atom "lambda" : List vs : body)) = d
   newFreeVars <- liftIO $ filterM filterFV fv
   _ <- newVar symEnv "self"
 
--- TODO: here is the original code, not sure if it is correct
---       to use body below or (car body) - but then WTF happens
---       to (cdr body)? 
---
---                       (list (convert (car (ast-subx ast))
---                                      new-self-var
---                                      new-free-vars))
   bodyConv <- mapM (cc env symEnv (Atom "self") newFreeVars) body
   let l = List (Atom "lambda" : List (Atom "self" : vs) : bodyConv)
   v <- mapM (\ v -> cc env symEnv selfVar freeVarLst v) newFreeVars
-  return $ List [Atom "%closure", List (l : v)]
+  return $ List (Atom "%closure" : l : v)
 
 -- TODO: app, prim cases (based on case below)
 cc env symEnv selfVar freeVarLst ast@(List (Atom fnc : args)) = do
@@ -360,7 +353,7 @@ freeVars (List (Atom "set!" : v@(Atom _) : rest)) = do
 freeVars (List (Atom "lambda" : List vs : body)) =
     DS.toList $ DS.difference (DS.fromList (freeVars $ List body))
                               (DS.fromList vs)
-freeVars (List ast) = do
+freeVars (List (fnc : ast)) = do
     let fvs = map (\ l -> DS.fromList $ freeVars l) ast
     DS.toList $ DS.unions fvs
 freeVars _ = []
