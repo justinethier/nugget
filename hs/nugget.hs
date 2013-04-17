@@ -272,8 +272,7 @@ cc env symEnv selfVar freeVarLst ast@(List (Atom fnc : args)) = do
    -- TODO: need to clean this up below, double-check it is correct.
    --       then need to test everything!!
       return $ 
-        List [List [Atom "%closure-ref", f, Number 0],
-              List (f : args')]
+        List (List [Atom "%closure-ref", f, Number 0] : f : args')
 -- TODO: need to test above to make sure it matches below:
 --                   (let ((f (cc fn)))
 --                     (make-app
