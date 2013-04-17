@@ -521,7 +521,12 @@ cg' env symEnv (List (Atom "%closure" : args)) globalVars stack = do
                  (reverse $ interval 1 n)) ++
             (" END_" : s)
 
--- TODO: cg' env symEnv (List (Atom "%closure-ref" : args)) globalVars stack = do
+ TODO: cg' env symEnv (List (Atom "%closure-ref" : args)) globalVars stack = do
+-- ((%closure-ref)
+--  (let ((i (lit-val (cadr args))))
+--    (list
+--     (cg (car args))
+--     " TOS() = CLOSURE_REF(TOS()," i ");")))
 
 cg' env symEnv (List (Atom fnc : args)) globalVars stack = do
     case DM.lookup fnc primitives of
