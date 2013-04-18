@@ -487,27 +487,15 @@ cg' env symEnv (List [Atom "define", Atom var, form]) globalVars stack = do
 cg' env symEnv ast@(List (Atom "lambda" : List vs : body)) globalVars stack = do
    Number i <- LSC.evalLisp env $ 
         List [Atom "add-lambda!", List [Atom "quote", List [ast]]]
-   return $ [" PUSH(INT2OBJ(" ++ show i ++ "));"]
+   (trace "should be impossible!!!!!" return) $ [" PUSH(INT2OBJ(" ++ show i ++ "));"]
+
 -- Application of an anonymous lambda
-cg' env symEnv (List (lam@(List (Atom "lambda" : List vs : body)) : args)) globalVars stack = do
-    --code <- cg env symEnv args globalVars stack
-    --lambdaCG <- cg' env symEnv lam globalVars stack
-    --return $ code ++ lambdaCG
+cg' env symEnv (List (lam@(List (Atom "lambda" : List vs : body)) : args))
+    globalVars stack = do
     cgList env symEnv args vs globalVars stack "\n" cont
---           (\ e se code newStack -> do
   where cont e se code newStack = do
           rest <- cg e se body globalVars newStack
           return $ code ++ rest
--- Above is a port of the following:
--- (cg-list args
---          (lam-params fn)
---          stack-env
---          "\n"
---          (lambda (code new-stack-env)
---            (list
---             code
---             (code-gen (car (ast-subx fn))
---                       new-stack-env))))
 
 cg' env symEnv (List (Atom "%closure" : args)) globalVars stack = do
    Number i <- LSC.evalLisp env $ 
@@ -534,41 +522,28 @@ cg' env symEnv (List (Atom "%closure-ref" : args)) globalVars stack = do
 --     (cg (car args))
 --     " TOS() = CLOSURE_REF(TOS()," i ");")))
 
-cg' env symEnv (List (Atom fnc : args)) globalVars stack = do
-    case DM.lookup fnc primitives of
-        Just prim -> do
-            argStr <- cg env symEnv args globalVars stack
-            return $ argStr ++ [prim]
-        Nothing -> do
-            -- TODO: could be a closure
-            --throwError $ Default $ "Unknown primitive: " ++ show fnc
-
--- TODO: this is a WIP
-            -- the app / not lam? case
-            code <- cg env symEnv args globalVars stack
-            let n = length args
-                start = length stack
-                s = "JUMP(" ++ show n ++ ");"
-                frame = map (\ j -> " PUSH(LOCAL(" ++ show (j + start) ++ "));") $ interval 0 (n - 1)
-            return $ code 
-                     ++ [" BEGIN_" ++ s]
-                     ++ frame
-                     ++ [" END_" ++ s]
--- Above is a port of the following:
---                   (cg-list args
---                            (interval 1 n)
---                            stack-env
---                            "\n"
---                            (lambda (code new-stack-env)
---                              (let* ((start (length stack-env))
---                                     (s (list "JUMP(" n ");")))
---                              (list
---                               code
---                               " BEGIN_" s
---                               (map (lambda (j)
---                                      (list " PUSH(LOCAL(" (+ j start) "));"))
---                                    (interval 0 (- n 1)))
---                               " END_" s)))))))
+cg' env symEnv (List (fnc : args)) globalVars stack = do
+    case fnc of
+        Atom f -> case DM.lookup f primitives of
+            Just prim -> do
+                -- Primitive function application
+                argStr <- cg env symEnv args globalVars stack
+                return $ argStr ++ [prim]
+            Nothing -> genApp
+        _ -> genApp
+  where 
+    -- General function application
+    genApp = do
+      code <- cg env symEnv args globalVars stack
+      let n = length args
+          start = length stack
+          s = "JUMP(" ++ show n ++ ");"
+          frame = map (\ j -> " PUSH(LOCAL(" ++ show (j + start) ++ "));") 
+                      (interval 0 (n - 1))
+      return $ code 
+               ++ [" BEGIN_" ++ s]
+               ++ frame
+               ++ [" END_" ++ s]
 
 cg' _ _ (Bool False) _ _ = return [" PUSH(FALSEOBJ));"]
 cg' _ _ (Bool True) _ _ = return [" PUSH(TRUEOBJ));"]
