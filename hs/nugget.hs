@@ -392,7 +392,8 @@ compileAllLambdas env symEnv globalVars = do
         caseNum <- LSP.car [x]
 
         ast <- LSP.cdr [x]
-        case ast of
+        case (trace ("\nDEBUG: todo = " ++ show todo ++ "\nast = " ++ show ast ++ "\n") ast) of
+--        case ast of
           -- TODO: is ast always a lambda here? what if it is something else?
           (List (Atom "lambda" : List vs : body)) -> do
             LSP.cdr [todo] >>= LSV.setVar env "lambda-todo" 
@@ -510,7 +511,7 @@ cg' env symEnv (List (lam@(List (Atom "lambda" : List vs : body)) : args)) globa
 
 cg' env symEnv (List (Atom "%closure" : args)) globalVars stack = do
    Number i <- LSC.evalLisp env $ 
-        List [Atom "add-lambda!", head args]
+        List [Atom "add-lambda!", List [Atom "quote", head args]]
    let n = length $ tail args
        s = ["CLOSURE(" ++ show i ++ "," ++ show n ++ ");"]
    code <- cgArgs env symEnv (tail args) globalVars stack
