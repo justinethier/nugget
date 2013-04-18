@@ -412,7 +412,10 @@ accessVar env symEnv var globalVars stackEnv = do
     isGV <- liftIO $ isGlobalVar symEnv var
     if (trace ("isGV = " ++ show isGV ++ " " ++ show penv ++ " var = " ++ show var ++ " stack = " ++ show stackEnv) isGV)
        then do
-         let Just i = DL.elemIndex (Atom var) globalVars
+         --let Just i = DL.elemIndex (Atom var) globalVars
+         Number i <- case DL.elemIndex (Atom var) globalVars of
+           Just i -> return $ Number $ toInteger i
+           Nothing -> throwError $ Default $ "accessVar: global not found for variable " ++ var
          varUID <- LSV.getNamespacedVar symEnv globalNamespace var
          return $ "GLOBAL(" ++ show i ++ "/*" ++ var ++ "." ++ show varUID ++ "*/)"
          -- (list "GLOBAL(" i "/*" (var-uid var) "*/)"))
