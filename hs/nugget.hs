@@ -337,25 +337,33 @@ interval n m
 
 ---------------------------------------------------------------------
 -- Free variables
--- TODO: this is a port of fv, although it needs to filter
---       out primitive functions, maybe other things
--- Also TBD if strings are good enough, since output from gambit
--- seemed to contain more information
+--
+-- TODO: is this good enough, or do we need more context information, since
+--       a passed arg could have the same name as a primitive
+--
 freeVars :: 
     -- ? Env -> 
     LispVal -> 
     [LispVal] 
-freeVars v@(Atom _) = [v]
-freeVars (List (Atom "set!" : v@(Atom _) : rest)) = do
+freeVars ast = do
+    -- Filter out primitives
+    let fv = freeVars' ast
+        prims = map (\ v -> Atom v) 
+                    (DM.keys primitives)
+    DS.toList $ DS.difference (DS.fromList fv)
+                              (DS.fromList prims)
+
+freeVars' v@(Atom _) = [v]
+freeVars' (List (Atom "define" : v@(Atom _) : rest)) = do
     DS.toList $ DS.union (DS.fromList [v]) 
-                         (DS.fromList (freeVars $ List rest))
-freeVars (List (Atom "lambda" : List vs : body)) =
-    DS.toList $ DS.difference (DS.fromList (freeVars $ List body))
+                         (DS.fromList (freeVars' $ List rest))
+freeVars' (List (Atom "lambda" : List vs : body)) =
+    DS.toList $ DS.difference (DS.fromList (freeVars' $ List body))
                               (DS.fromList vs)
-freeVars (List (fnc : ast)) = do
-    let fvs = map (\ l -> DS.fromList $ freeVars l) ast
+freeVars' (List ast@(fnc : _)) = do
+    let fvs = map (\ l -> DS.fromList $ freeVars' l) ast
     DS.toList $ DS.unions fvs
-freeVars _ = []
+freeVars' _ = []
 
 ---------------------------------------------------------------------
 -- code generation section
@@ -363,7 +371,6 @@ freeVars _ = []
 codeGenerate :: Env -> Env -> [LispVal] -> IOThrowsError [String]
 codeGenerate cgEnv symEnv ast = do
    let globalVars = freeVars $ List ast
--- TODO: ^ need to filter out primitives
 
    _ <- LSC.evalLisp cgEnv $ List [Atom "load", String "code-gen.scm"]
    _ <- LSC.evalLisp cgEnv $ List [Atom "add-lambda!", List [Atom "quote", List (Atom "lambda" : List [] : ast)]]
