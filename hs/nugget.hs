@@ -248,8 +248,8 @@ cc env symEnv selfVar freeVarLst ast@(Atom a) = do
 -- TODO: lambda case
 -- need to test this!!
 cc env symEnv selfVar freeVarLst ast@(List (Atom "lambda" : List vs : body)) = do
-  let fv = freeVars ast
-      filterFV (Atom v) = do
+  fv <- freeVars symEnv ast
+  let filterFV (Atom v) = do
         is <- isGlobalVar symEnv v
         return $ not is 
   newFreeVars <- liftIO $ filterM filterFV fv
@@ -340,18 +340,29 @@ interval n m
 --
 -- TODO: is this good enough, or do we need more context information, since
 --       a passed arg could have the same name as a primitive
+-- the thing is, 90-scc has an AST that includes context information and
+-- can distinguish between an Atom that is a ref versus one that is
+-- used as a prim.
 --
 freeVars :: 
-    -- ? Env -> 
+    Env -> 
     LispVal -> 
-    [LispVal] 
-freeVars ast = do
+    IOThrowsError [LispVal] 
+freeVars symEnv ast = do
     -- Filter out primitives
     let fv = freeVars' ast
         prims = map (\ v -> Atom v) 
                     (DM.keys primitives)
-    DS.toList $ DS.difference (DS.fromList fv)
-                              (DS.fromList prims)
+        sym = DS.toList $ DS.difference (DS.fromList fv)
+                                        (DS.fromList prims)
+  -- TODO: experimenting with filtering out symbols that are
+  -- not variables, instead of just returning all found symbols
+  -- I think we still have a context problem, though
+        filterFV (Atom v) = do
+          isL <- isVar symEnv v
+          isG <- isGlobalVar symEnv v
+          return $ isL || isG
+    liftIO $ filterM filterFV sym
 
 freeVars' v@(Atom _) = [v]
 freeVars' (List (Atom "define" : v@(Atom _) : rest)) = do
@@ -370,7 +381,7 @@ freeVars' _ = []
 
 codeGenerate :: Env -> Env -> [LispVal] -> IOThrowsError [String]
 codeGenerate cgEnv symEnv ast = do
-   let globalVars = freeVars $ List ast
+   globalVars <- freeVars symEnv $ List ast
 
    _ <- LSC.evalLisp cgEnv $ List [Atom "load", String "code-gen.scm"]
    _ <- LSC.evalLisp cgEnv $ List [Atom "add-lambda!", List [Atom "quote", List (Atom "lambda" : List [] : ast)]]
