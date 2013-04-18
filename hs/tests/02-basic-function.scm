@@ -1,9 +1,10 @@
-(lambda ()
+;(lambda ()
     (define square
       (lambda (x)
         (* x x)))
     
-    (+ (square 5) 1))
+    (+ (square 5) 1)
+;)
 
 ; After CPS:
 ;(let ((r.2 (lambda (k.3) 
