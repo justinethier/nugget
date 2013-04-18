@@ -521,8 +521,13 @@ cg' env symEnv (List (Atom "%closure" : args)) globalVars stack = do
                  (reverse $ interval 1 n)) ++
             (" END_" : s)
 
- TODO: cg' env symEnv (List (Atom "%closure-ref" : args)) globalVars stack = do
--- ((%closure-ref)
+cg' env symEnv (List (Atom "%closure-ref" : args)) globalVars stack = do
+    let i = head $ tail args
+    code <- cg' env symEnv (head args) globalVars stack
+
+    return $ code ++
+             [" TOS() = CLOSURE_REF(TOS()," ++ show i ++ ");"]
+-- TODO: test above, needs to be a port of:
 --  (let ((i (lit-val (cadr args))))
 --    (list
 --     (cg (car args))
