@@ -8,24 +8,23 @@ Portability : portable
 
 An experimental port of the 90 minute scheme compiler to Haskell.
 
--}
-
-{-
+-}{-------------------------------------------
 Terms used in the code:
 
-    - CPS - Continuation-passing style
-    - CC - Closure conversion
-    - AST - Abstract syntax tree
--}
+    * AST - Abstract syntax tree
+    * CC - Closure conversion
+    * CPS - Continuation-passing style
+---------------------------------------------}
 
 module Main where
+
 import Control.Monad.Error
 import qualified Data.List as DL
 import qualified Data.Map as DM
 import qualified Data.Set as DS
 import qualified Language.Scheme.Core as LSC
 import qualified Language.Scheme.Primitives as LSP
-import Language.Scheme.Types
+import Language.Scheme.Types -- Not worth the effort to qualify
 import qualified Language.Scheme.Variables as LSV
 import System.Environment
 import qualified System.Exit
