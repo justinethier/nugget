@@ -128,20 +128,29 @@ generateCode env symEnv ast = do
     handleResult result
 
 ------------------------------------------------------------------------------
--- CPS (continuation passing style) conversion
+--
+-- |Perform CPS (continuation passing style) conversion
+--
+--  This step also adds the top-level continuation, which calls into 
+--  HALT to stop the program.
 cpsConvert env symEnv ast = do
   result <- runErrorT $ cpsConvert' env symEnv ast
   handleResult result
+
 cpsConvert' :: Env -> Env -> [LispVal] -> IOThrowsError [LispVal]
 cpsConvert' env symEnv ast = do
+  -- Top-level is a sequence of expr's, 
+  -- so use cpsSeq to convert each one
   _ <- newVar symEnv "r"
-  cpsSeq env symEnv  -- Top-level is a sequence of expr's, so use cpsSeq
+  cpsSeq env symEnv
     ast
     (List (Atom "lambda" : List [Atom "r"] : [List [Atom "halt", Atom "r"]]))
 
 cps :: Env -> Env -> LispVal -> LispVal -> IOThrowsError [LispVal] 
+
+-- TODO: cond (really if)
+
 cps env symEnv (List (Atom "lambda" : List vs : body)) (contAST) = do
--- OBSOLETE - the old code for above - cps env symEnv (List (List (Atom "lambda" : List vs : body) : as)) (contAST) = do
     _ <- newVar symEnv "k" -- TODO: will this clobber an old k?
                         -- may need to rethink var type, may even need to
                         -- use a new data type that can pass along metadata
@@ -153,24 +162,21 @@ cps env symEnv (List [Atom "define", Atom var, form]) contAst = do
     cpsList env symEnv [form] inner
   where 
     inner env symEnv [val] = do
-      --throwError $ Default $ "val = " ++ show val
-      (trace ("val = " ++ show val) return) [List [contAst,
-                     List [Atom "define", Atom var, val]]]
+      return 
+        [List [contAst,
+               List [Atom "define", Atom var, val]]]
+-- Application of an anonymous lambda
+cps env 
+    symEnv 
+    (List (List (Atom "lambda" : List vs : body) : as))
+    contAst = cpsList env symEnv as innerLamb
+  where
+    innerLamb e se vals = do
+      b <- cpsSeq e se body contAst
+      return
+        (List (Atom "lambda" : List vs : b) : vals)
 
--- TODO: prim
--- TODO: cond (really if)
--- TODO: function app (will cause problems with below, which is really the seq case)
---
--- maybe need to move this to process lambda body, since that is the only
--- place that can have a sequence anyway, except the top-level which is
--- a special case
---
--- so we then need to change this to accept either an anonymous function
--- (lambda), primitive function application, or general function application.
--- 
--- TBD: probably should search the primitives list to determine if prim, 
--- structure so it is a good foundation to extend later
--- 
+-- Function application
 cps env symEnv (List ast@(Atom a : as)) contAst = do
    case DM.member a (trace ("app, ast = " ++ show ast) primitives) of
         True -> cpsList env symEnv as innerPrim
@@ -178,23 +184,16 @@ cps env symEnv (List ast@(Atom a : as)) contAst = do
    
  where 
    innerPrim env symEnv args = do
-     (trace ("innerPrim, args = " ++ show args) return)
-     --return
+     return
         [List [contAst,
                List (Atom a : args)]]
    innerFunc env symEnv args = do
-     (trace ("innerFunc, args = " ++ show args) return)
-     --return 
+     return 
         [List (Atom a : contAst : args)]
--- TODO: application of an anonymous lambda
---cps env symEnv (List (??? : as)) contAst = do
-    
-
-
-cps _ _ (List []) result = return [result]
 cps env symEnv ast@(Bool _) contAst = return $ [List [contAst, ast]]
 cps env symEnv ast@(Number _) contAst = return $ [List [contAst, ast]]
 cps env symEnv ast@(Atom _) contAst = return $ [List [contAst, ast]]
+cps _ _ (List []) result = return [result]
 cps _ _ err contAst = throwError $ Default $ "Unexpected input to cps, ast = " ++ (show err) ++ ", cont ast = " ++ show contAst
 
 -- |Convert a list (sequence) of code into CPS
