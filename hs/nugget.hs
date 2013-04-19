@@ -29,33 +29,39 @@ main = do
     args <- getArgs
     case (null args) of
         True -> showBanner
-        _ -> compileFile $ head args
+        _ -> compileFile (head args) 
+                         True -- Hardcode verbose for now
 
 showBanner :: IO ()
 showBanner = putStrLn "Usage: nugget filename"
 
-compileFile :: String -> IO ()
-compileFile filename = do
+compileFile :: String -> Bool -> IO ()
+compileFile filename verbose = do
     env <- LSC.r5rsEnv -- Local Env for code generation phase
     symEnv <- nullEnv
     ast <- loadFile filename
     _ <- initEnv symEnv
     _ <- run symEnv ast semanticAnalysis 
 
-    putStrLn "-------------------------- AST:"
-    putStrLn $ show ast
+    when verbose (do
+        putStrLn "-------------------------- AST:"
+        putStrLn $ show ast)
 
     astAfterCPS <- cpsConvert env symEnv ast
-    putStrLn "-------------------------- AST AFTER CPS-CONVERSION:"
-    putStrLn $ show astAfterCPS
+    when verbose (do
+        putStrLn "-------------------------- AST AFTER CPS-CONVERSION:"
+        putStrLn $ show astAfterCPS)
 
     astAfterCC <- closureConvert env symEnv astAfterCPS
-    putStrLn "-------------------------- AST AFTER CLOSURE-CONVERSION:"
-    putStrLn $ show astAfterCC
+    when verbose (do
+        putStrLn "-------------------------- AST AFTER CLOSURE-CONVERSION:"
+        putStrLn $ show astAfterCC)
 
     code <- generateCode env symEnv astAfterCC
-    putStrLn "-------------------------- C CODE:"
-    putStrLn $ show code
+    when verbose (do
+        putStrLn "-------------------------- C CODE:"
+        putStrLn $ show code)
+
     writeOutputFile ((dropExtension filename) ++ ".c")
                     code
     System.Exit.exitSuccess
@@ -115,17 +121,14 @@ semanticAnalysis env _ = return $ Nil ""
 --semanticAnalysis env ast = 
 --    throwError $ Default $ "SA Unrecognized form: " ++ show ast
 
--- Port of xe-lookup
+-- |A port of xe-lookup
 saLookup :: Env -> String -> IOThrowsError LispVal
 saLookup env var = do
  isV <- liftIO $ isVar env var
  if isV
     then LSV.getVar env var
     else (trace ("DEBUG: adding global: " ++ var) newGlobalVar) env var
-
-generateCode env symEnv ast = do
-    result <- runErrorT $ codeGenerate env symEnv ast
-    handleResult result
+    --else newGlobalVar env var
 
 ------------------------------------------------------------------------------
 --
@@ -377,6 +380,10 @@ freeVars' _ = []
 
 ---------------------------------------------------------------------
 -- code generation section
+
+generateCode env symEnv ast = do
+    result <- runErrorT $ codeGenerate env symEnv ast
+    handleResult result
 
 codeGenerate :: Env -> Env -> [LispVal] -> IOThrowsError [String]
 codeGenerate cgEnv symEnv ast = do
