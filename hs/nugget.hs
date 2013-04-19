@@ -7,6 +7,15 @@ Maintainer  : github.com/justinethier
 Portability : portable
 
 An experimental port of the 90 minute scheme compiler to Haskell.
+
+-}
+
+{-
+Terms used in the code:
+
+    - CPS - Continuation-passing style
+    - CC - Closure conversion
+    - AST - Abstract syntax tree
 -}
 
 module Main where
@@ -227,14 +236,22 @@ cpsListBody env symEnv (a : as) inner = do
     cpsList env symEnv as (\ e se newAsts -> inner e se (a : newAsts))
 
 ------------------------------------------------------------------------------
--- Closure conversion
+--
+-- |Perform Closure conversion (CC)
 closureConvert env symEnv asts = do
   result <- runErrorT $ ccSeq env symEnv asts
   handleResult result
 
+-- |Perform CC on a block of code
 ccSeq env symEnv asts = mapM (cc env symEnv (Bool False) []) asts
 
-cc :: Env -> Env -> LispVal -> [LispVal] -> LispVal -> IOThrowsError LispVal
+-- |Perform actual CC
+cc :: Env -- ^ Main environment
+   -> Env -- ^ Symbol environment
+   -> LispVal -- ^ "self" variable
+   -> [LispVal] -- ^ Free variables
+   -> LispVal -- ^ AST being converted
+   -> IOThrowsError LispVal -- ^ Converted AST
 cc env symEnv _ _ ast@(Bool _) = return ast 
 cc env symEnv _ _ ast@(Number _) = return ast 
 cc env symEnv selfVar freeVarLst ast@(List [Atom "define", Atom var, form]) = do
@@ -245,11 +262,12 @@ cc env symEnv selfVar freeVarLst ast@(Atom a) = do
     Just i -> do
         return $ List [Atom "%closure-ref", selfVar, Number $ toInteger (i + 1)]
     Nothing -> return ast
+
 -- TODO: cnd (if)  
 
--- TODO: lambda case
--- need to test this!!
-cc env symEnv selfVar freeVarLst ast@(List (Atom "lambda" : List vs : body)) = do
+-- Lambda
+cc env symEnv selfVar freeVarLst 
+   ast@(List (Atom "lambda" : List vs : body)) = do
   fv <- freeVars symEnv ast
   let filterFV (Atom v) = do
         is <- isGlobalVar symEnv v
@@ -262,28 +280,18 @@ cc env symEnv selfVar freeVarLst ast@(List (Atom "lambda" : List vs : body)) = d
   v <- mapM (\ v -> cc env symEnv selfVar freeVarLst v) newFreeVars
   return $ List (Atom "%closure" : l : v)
 
--- TODO: app, prim cases (based on case below)
+-- |Function application
 cc env symEnv selfVar freeVarLst ast@(List (Atom fnc : args)) = do
-  args' <- mapM (\ v -> cc env symEnv selfVar freeVarLst v) args 
+  args' <- mapM (\ v -> cc env symEnv selfVar freeVarLst v)
+                args 
 
   case DM.member fnc primitives of
     True -> do
       return $ List (Atom fnc : args')
     False -> do
       f <- cc env symEnv selfVar freeVarLst (Atom fnc)
-   -- TODO: need to clean this up below, double-check it is correct.
-   --       then need to test everything!!
       return $ 
         List (List [Atom "%closure-ref", f, Number 0] : f : args')
--- TODO: need to test above to make sure it matches below:
---                   (let ((f (cc fn)))
---                     (make-app
---                      (cons (make-prim
---                             (list f
---                                   (make-lit '() 0))
---                             '%closure-ref)
---                            (cons f
---                                  args)))))))
 
 -- Lambda application
 cc env symEnv selfVar freeVarLst 
@@ -293,7 +301,6 @@ cc env symEnv selfVar freeVarLst
   body' <- mapM (\ v -> cc env symEnv selfVar freeVarLst v) body
   return $ List (List (Atom "lambda" : List vs : body') :
                  args')
-
 
 cc env symEnv _ _ ast = 
   throwError $ Default $ "Unrecognized ast in closure conversion: " ++ show ast
