@@ -1,6 +1,14 @@
-nugget: nugget.hs
-	ghc nugget.hs
+all: config build install
+config:
+	cabal configure --prefix=${HOME}
+build:
+	cabal build
+install:
+	cabal install
+
+nsc: nugget.hs
+	ghc nugget.hs -o nsc
 
 .PHONY: clean
 clean:
-	rm -rf *.o *.c *.hi nugget a.out tests/*.c tests/a.out
+	rm -rf *.o *.c *.hi nsc nugget a.out tests/*.c tests/a.out dist
