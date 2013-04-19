@@ -397,7 +397,7 @@ codeGenerate :: Env -> Env -> [LispVal] -> IOThrowsError [String]
 codeGenerate cgEnv symEnv ast = do
    globalVars <- freeVars symEnv $ List ast
 
-   _ <- LSC.evalLisp cgEnv $ List [Atom "load", String "code-gen.scm"]
+   _ <- LSC.evalLisp cgEnv $ List [Atom "load", String "nugget.scm"]
    _ <- LSC.evalLisp cgEnv $ List [Atom "add-lambda!", List [Atom "quote", List (Atom "lambda" : List [] : ast)]]
    String codePrefix <- LSV.getVar cgEnv "code-prefix"
    String codeSuffix <- LSV.getVar cgEnv "code-suffix"
