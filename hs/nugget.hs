@@ -386,8 +386,8 @@ freeVars' (List ast@(fnc : _)) = do
 freeVars' _ = []
 
 ---------------------------------------------------------------------
--- code generation section
-
+--
+-- |Generate the final C code
 generateCode env symEnv ast = do
     result <- runErrorT $ codeGenerate env symEnv ast
     handleResult result
@@ -438,27 +438,20 @@ compileAllLambdas env symEnv globalVars = do
 -- A port of (access-var)
 accessVar :: Env -> Env -> String -> [LispVal] -> [LispVal] -> IOThrowsError String
 accessVar env symEnv var globalVars stackEnv = do
-    -- TODO: WTF is square not bound in jae-test????
     penv <- liftIO $ LSV.printEnv symEnv
     isGV <- liftIO $ isGlobalVar symEnv var
     if (trace ("isGV = " ++ show isGV ++ " " ++ show penv ++ " var = " ++ show var ++ " stack = " ++ show stackEnv) isGV)
        then do
-         --let Just i = DL.elemIndex (Atom var) globalVars
          Number i <- case DL.elemIndex (Atom var) globalVars of
            Just i -> return $ Number $ toInteger i
            Nothing -> throwError $ Default $ "accessVar: global not found for variable " ++ var
          varUID <- LSV.getNamespacedVar symEnv globalNamespace var
          return $ "GLOBAL(" ++ show i ++ "/*" ++ var ++ "." ++ show varUID ++ "*/)"
-         -- (list "GLOBAL(" i "/*" (var-uid var) "*/)"))
        else do
-         -- TODO: pos-in-list call below is probably broken, replaced w/Haskell below...
-         --Number pos <- LSC.evalLisp env $ List [Atom "pos-in-list", Atom var, List stackEnv]
          let Just pos = DL.elemIndex (Atom var) stackEnv
          --varUID <- LSV.getNamespacedVar symEnv localNamespace var
          let i = (length stackEnv) - pos - 1 
          return $ "LOCAL(" ++ show i ++ "/*" ++ var ++ {-"." ++ show varUID ++-} "*/)"
-         -- (list "LOCAL(" i "/*" (var-uid var) "*/)"))))
-
 
 -- A port of cg-list
 -- TODO: which is used to...?
@@ -489,6 +482,7 @@ cgArgs env symEnv args globalVars stackEnv = do
         cont _ _ code _ = return code
     cgList env symEnv args vars globalVars stackEnv "" cont
 
+-- |Generate code for a list of AST forms
 cg ::
    Env -> 
    Env -> 
@@ -502,6 +496,7 @@ cg env symEnv (a : as) globalVars stack = do
     return $ h ++ t
 cg env symEnv [] globalVars stack = return []
 
+-- |Generate C code for an AST
 cg' ::
    Env -> 
    Env -> 
@@ -513,17 +508,16 @@ cg' env symEnv (List [Atom "define", Atom var, form]) globalVars stack = do
   h <- cg' env symEnv form globalVars stack
   t <- accessVar env symEnv var globalVars stack
   return $ h ++ [" " ++ t ++ " = TOS();"]
--- this case is impossible after CPS-conversion
-----TODO: for some reason we are getting in here even though it is supposed
-----to be impossible after CPS conversion. have a look at the TODO's in 
-----the debug output:
------- NOTE: above should be fixed after adding cpsList and *using* it
-cg' env symEnv ast@(List (Atom "lambda" : List vs : body)) globalVars stack = do
-   Number i <- LSC.evalLisp env $ 
-        List [Atom "add-lambda!", List [Atom "quote", List [ast]]]
-   (trace "should be impossible!!!!!" return) $ [" PUSH(INT2OBJ(" ++ show i ++ "));"]
 
--- Application of an anonymous lambda
+-- this case is impossible after CPS-conversion
+cg' env symEnv ast@(List (Atom "lambda" : List vs : body)) globalVars stack = do
+    throwError $ Default $
+        "Code generation encountered unexpected lambda: " ++ show ast
+--   Number i <- LSC.evalLisp env $ 
+--        List [Atom "add-lambda!", List [Atom "quote", List [ast]]]
+--   (trace "should be impossible!!!!!" return) $ [" PUSH(INT2OBJ(" ++ show i ++ "));"]
+
+-- |Application of an anonymous lambda
 cg' env symEnv (List (lam@(List (Atom "lambda" : List vs : body)) : args))
     globalVars stack = do
     cgList env symEnv args vs globalVars stack "\n" cont
@@ -550,12 +544,8 @@ cg' env symEnv (List (Atom "%closure-ref" : args)) globalVars stack = do
 
     return $ code ++
              [" TOS() = CLOSURE_REF(TOS()," ++ show i ++ ");"]
--- TODO: test above, needs to be a port of:
---  (let ((i (lit-val (cadr args))))
---    (list
---     (cg (car args))
---     " TOS() = CLOSURE_REF(TOS()," i ");")))
 
+-- |Function application
 cg' env symEnv (List (fnc : args)) globalVars stack = do
     case fnc of
         Atom f -> case DM.lookup f primitives of
@@ -587,6 +577,7 @@ cg' env symEnv (Atom var) globalVars stack = do
     return [" PUSH(" ++ code ++ ");"]
 cg' _ _ e _ _ = throwError $ Default $ "Unexpected input to cg: " ++ show e
 
+-- |Primitive functions implemented directly in C
 primitives = DM.fromList
   [ ("=", " EQ();")
   , ("<", " LT();")
