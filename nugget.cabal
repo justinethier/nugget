@@ -1,0 +1,41 @@
+Name:                nugget
+Version:             0.1
+Synopsis:            A tiny Scheme compiler
+Description:         
+  A compiler for a tiny subset of the Scheme language.
+
+License:             MIT
+--License-file:        LICENSE
+Author:              Justin Ethier
+Maintainer:          Justin Ethier <github.com/justinethier>
+--Homepage:            http://justinethier.github.com/husk-scheme
+--Bug-Reports:         http://github.com/justinethier/husk-scheme/issues
+Cabal-Version:       >= 1.8
+Build-Type:          Simple
+Category:            Compilers/Interpreters, Language
+Tested-with:         GHC == 7.4.1
+
+-- Extra-Source-Files:  README.markdown
+--                      ChangeLog.markdown
+--                      LICENSE
+--                      AUTHORS
+-- Data-Files:          lib/*.scm lib/scheme/*.sld lib/scheme/r5rs/*.sld lib/srfi/*.scm
+-- 
+-- Source-Repository head
+--     Type:            git
+--     Location:        git://github.com/justinethier/husk-scheme.git
+-- 
+-- flag useffi
+--     description: Haskell Foreign Function Interface (FFI). Allows husk to import and call into Haskell code directly from Scheme code. Turn off FFI to decrease build times and minimize executable sizes
+--     default: False
+
+Executable         nsc
+  Build-Depends:   husk-scheme, base >= 2.0 && < 5, array, containers, filepath, mtl 
+--, base >= 2.0 && < 5, array, containers, haskeline, transformers, mtl, parsec, directory, process
+--  if flag(useffi)
+--    Build-Depends: ghc, ghc-paths
+--    cpp-options: -DUseFfi
+--  Extensions:      ExistentialQuantification
+  Main-is:         nugget.hs
+--  Hs-Source-Dirs:  hs-src/Interpreter
+
