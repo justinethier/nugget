@@ -28,6 +28,7 @@ import qualified Language.Scheme.Core as LSC
 import qualified Language.Scheme.Primitives as LSP
 import Language.Scheme.Types -- Not worth the effort to qualify
 import qualified Language.Scheme.Variables as LSV
+import System.Console.GetOpt
 import System.Environment
 import qualified System.Exit
 import System.FilePath (dropExtension)
@@ -37,13 +38,34 @@ import Debug.Trace
 main :: IO ()
 main = do 
     args <- getArgs
+
+    let (actions, nonOpts, msgs) = getOpt Permute options args
+    opts <- foldl (>>=) (return defaultOptions) actions
+    let Options {optVerbose = verbose} = opts
+
     case (null args) of
         True -> showBanner
-        _ -> compileFile (head args) 
-                         True -- Hardcode verbose for now
+        _ -> compileFile (head args) verbose
+
+-- Command line options section
+data Options = Options {
+    optVerbose :: Bool
+    }
+
+-- |Default values for the command line options
+defaultOptions :: Options
+defaultOptions = Options {
+    optVerbose = False
+    }
+options :: [OptDescr (Options -> IO Options)]
+options = [
+  Option ['v'] ["verbose"] (NoArg getVerbose) "verbose output"
+  ]
+
+getVerbose opt = return opt { optVerbose = True }
 
 showBanner :: IO ()
-showBanner = putStrLn "Usage: nugget filename"
+showBanner = putStrLn "Usage: nsc filename"
 
 compileFile :: String -> Bool -> IO ()
 compileFile filename verbose = do
