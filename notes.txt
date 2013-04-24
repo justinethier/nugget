@@ -1,0 +1,3 @@
+Some useful information:
+ ORBIT: An Optimizing Compiler For Scheme
+ http://repository.readscheme.org/ftp/papers/orbit-thesis.pdf
