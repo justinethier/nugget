@@ -6,7 +6,7 @@ Licence     : MIT (see LICENSE in the distribution)
 Maintainer  : github.com/justinethier
 Portability : portable
 
-nugget, a tiny Scheme compiler.
+nugget, a compiler for a tiny subset of Scheme.
 
 This project is an experimental port of the 90 minute scheme compiler to Haskell.
 
