@@ -212,19 +212,21 @@ cps env
         (List (Atom "lambda" : List vs : b) : vals)
 
 -- Function application
-cps env symEnv (List ast@(Atom a : as)) contAst = do
-   case DM.member a (trace ("app, ast = " ++ show ast) primitives) of
-        True -> cpsList env symEnv as innerPrim
-        _ -> cpsList env symEnv as innerFunc
-   
+cps env symEnv (List ast@(fnc : as)) contAst = do
+   case fnc of
+     Atom a -> do
+       case DM.member a (trace ("app, ast = " ++ show ast) primitives) of
+         True -> cpsList env symEnv as innerPrim
+         _ -> cpsList env symEnv ast innerFunc
+     _ -> cpsList env symEnv ast innerFunc
  where 
    innerPrim env symEnv args = do
      return
         [List [contAst,
-               List (Atom a : args)]]
-   innerFunc env symEnv args = do
+               List (fnc : args)]]
+   innerFunc env symEnv (arg : args) = do
      return 
-        [List (Atom a : contAst : args)]
+        [List (arg : contAst : args)]
 cps env symEnv ast@(Bool _) contAst = return $ [List [contAst, ast]]
 cps env symEnv ast@(Number _) contAst = return $ [List [contAst, ast]]
 cps env symEnv ast@(Atom _) contAst = return $ [List [contAst, ast]]
