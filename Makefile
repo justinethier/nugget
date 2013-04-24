@@ -11,4 +11,4 @@ nsc: nugget.hs
 
 .PHONY: clean
 clean:
-	rm -rf *.o *.c *.hi nsc nugget a.out tests/*.c tests/a.out dist
+	rm -rf *.o *.c *.hi nsc nugget a.out 90-min-scc/*.c tests/*.c tests/a.out dist
