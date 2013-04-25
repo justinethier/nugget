@@ -100,31 +100,31 @@ compileFile filename verbose = do
         putStrLn "-------------------------- AST AFTER CLOSURE-CONVERSION:"
         putStrLn $ show astAfterCC)
 
-    code <- generateCode env symEnv astAfterCC
+    (fullcode, c) <- generateCode env symEnv astAfterCC
     when verbose (do
         putStrLn "-------------------------- C CODE:"
-        putStrLn $ show code)
+        putStr $ joinCode c)
 
     writeOutputFile ((dropExtension filename) ++ ".c")
-                    code
+                    (joinCode fullcode)
 
     system $ "gcc " ++ (dropExtension filename) ++ ".c " 
                     ++ "-o " ++ (dropExtension filename)
 
     System.Exit.exitSuccess
 
-writeOutputFile :: String -> [String] -> IO ()
+writeOutputFile :: String -> String -> IO ()
 writeOutputFile filename code = do
   outH <- liftIO $ openFile filename WriteMode
-  writeList outH code
+  hPutStr outH code
   hClose outH
   
--- |Helper function to write code to file
-writeList outH (l : ls) = do
-  hPutStr outH l
-  writeList outH ls
-writeList outH _ = do
-  hPutStr outH ""
+-- -- |Helper function to write code to file
+-- writeList outH (l : ls) = do
+--   hPutStr outH l
+--   writeList outH ls
+-- writeList outH _ = do
+--   hPutStr outH ""
 
 handleResult (Left err) = do
   putStrLn $ show err
@@ -441,11 +441,14 @@ freeVars' _ = []
 ---------------------------------------------------------------------
 --
 -- |Generate the final C code
+joinCode [] = []
+joinCode (l:ls) = l ++ joinCode ls
+
 generateCode env symEnv ast = do
     result <- runErrorT $ codeGenerate env symEnv ast
     handleResult result
 
-codeGenerate :: Env -> Env -> [LispVal] -> IOThrowsError [String]
+codeGenerate :: Env -> Env -> [LispVal] -> IOThrowsError ([String], [String])
 codeGenerate cgEnv symEnv ast = do
    globalVars <- freeVars symEnv $ List ast
 
@@ -457,10 +460,10 @@ codeGenerate cgEnv symEnv ast = do
 
    --code <- (trace ("fv = " ++ show globalVars) compileAllLambdas cgEnv symEnv globalVars)
    code <- compileAllLambdas cgEnv symEnv globalVars
-   return $ [
+   return ([
       "#define NB_GLOBALS " ++ show (length globalVars) ++ "\n" ,
       "#define MAX_STACK 100 \n" , -- could be computed...
-      codePrefix] ++ code ++ [codeSuffix]
+      codePrefix] ++ code ++ [codeSuffix], code)
 
 -- |A port of (compile-all-lambdas) from "90 minutes"
 compileAllLambdas ::
