@@ -34,7 +34,7 @@ import System.Environment
 import qualified System.Exit
 import System.FilePath (dropExtension)
 import System.IO
-import Debug.Trace
+-- import Debug.Trace
 
 main :: IO ()
 main = do 
@@ -152,7 +152,7 @@ semanticAnalysis env (List (List [Atom "define", Atom var, form] : as)) = do
     Bool False -> throwError $ Default $ "cannot set a nonvariable " ++ var -- ++ " - " ++ show isV ++ " - " ++ show penv
     _ -> semanticAnalysis env form
   semanticAnalysis env $ List as
-semanticAnalysis env (List (a : as)) = (trace ("a = " ++ show a ) semanticAnalysis) env $ List as
+semanticAnalysis env (List (a : as)) = semanticAnalysis env $ List as
 semanticAnalysis env (List []) = return $ Nil ""
 semanticAnalysis env _ = return $ Nil ""
 --semanticAnalysis env ast = 
@@ -164,8 +164,8 @@ saLookup env var = do
  isV <- liftIO $ isVar env var
  if isV
     then LSV.getVar env var
-    else (trace ("DEBUG: adding global: " ++ var) newGlobalVar) env var
-    --else newGlobalVar env var
+    --else (trace ("DEBUG: adding global: " ++ var) newGlobalVar) env var
+    else newGlobalVar env var
 
 ------------------------------------------------------------------------------
 --
@@ -220,7 +220,7 @@ cps env
 cps env symEnv (List ast@(fnc : as)) contAst = do
    case fnc of
      Atom a -> do
-       case DM.member a (trace ("app, ast = " ++ show ast) primitives) of
+       case DM.member a primitives of
          True -> cpsList env symEnv as innerPrim
          _ -> cpsList env symEnv ast innerFunc
      _ -> cpsList env symEnv ast innerFunc
@@ -431,7 +431,8 @@ codeGenerate cgEnv symEnv ast = do
    String codePrefix <- LSV.getVar cgEnv "code-prefix"
    String codeSuffix <- LSV.getVar cgEnv "code-suffix"
 
-   code <- (trace ("fv = " ++ show globalVars) compileAllLambdas cgEnv symEnv globalVars)
+   --code <- (trace ("fv = " ++ show globalVars) compileAllLambdas cgEnv symEnv globalVars)
+   code <- compileAllLambdas cgEnv symEnv globalVars
    return $ [
       "#define NB_GLOBALS " ++ show (length globalVars) ++ "\n" ,
       "#define MAX_STACK 100 \n" , -- could be computed...
@@ -453,8 +454,8 @@ compileAllLambdas env symEnv globalVars = do
         caseNum <- LSP.car [x]
 
         ast <- LSP.cdr [x]
-        case (trace ("\nDEBUG: todo = " ++ show todo ++ "\nast = " ++ show ast ++ "\n") ast) of
---        case ast of
+        --case (trace ("\nDEBUG: todo = " ++ show todo ++ "\nast = " ++ show ast ++ "\n") ast) of
+        case ast of
           -- TODO: is ast always a lambda here? what if it is something else?
           (List (Atom "lambda" : List vs : body)) -> do
             LSP.cdr [todo] >>= LSV.setVar env "lambda-todo" 
@@ -470,7 +471,8 @@ accessVar :: Env -> Env -> String -> [LispVal] -> [LispVal] -> IOThrowsError Str
 accessVar env symEnv var globalVars stackEnv = do
     penv <- liftIO $ LSV.printEnv symEnv
     isGV <- liftIO $ isGlobalVar symEnv var
-    if (trace ("isGV = " ++ show isGV ++ " " ++ show penv ++ " var = " ++ show var ++ " stack = " ++ show stackEnv) isGV)
+    --if (trace ("isGV = " ++ show isGV ++ " " ++ show penv ++ " var = " ++ show var ++ " stack = " ++ show stackEnv) isGV)
+    if isGV
        then do
          Number i <- case DL.elemIndex (Atom var) globalVars of
            Just i -> return $ Number $ toInteger i
