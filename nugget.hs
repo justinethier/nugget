@@ -35,7 +35,7 @@ import System.Environment
 import qualified System.Exit
 import System.FilePath (dropExtension)
 import System.IO
--- import Debug.Trace
+import Debug.Trace
 
 main :: IO ()
 main = do 
@@ -304,7 +304,8 @@ cc env symEnv selfVar freeVarLst
         is <- isGlobalVar symEnv v
         return $ not is 
   newFreeVars <- liftIO $ filterM filterFV fv
-  _ <- newVar symEnv "self"
+  _ <- (trace ("new free vars = " ++ show newFreeVars) newVar) symEnv "self"
+  --_ <- newVar symEnv "self"
 
   bodyConv <- mapM (cc env symEnv (Atom "self") newFreeVars) body
   let l = List (Atom "lambda" : List (Atom "self" : vs) : bodyConv)
@@ -482,10 +483,14 @@ accessVar env symEnv var globalVars stackEnv = do
          varUID <- LSV.getNamespacedVar symEnv globalNamespace var
          return $ "GLOBAL(" ++ show i ++ "/*" ++ var ++ "." ++ show varUID ++ "*/)"
        else do
-         let Just pos = DL.elemIndex (Atom var) stackEnv
-         --varUID <- LSV.getNamespacedVar symEnv localNamespace var
-         let i = (length stackEnv) - pos - 1 
-         return $ "LOCAL(" ++ show i ++ "/*" ++ var ++ {-"." ++ show varUID ++-} "*/)"
+         let position = DL.elemIndex (Atom var) stackEnv
+         case position of
+           Just pos -> do
+             --varUID <- LSV.getNamespacedVar symEnv localNamespace var
+             let i = (length stackEnv) - pos - 1 
+             return $ "LOCAL(" ++ show i ++ "/*" ++ var ++ {-"." ++ show varUID ++-} "*/)"
+           Nothing -> throwError $ Default $
+             "Unable to access local variable " ++ var
 
 -- A port of cg-list
 -- TODO: which is used to...?
