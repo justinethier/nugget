@@ -35,7 +35,7 @@ import System.Environment
 import qualified System.Exit
 import System.FilePath (dropExtension)
 import System.IO
-import Debug.Trace
+-- import Debug.Trace
 
 main :: IO ()
 main = do 
@@ -304,8 +304,9 @@ cc env symEnv selfVar freeVarLst
         is <- isGlobalVar symEnv v
         return $ not is 
   newFreeVars <- liftIO $ filterM filterFV fv
-  _ <- (trace ("new free vars = " ++ show newFreeVars) newVar) symEnv "self"
-  --_ <- newVar symEnv "self"
+--  penv <- (trace ("ast = " ++ show ast) liftIO) $ LSV.printEnv symEnv -- DEBUG!
+--  _ <- (trace ("fv = " ++ show fv ++ ", new free vars = " ++ show newFreeVars ++ ", symEnv = " ++ show penv) newVar) symEnv "self"
+  _ <- newVar symEnv "self"
 
   bodyConv <- mapM (cc env symEnv (Atom "self") newFreeVars) body
   let l = List (Atom "lambda" : List (Atom "self" : vs) : bodyConv)
@@ -396,14 +397,20 @@ freeVars symEnv ast = do
                     (DM.keys primitives)
         sym = DS.toList $ DS.difference (DS.fromList fv)
                                         (DS.fromList prims)
-  -- TODO: experimenting with filtering out symbols that are
-  -- not variables, instead of just returning all found symbols
-  -- I think we still have a context problem, though
-        filterFV (Atom v) = do
-          isL <- isVar symEnv v
-          isG <- isGlobalVar symEnv v
-          return $ isL || isG
-    liftIO $ filterM filterFV sym
+    return sym
+--
+-- The below does not work because it filters out
+-- lambda parameters that can still be free variables even though
+-- they are not allocated using newVar
+--
+--  -- TODO: experimenting with filtering out symbols that are
+--  -- not variables, instead of just returning all found symbols
+--  -- I think we still have a context problem, though
+--        filterFV (Atom v) = do
+--          isL <- isVar symEnv v
+--          isG <- isGlobalVar symEnv v
+--          return $ isL || isG
+--    liftIO $ filterM filterFV sym
 
 freeVars' v@(Atom _) = [v]
 freeVars' (List (Atom "define" : v@(Atom _) : rest)) = do
