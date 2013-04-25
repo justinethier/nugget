@@ -1,4 +1,4 @@
-all: config build install
+all: config install
 config:
 	cabal configure --prefix=${HOME}
 build:
