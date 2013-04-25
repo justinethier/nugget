@@ -30,7 +30,7 @@ Tested-with:         GHC == 7.4.1
 --     default: False
 
 Executable         nsc
-  Build-Depends:   husk-scheme, base >= 2.0 && < 5, array, containers, filepath, mtl 
+  Build-Depends:   husk-scheme, base >= 2.0 && < 5, array, containers, filepath, mtl, process 
 --, base >= 2.0 && < 5, array, containers, haskeline, transformers, mtl, parsec, directory, process
 --  if flag(useffi)
 --    Build-Depends: ghc, ghc-paths

@@ -28,6 +28,7 @@ import qualified Language.Scheme.Core as LSC
 import qualified Language.Scheme.Primitives as LSP
 import Language.Scheme.Types -- Not worth the effort to qualify
 import qualified Language.Scheme.Variables as LSV
+import System.Cmd (system)
 import System.Console.GetOpt
 import System.Environment
 import qualified System.Exit
@@ -96,6 +97,10 @@ compileFile filename verbose = do
 
     writeOutputFile ((dropExtension filename) ++ ".c")
                     code
+
+    system $ "gcc " ++ (dropExtension filename) ++ ".c " 
+                    ++ "-o " ++ (dropExtension filename)
+
     System.Exit.exitSuccess
 
 writeOutputFile :: String -> [String] -> IO ()
