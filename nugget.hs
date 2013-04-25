@@ -20,6 +20,7 @@ Terms used in the code:
 
 module Main where
 
+import Paths_nugget (getDataFileName)
 import Control.Monad.Error
 import qualified Data.List as DL
 import qualified Data.Map as DM
@@ -426,7 +427,8 @@ codeGenerate :: Env -> Env -> [LispVal] -> IOThrowsError [String]
 codeGenerate cgEnv symEnv ast = do
    globalVars <- freeVars symEnv $ List ast
 
-   _ <- LSC.evalLisp cgEnv $ List [Atom "load", String "nugget.scm"]
+   lib <- liftIO $ getDataFileName "lib/nugget.scm"
+   _ <- LSC.evalLisp cgEnv $ List [Atom "load", String lib]
    _ <- LSC.evalLisp cgEnv $ List [Atom "add-lambda!", List [Atom "quote", List (Atom "lambda" : List [] : ast)]]
    String codePrefix <- LSV.getVar cgEnv "code-prefix"
    String codeSuffix <- LSV.getVar cgEnv "code-suffix"

@@ -20,6 +20,7 @@ Tested-with:         GHC == 7.4.1
 --                      LICENSE
 --                      AUTHORS
 -- Data-Files:          lib/*.scm lib/scheme/*.sld lib/scheme/r5rs/*.sld lib/srfi/*.scm
+Data-Files:          lib/*.scm
 -- 
 -- Source-Repository head
 --     Type:            git
