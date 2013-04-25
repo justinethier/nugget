@@ -26,6 +26,7 @@ import qualified Data.List as DL
 import qualified Data.Map as DM
 import qualified Data.Set as DS
 import qualified Language.Scheme.Core as LSC
+import qualified Language.Scheme.Macro as LSM
 import qualified Language.Scheme.Primitives as LSP
 import Language.Scheme.Types -- Not worth the effort to qualify
 import qualified Language.Scheme.Variables as LSV
@@ -72,16 +73,24 @@ showBanner = putStrLn "Usage: nsc filename"
 compileFile :: String -> Bool -> IO ()
 compileFile filename verbose = do
     env <- LSC.r5rsEnv -- Local Env for code generation phase
-    symEnv <- nullEnv
     ast <- loadFile filename
-    _ <- initEnv symEnv
-    _ <- run symEnv ast semanticAnalysis 
 
     when verbose (do
         putStrLn "-------------------------- AST:"
         putStrLn $ show ast)
 
-    astAfterCPS <- cpsConvert env symEnv ast
+    List astAfterMacroExp <- expandMacro env (List ast)
+    when verbose (do
+        putStrLn "-------------------------- AST AFTER MACRO EXPANSION:"
+        putStrLn $ show astAfterMacroExp)
+
+    -- Analyze expanded ast
+    symEnv <- nullEnv
+    _ <- initEnv symEnv
+    _ <- run symEnv astAfterMacroExp semanticAnalysis 
+    -- TODO: output symbol table in verbose mode
+
+    astAfterCPS <- cpsConvert env symEnv astAfterMacroExp
     when verbose (do
         putStrLn "-------------------------- AST AFTER CPS-CONVERSION:"
         putStrLn $ show astAfterCPS)
@@ -131,6 +140,11 @@ run env dat func = do
 loadFile :: String -> IO [LispVal]
 loadFile filename = do
     result <- runErrorT $ LSP.load filename
+    handleResult result
+
+expandMacro :: Env -> LispVal -> IO LispVal
+expandMacro env ast = do
+    result <- runErrorT $ LSM.expand env False ast LSC.apply
     handleResult result
 
 initEnv symEnv = do
