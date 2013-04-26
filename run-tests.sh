@@ -18,5 +18,9 @@ testScm tests/00-simplest
 testScm tests/01-simple
 testScm tests/02-basic-function
 testScm tests/03-top-level-test1
+testScm tests/04-macro
+testScm tests/04-macro-begin
+testScm tests/04-macro-let
+testScm tests/04-macro-full
 
 rm -f a.out
