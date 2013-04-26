@@ -160,6 +160,8 @@ semanticAnalysis :: Env -> LispVal -> IOThrowsError LispVal
 semanticAnalysis env (List (List (Atom "lambda" : List vs : body) : as)) = do
     semanticAnalysis env $ List body
     semanticAnalysis env $ List as
+    -- TODO: should make var of each vs
+
 semanticAnalysis env (List (List [Atom "define", Atom var, form] : as)) = do
   --penv <- liftIO $ LSV.printEnv env
   isV <- saLookup env var 
@@ -205,13 +207,16 @@ cps :: Env -> Env -> LispVal -> LispVal -> IOThrowsError [LispVal]
 
 -- TODO: cond (really if)
 
-cps env symEnv (List (Atom "lambda" : List vs : body)) (contAST) = do
+cps env symEnv (List (Atom "lambda" : List [] : body)) (contAst) = do
+    cpsSeq env symEnv body contAst
+    --return [List code]
+cps env symEnv (List (Atom "lambda" : List vs : body)) (contAst) = do
     _ <- newVar symEnv "k" -- TODO: will this clobber an old k?
                         -- may need to rethink var type, may even need to
                         -- use a new data type that can pass along metadata
                         -- such as var, id, uid, etc
     b <- cpsSeq env symEnv body $ Atom "k"
-    return $ [List [contAST, 
+    return $ [List [contAst, 
                    (List (Atom "lambda" : List (Atom "k" : vs) : b))]]
 cps env symEnv (List [Atom "define", Atom var, form]) contAst = do
     cpsList env symEnv [form] inner
@@ -221,6 +226,10 @@ cps env symEnv (List [Atom "define", Atom var, form]) contAst = do
         [List [contAst,
                List [Atom "define", Atom var, val]]]
 -- Application of an anonymous lambda
+cps env 
+    symEnv 
+    (List (List (Atom "lambda" : List [] : body) : as))
+    contAst = cpsSeq env symEnv body contAst
 cps env 
     symEnv 
     (List (List (Atom "lambda" : List vs : body) : as))
