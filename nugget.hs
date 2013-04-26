@@ -268,7 +268,8 @@ cpsSeq env symEnv [ast] contAst = cps env symEnv ast contAst
 cpsSeq env symEnv (a : as) contAst = do
     _ <- newVar symEnv "r"
     b <- cpsSeq env symEnv as contAst
-    cps env symEnv a (List (Atom "lambda" : List [Atom "r"] : b)) 
+    cps env symEnv a 
+        (List (Atom "lambda" : List [Atom "r"] : b)) 
 
 --TODO: this is a port of cps-list, but what exactly does it do??
 cpsList :: Env -> Env -> [LispVal] ->
