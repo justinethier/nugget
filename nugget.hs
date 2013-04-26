@@ -237,8 +237,7 @@ cps env
   where
     innerLamb e se vals = do
       b <- cpsSeq e se body contAst
-      return
-        (List (Atom "lambda" : List vs : b) : vals)
+      return $ [List (List (Atom "lambda" : List vs : b) : vals)]
 
 -- Function application
 cps env symEnv (List ast@(fnc : as)) contAst = do
