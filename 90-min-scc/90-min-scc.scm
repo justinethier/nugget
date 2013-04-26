@@ -744,14 +744,14 @@ int main () { printf (\"result = %d\\n\", OBJ2INT(execute ())); return 0; }
         ((prim? ast)
          (cons (prim-op ast) (map source (ast-subx ast))))
         ((app? ast)
-         (if (lam? (car (ast-subx ast)))
-             (list 'let
-                   (map (lambda (p a)
-                          (list (var-uid p) (source a)))
-                        (lam-params (car (ast-subx ast)))
-                        (cdr (ast-subx ast)))
-                   (source (car (ast-subx (car (ast-subx ast))))))
-             (map source (ast-subx ast))))
+         ;(if (lam? (car (ast-subx ast)))
+         ;    (list 'let
+         ;          (map (lambda (p a)
+         ;                 (list (var-uid p) (source a)))
+         ;               (lam-params (car (ast-subx ast)))
+         ;               (cdr (ast-subx ast)))
+         ;          (source (car (ast-subx (car (ast-subx ast))))))
+             (map source (ast-subx ast)));)
         ((lam? ast)
          (list 'lambda
                (map var-uid (lam-params ast))
