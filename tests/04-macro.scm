@@ -7,3 +7,7 @@
     (display (+ x (- z y)))
     (+ y z))
 )
+
+;; ; TODO: two more examples:
+;; (begin 48 (let ((x 90)) (+ x x))) ; Another closure issue?
+;; (begin 48 90) ; Works
