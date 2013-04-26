@@ -3,6 +3,7 @@ NMS=90-min-scc/90-min-scc.scm
 NMSDIR=90-min-scc
 
 function testScm {
+    echo "Testing $1"
     $NMS $1.scm > /dev/null && gcc $1.c && ./a.out
     nsc $1.scm
     $1
