@@ -205,7 +205,9 @@ cpsConvert' env symEnv ast = do
 
 cps :: Env -> Env -> LispVal -> LispVal -> IOThrowsError [LispVal] 
 
--- TODO: cond (really if)
+-- TODO: port code over for the below, which is incomplete
+cps env symEnv ast@(List [Atom "if", pred, conseq, alt]) contAst = do
+    return $ [ast]
 
 cps env symEnv (List (Atom "lambda" : List [] : body)) (contAst) = do
     cpsSeq env symEnv body contAst
@@ -317,7 +319,10 @@ cc env symEnv selfVar freeVarLst ast@(Atom a) = do
         return $ List [Atom "%closure-ref", selfVar, Number $ toInteger (i + 1)]
     Nothing -> return ast
 
--- TODO: cnd (if)  
+-- TODO: port code from 90 for the below:
+cc env symEnv selfVar freeVarLst
+   ast@(List [Atom "if", pred, conseq, alt]) = do
+    return ast
 
 -- Lambda
 cc env symEnv selfVar freeVarLst 
@@ -580,6 +585,14 @@ cg' env symEnv (List [Atom "define", Atom var, form]) globalVars stack = do
   h <- cg' env symEnv form globalVars stack
   t <- accessVar env symEnv var globalVars stack
   return $ h ++ [" " ++ t ++ " = TOS();"]
+
+cg' env symEnv ast@(List [Atom "if", pred, conseq, alt]) globalVars stack = do
+   p <- cg' env symEnv pred globalVars stack 
+   c <- cg' env symEnv conseq globalVars stack 
+   a <- cg' env symEnv alt globalVars stack 
+   return $ p ++ ["\n if (POP()) {\n"] ++
+            c ++ ["\n } else {\n"] ++
+            a ++ ["\n }"]
 
 -- this case is impossible after CPS-conversion
 cg' env symEnv ast@(List (Atom "lambda" : List vs : body)) globalVars stack = do
