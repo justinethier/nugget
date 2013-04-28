@@ -208,6 +208,26 @@ cps :: Env -> Env -> LispVal -> LispVal -> IOThrowsError [LispVal]
 -- TODO: port code over for the below, which is incomplete
 cps env symEnv ast@(List [Atom "if", pred, conseq, alt]) contAst = do
     return $ [ast]
+-- TODO: need to port this code:
+--  ((cnd? ast)
+--   (let ((xform
+--          (lambda (cont-ast)
+--            (cps-list (list (car (ast-subx ast)))
+--                      (lambda (test)
+--                        (make-cnd
+--                         (list (car test)
+--                               (cps (cadr (ast-subx ast))
+--                                    cont-ast)
+--                               (cps (caddr (ast-subx ast))
+--                                    cont-ast))))))))
+--     (if (ref? cont-ast) ; prevent combinatorial explosion
+--         (xform cont-ast)
+--         (let ((k (new-var 'k)))
+--           (make-app
+--            (list (make-lam
+--                   (list (xform (make-ref '() k)))
+--                   (list k))
+--                  cont-ast))))))
 
 cps env symEnv (List (Atom "lambda" : List [] : body)) (contAst) = do
     cpsSeq env symEnv body contAst
