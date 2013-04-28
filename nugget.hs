@@ -319,10 +319,11 @@ cc env symEnv selfVar freeVarLst ast@(Atom a) = do
         return $ List [Atom "%closure-ref", selfVar, Number $ toInteger (i + 1)]
     Nothing -> return ast
 
--- TODO: port code from 90 for the below:
 cc env symEnv selfVar freeVarLst
    ast@(List [Atom "if", pred, conseq, alt]) = do
-    return ast
+     args <- mapM (\ v -> cc env symEnv selfVar freeVarLst v)
+                  [pred, conseq, alt]
+     return $ List (Atom "if" : args)
 
 -- Lambda
 cc env symEnv selfVar freeVarLst 
