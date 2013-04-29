@@ -206,8 +206,18 @@ cpsConvert' env symEnv ast = do
 cps :: Env -> Env -> LispVal -> LispVal -> IOThrowsError [LispVal] 
 
 -- TODO: port code over for the below, which is incomplete
-cps env symEnv ast@(List [Atom "if", pred, conseq, alt]) contAst = do
-    return $ [ast]
+--cps env symEnv ast@(List [Atom "if", pred, conseq, alt]) contAst = do
+--  let xform cAst = do
+--      let inner e se [test] = do
+--        conseq' <- cps env symEnv conseq cAst
+--        alt' <- cps env symEnv conseq cAst
+--        return $ List [Atom "if", test, conseq', alt']
+--      cpsList env symEnv [pred] inner
+--   case contAst of
+--     Atom _ -> xform contAst -- prevent combinatorial explosion
+--     _ -> do
+--       _ <- newVar symEnv "k"
+
 -- TODO: need to port this code:
 --  ((cnd? ast)
 --   (let ((xform
