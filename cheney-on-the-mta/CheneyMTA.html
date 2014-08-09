@@ -1,0 +1,415 @@
+<html><head><title>Cheney on the M.T.A.</title>
+<link rev="made" href="mailto:hbaker1@pipeline.com">
+</head><body>
+
+<h1>CONS Should Not CONS Its Arguments, Part II: Cheney on the M.T.A.<a href="#fn1">[1]</a></h1>
+
+<address>DRAFT for comp.lang.scheme.c Feb. 4, 1994<p></address>
+<address>ACM Sigplan Notices 30, 9 (Sept. 1995), 17-20.</address>
+
+<address>
+<a href="home.html">Henry G. Baker</a><br>
+<br>
+Nimble Computer Corporation, 16231 Meadow Ridge Way, Encino, CA  91436<br>
+(818) 986-1436   (818) 986-1360 (FAX)<br>
+</address>
+
+<address>
+Copyright (c) 1994 by Nimble Computer Corporation.  All rights reserved.
+</address>
+
+<h2>Abstract</h2>
+
+Previous Schemes for implementing full tail-recursion when compiling into C 
+have required some form of "trampoline" to pop the stack.  We propose solving 
+the tail-recursion problem in the same manner as Standard ML of New Jersey, by 
+allocating all frames in the (garbage-collected) heap.  The Scheme program is 
+translated into continuation-passing style, so the target C functions never 
+return.  The C stack pointer then becomes the allocation pointer for a Cheney-style
+copying garbage collection scheme.  Our Scheme can use C function calls, 
+C arguments, C variable-arity functions, and separate compilation without 
+requiring complex block-compilation of entire programs.
+
+<h2>Introduction</h2>
+
+IEEE Scheme [IEEE90] requires that all functions be properly <i>tail-recursive,</i> 
+in order that tail-recursive programs not require an unbounded amount of stack 
+space.  Several Scheme compilers have targeted the C language [Bartlett89], 
+because C is an efficient systems programming language which is available on 
+nearly every computer, thus ensuring portability of the compiled code.  
+Unfortunately, C compilers are not required to be properly tail-recursive, and 
+only the GNU C compilers [Stallman90] attempt to achieve tail recursion in 
+their implementations.<p>
+
+A popular method for achieving proper tail recursion in a non-tail-recursive C 
+implementation is a <i>trampoline.</i><a href="#fn2">[2]</a>  A trampoline is an outer function which 
+iteratively calls an inner function.  The inner function returns the address 
+of another function to call, and the outer function then calls this new 
+function.  In other words, when an inner function wishes to call another inner 
+function tail-recursively, it returns the address of the function it wants to 
+call back to the trampoline, which then calls the returned function.  By 
+returning before calling, the stack is first popped so that it does not grow 
+without bound on a simple iteration.  Unfortunately, the cost of such a 
+trampoline function call is 2-3 times slower than a normal C call, and it 
+requires that arguments be passed in global variables
+
+<a href="#tarditi92">[Tarditi92].</a>
+
+<p>
+
+Appel's unpublished suggestion for achieving proper tail recursion in C uses a 
+much larger fixed-size stack, continuation-passing style, and also does not 
+put any arguments or data on the C stack.  When the stack is about to 
+overflow, the address of the next function to call is <tt>longjmp</tt>'ed (or 
+<tt>return</tt>'ed) to a trampoline.  Appel's method avoids making a large number of 
+small trampoline bounces by occasionally jumping off the Empire State 
+Building.
+
+<h2>The Proposed Scheme</h2>
+
+We propose to compile Scheme by converting it into continuation-passing style 
+(CPS), and then compile the resulting lambda expressions into individual C 
+functions.  <i>Arguments are passed as normal C arguments, and function calls are 
+normal C calls.</i>  Continuation closures and closure environments are passed as 
+extra C arguments.  (Of course, calls to closures perform a C call on the code 
+portion of the closure, and pass the environment portion of the closure as an 
+additional argument.)  Such a Scheme never executes a C <tt>return</tt>, so the stack 
+will grow and grow.<p>
+
+Since the C "stack" never contracts, we can allocate all of our closures and 
+user data structures on this stack as automatic/dynamic/local data.  All 
+closures and user data structures whose sizes are known at compile time are 
+statically allocated in the C "stack" frame; dynamic arrays and other data 
+structures whose size is unknown at compile time can be allocated by C's 
+<tt>alloca</tt> primitive (or equivalent), which also obtains space from the "stack".<a href="#fn3">[3] </a>
+Since our C "stack" is also the "heap", there is no distinction between stack 
+and heap allocation.<p>
+
+Since none of our C functions ever returns, the only <i>live</i> frame on this 
+"stack" is the top one.  However, within many of the dead frames will be found 
+live closures and live user data objects.  Eventually, the C "stack" will 
+overflow the space assigned to it, and we must perform garbage collection.  
+Garbage collection (GC) by copying is a relatively straight-forward process.  
+There are a number of static roots, as well as the latest continuation 
+closure, which is passed to the GC as an argument.  (Forming an explicit 
+continuation closure for the GC avoids the necessity of scanning C stack 
+frames.)  The live objects and live closures are all copied (and thereby 
+condensed) into another area, so that execution can be restarted with a 
+"stack" frame at the beginning of the C "stack" allocation area.<p>
+
+A key point is that since <i>only live objects are traced</i>--i.e., garbage 
+(including the C frames, which are all dead) is not traced--<i>the GC does not 
+have to know the format of a stack frame and can be written in C itself.</i>  A 
+Cheney-style scanner must know the format of all tospace objects, but we copy 
+only objects--never C frames.  When the GC is done, it creates a new frame to 
+execute its continuation.  The GC is called explicitly from the C code after 
+checking whether the stack pointer has reached its preset limit.  Although 
+stack-pointer checking in this way may require a few more instructions than if 
+it were done in assembly language, it is still faster than a trampoline call 
+would be.
+
+<tt><pre>
+/* The following macro definition is machine-dependent.  */
+#ifdef stack_grows_upward
+#define stack_check(sp) ((sp) &gt;= limit)
+#else
+#define stack_check(sp) ((sp) &lt;= limit)
+#endif
+...
+object foo(env,cont,a1,a2,a3) environment env; object cont,a1,a2,a3;
+{int xyzzy; void *sp = &amp;xyzzy; /* Where are we on the stack? */
+ /* May put other local allocations here. */
+ ...
+ if (stack_check(sp)) /* Check allocation limit. */
+    {closure5_type foo_closure; /* Locally allocate closure with 5 slots. */
+     /* Initialize foo_closure with env,cont,a1,a2,a3 and ptr to foo code. */
+     ...
+     return GC(&amp;foo_closure);} /* Do GC and then execute foo_closure. */
+ /* Rest of foo code follows. */
+ ...
+}
+</pre></tt>
+
+After the GC is done copying, it must reset the C stack pointer to the 
+beginning of the allocation area and call its continuation argument.  Since 
+the GC itself has been executing out of its frame in the fromspace, it must 
+cause the stack pointer to be reset to the allocation area in tospace and then 
+call its continuation.  One way to relocate the stack pointer is for the GC to 
+call the alloca function with an argument which is the difference--<i>positive or 
+negative!</i>--between the current stack pointer and the desired stack pointer.  
+Then, the GC can call its continuation.<p>
+
+(An alternative method suggested by Appel follows SML/NJ more closely.  After 
+the live data has been copied elsewhere--this is a <i>minor collection</i>--the GC 
+can <tt>longjmp</tt> to a trampoline (or simply <tt>return</tt> its argument!) and the 
+trampoline will restart the continuation with the stack pointer allocating at 
+the bottom of the stack again.  When the total copied data in the second area 
+exceeds a certain amount, a <i>major collection</i> is performed on the second area.)
+
+<h2>CONS Should Not CONS Its Arguments</h2>
+
+In our Scheme, the compiler does all consing using stack-allocated (dynamic) 
+local storage.  Thus, the <tt>revappend</tt> function to reverse one list onto another 
+list looks like the following code.  (The C <tt>return</tt> statement is curious, since 
+we don't actually ever return, unless we use Appel's method; <tt>return</tt> simply 
+tells the C compiler that the local variables are all dead (except for the 
+return address!), and therefore it needn't save them "across" the call.)
+
+<tt><pre>
+object revappend(cont,old,new) object cont,old,new;
+{if (old == NIL)
+  {clos_type *c = cont;
+   /* Call continuation with new as result. */
+   return (c->fn)(c->env,new);}
+  {cons_type *o = old; cons_type newer; /* Should check stack here. */
+   /* Code for (revappend (cdr old) (cons (car old) new)). */
+   newer.tag = cons_tag; newer.car = o->car; newer.cdr = new;
+   return revappend(cont,o->cdr,&amp;newer);}}
+</pre></tt>
+
+Closures, whose size are always known by the compiler, are explicitly 
+constructed in the local frame in a similar manner.  Vectors and arrays whose 
+size is unknown at compile time can be allocated by calling <tt>alloca</tt> (or its 
+equivalent) to extend the current stack frame.  (See also section below on 
+<tt>malloc</tt>-allocated objects.)
+
+<h2>Variable-arity Functions</h2>
+
+Variable-arity Scheme functions can be compiled into variable-arity C 
+functions using either the Unix <tt>varargs</tt> or the ANSI C <tt>stdarg</tt> mechanism.  Using 
+CPS, variable-arity multiple "returned" values can be similarly handled.
+
+<h2>Iteration</h2>
+
+Scheme's only mechanism for expressing iteration is the "tail call", hence 
+Scheme compilers perform a great many optimizations to ensure the efficiency 
+of these "tail recursions".  With our Scheme, the definition of an iterative 
+routine is narrowed considerably--only those iterations which do <i>no</i> storage 
+allocation may be converted into an iteration, because all storage is being 
+allocated on the stack.  In particular, only the lowest-level functions can 
+operate without allocating some storage--e.g., calls to C library routines 
+that restore the "stack" pointer can be made within an iteration.  <i>Local</i> tail-recursion
+optimizations [Bartlett89] are thus sufficient to obtain efficient 
+iteration.  We thus achieve the <i>spirit,</i> if not the <i>letter,</i> of ANSI Scheme's 
+tail-recursion law.
+
+<h2>Scheme Compiler Optimizations</h2>
+
+Scheme compilers perform a number of optimizations to reduce the cost of 
+closure creation and the cost of function calling--e.g., they take advantage 
+of "known" functions when compiling function calls.<a href="#fn4">[4]</a>  "Lambda lifting" 
+[Peyton-Jones87] can be used to replace closure creation by additional 
+argument passing; this optimization is very valuable when arguments can be 
+kept in registers.  Various kinds of type inference can be used optimize the 
+representation of values and avoid the need for run-time type checks.  These 
+optimizations continue to be valuable in our stack/heap Scheme--i.e., they are 
+orthogonal to the policies of memory management.
+
+<h2>Using malloc</h2>
+
+If <tt>malloc</tt>-allocated storage is distinguishable by address range from the 
+stack/heap storage, then <tt>malloc</tt> may be used to allocate (non-relocatable) 
+objects.<a href="#fn5">[5]</a>  These objects must be enumerable, so that the GC can first trace 
+these objects (they must have proper tags), and then sweep and explicitly free 
+those objects which have become garbage.
+
+<h2>Separate Compilation</h2>
+
+In order to obtain proper tail-recursion, existing Scheme-to-C and ML-to-C 
+compilers do large amounts of interprocedural optimizations (including block 
+compilations) which interfere with separate compilation, create large C 
+functions, and cause long C compilations.  In our Scheme, every C function can 
+in principle be a separate file.
+
+<h2>Calling Normal C Functions</h2>
+
+Calling normal C functions which return is trivial, except that you must 
+assure enough "stack" space in advance so that the C "stack" does not overflow 
+during the execution of the C functions.  These C functions cannot store 
+pointers to GC-able objects, except in "root" locations, nor can they "call 
+back" to non-returnable Scheme functions.
+
+<h2>Hardware Architecture Issues</h2>
+
+Appel and Dybvig warn that our pushy Scheme may break "register windows" in, 
+e.g., the SPARC architecture.
+
+<h2>Conclusions</h2>
+
+The lack of tail recursion in C may be an advantage for implementing a tail-recursive,
+garbage-collected language like Scheme.<a href="#fn6">[6]</a>  If all functions are 
+transformed into continuation-passing style, if arguments are passed as C 
+arguments (even for variable-arity functions), if C's "stack" allocation is 
+used to perform all allocation (including closure allocation), and if a 
+copying garbage collector is used, then we can achieve a Scheme implementation 
+on top of C which is similar to the implementation of SML/NJ
+
+<a href="#appel91">[Appel91],</a>
+
+except 
+that it will be much more portable.  In our Scheme, the entire C "stack" is 
+effectively the youngest generation in a generational garbage collector!<p>
+
+A key feature of our Scheme is that the garbage collector avoids the necessity 
+of tracing garbage, and therefore it need not know the format of this garbage, 
+which includes all of the C stack frames.  At the cost of continually checking 
+and following forwarding pointers, we could make our Scheme "real-time" 
+
+<a href="RealTimeGC.html">[Baker78].</a>
+
+A previous paper
+
+<a href="LazyAlloc.html">[Baker92]</a>
+
+also advocated allocating objects on 
+the stack within the local C frame.  However, the current scheme is simpler, 
+since it does not require that objects be forwarded dynamically during 
+execution.
+
+We have hand-translated the Boyer Benchmark into C using the methods of this paper
+<a href="cboyer13.c">[cboyer13.c]</a>.
+
+<h2>Acknowledgements</h2>
+
+Many thanks to Andrew Appel, Jerome Chailloux, R. Kent Dybvig, and David Wise 
+for their comments on early drafts of this paper (and their fixes for my 
+bugs!).
+
+<h2>References</h2>
+
+<a href="http://www.cs.princeton.edu/faculty/appel/papers/45.ps">[Appel87]</a>
+
+Appel, A.W.  "Garbage collection can be faster than stack allocation".  <i>Information
+Processing Letters 25,</i> 4 (1987), 275-279.<p>
+
+<a href="http://www.cs.princeton.edu/faculty/appel/papers/143.ps">[Appel89]</a>
+
+Appel, A.W.  "Simple Generational Garbage Collection and Fast Allocation".  <i>Software--Practice
+and Experience 19,</i> 2 (Feb. 1989), 171-183.<p>
+
+<a href="ftp://ftp.cs.princeton.edu/reports/1989/220.ps.Z">[Appel90]</a>
+
+Appel, A.W.  "A Runtime System".  <i>Lisp and Symbolic Computation 3,</i> 4 (Nov. 1990), 
+343-380.<p>
+
+<a name="appel91"></a>
+<a href="ftp://ftp.cs.princeton.edu/reports/1991/329.ps.Z">[Appel91]</a>
+
+Appel, A.W., and MacQueen, D.B.  "Standard ML of New Jersey".  In
+Wirsing, M., <i>ed.</i> <i>Third Int'l Symp on Programming Language
+Implementation and Logic Programming,</i> Springer, August 1991.<p>
+
+<a href="RealTimeGC.html">[Baker78]</a>
+
+Baker, H.G.  "List Processing in Real Time on a Serial Computer".
+<i>Comm. of the ACM 21,</i> 4 (April 1978), 280-294.<p>
+
+<a href="LazyAlloc.html">[Baker92]</a>
+
+Baker, H.G.  "CONS Should Not CONS Its Arguments, or, a Lazy alloc is a Smart 
+alloc".  ACM <i>Sigplan Not. 27,</i> 3 (Mar. 1992), 24-34.<p>
+
+<a href="http://www.research.digital.com/wrl/techreports/abstracts/89.1.html">[Bartlett89]</a>
+
+Bartlett, J.  <i>Scheme->C: A portable Scheme-to-C compiler.</i>  Tech. Rept., DEC 
+West. Res. Lab., 1989.<p>
+
+Berry, D.M.  "Block Structure: Retention vs. Deletion".  <i>Proc. 3rd Sigact Symposium
+Theory of Computation,</i> Shaker Hgts., 1971.<p>
+
+Cheney, C.J.  "A nonrecursive list compacting algorithm".  <i>Comm. of
+the ACM 13,</i> 11 (Nov.  1970), 677-678.<p>
+
+Clinger, W., Hartheimer, A., and Ost, E.  "Implementation strategies for 
+continuations".  <i>Proc. Lisp and Functional Programming,</i> 1988, 124-131.<p>
+
+Danvy, O.  "Memory Allocation and Higher-Order Functions".  <i>Proc.
+Sigplan '87 Symposium on Interpretation and Interpretive
+Techniques,</i> ACM <i>Sigplan Not. 22,</i> 7 (July 1987), 241-252.<p>
+
+Fairbairn, J., and Wray, S.C.  "TIM: a simple abstract machine to
+execute supercombinators".  <i>Proc. 1987 Functional Programming and
+Computer Architecture.</i><p>
+
+Fischer, M.J.  "Lambda Calculus Schemata".  ACM <i>Conf. Proving Assertions about
+Programs,</i> ACM <i>Sigplan Not. 7,</i> 1 (Jan. 1972).<p>
+
+Friedman, D.P., and Wise, D.S.  "CONS Should Not Evaluate Its
+Arguments".  In Michaelson, S., and Milner, R., <i>eds.</i>
+<i>Automata, Languages and Programming.</i> Edinburgh U. Press, 1976,
+257-284.<p>
+
+Hanson, C.  "Efficient stack allocation for tail-recursive languages".  <i>Proc. 
+Lisp and Functional Programming,</i> June 1990.<p>
+
+<a href="http://www-swiss.ai.mit.edu/ftpdir/scheme-reports/r4rs.ps">[Rees]</a>
+
+IEEE.  <i>IEEE Standard for the Scheme Programming Language.</i>  IEEE-1178-1990, 
+IEEE, NY, Dec. 1990.<p>
+
+Peyton Jones, S.L.  <i>The Implementation of Functional Programming Languages.</i> 
+Prentice-Hall, New York, 1987.<p>
+
+Stallman, R.M.  "Phantom Stacks: If you look too hard, they aren't there".  AI 
+Memo 556, MIT AI Lab., Sept. 1974.<p>
+
+Stallman, R.M.  <i>Using and Porting GNU CC.</i>  Free Software Foundation, Inc.  
+February, 1990.<p>
+
+Steiner, J., and Hawkes, B.  "The M.T.A."  On the album, <i>The Kingston Trio At 
+Large,</i> released June 8, 1959, reached number 15 on June 15, 1959.  Copyright 
+Atlantic Music 1956-57.<p>
+
+<a name="tarditi92"></a>
+<a href="http://www.cs.cmu.edu:8001/afs/cs.cmu.edu/user/petel/ftp/papers/sml2c.ps">[Tarditi92]</a>
+
+Tarditi, D., and Lee, P.  "No assembly required: Compiling standard ML to C".  
+ACM <i>Letters on Programming Languages and Systems 1,</i> 2 (1992), 161-177.<p>
+
+<a name="fn1">[1]</a>
+
+Reference to the 1959 song <i>Charlie on the M.T.A.</i> [Steiner56] recorded by
+the Kingston Trio.  Lyrics include the refrain:<p>
+
+<blockquote>
+Oh, will he ever return?<br>
+No, he'll never return,<br>
+and his fate is still unlearned.<br>
+He will ride forever,<br>
+'neath the streets of Boston,<br>
+he's a man who'll never return.
+</blockquote>
+
+Charlie couldn't get off the Metropolitan Transit Authority (now the
+Massachusetts Bay Transit Authority "MBTA") subway (tube) train, because he
+lacked the money to pay the fare.  (By the way, "Charlie" is also the
+military name for the letter "C".)<p>
+
+<a name="fn2">[2]</a>
+
+Other names for a trampoline are a <i>dispatcher</i> or an <i>operator,</i> who has to
+transfer your telephone calls for you.<p>
+
+<a name="fn3">[3]</a>
+
+Maximally portable implementations may shun <tt>alloca</tt>, since it is not
+required by either ANSI C or Unix.<p>
+
+<a name="fn4">[4]</a>
+
+Jerome Chailloux tells me that the IBM RS6000 and HP 9700 C compilers
+generate slower "stubs" for indirectly-called C functions--e.g., our closures.
+Scheme-to-C compilers therefore generate calls to "known" functions wherever
+possible.<p>
+
+<a name="fn5">[5]</a>
+
+Maximally portable implementations may prefer <tt>malloc</tt> to <tt>alloca</tt> for objects
+whose size is not known at compile time.<p>
+
+<a name="fn6">[6]</a>
+
+C's which <i>do</i> attempt tail recursion--e.g., Gnu C--may be penalized if they
+restore caller-save registers!
+
+</body></html>
