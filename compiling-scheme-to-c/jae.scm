@@ -701,6 +701,150 @@
 
 
 
+;; JAE -
+;; CPS conversion 
+;;
+;; Convert intermediate code to continuation-passing style, to allow for
+;; first-class continuations and call/cc
+;;
+
+(define (cps-convert ast)
+
+  (define (cps ast cont-ast)
+
+    (cond
+;          ((lit? ast)
+;           (make-app (list cont-ast ast)))
+;
+;          ((ref? ast)
+;           (make-app (list cont-ast ast)))
+;
+;          ((set? ast)
+;           (cps-list (ast-subx ast)
+;                     (lambda (val)
+;                       (make-app
+;                        (list cont-ast
+;                              (make-set val
+;                                        (set-var ast)))))))
+;
+;          ((cnd? ast)
+;           (let ((xform
+;                  (lambda (cont-ast)
+;                    (cps-list (list (car (ast-subx ast)))
+;                              (lambda (test)
+;                                (make-cnd
+;                                 (list (car test)
+;                                       (cps (cadr (ast-subx ast))
+;                                            cont-ast)
+;                                       (cps (caddr (ast-subx ast))
+;                                            cont-ast))))))))
+;             (if (ref? cont-ast) ; prevent combinatorial explosion
+;                 (xform cont-ast)
+;                 (let ((k (new-var 'k)))
+;                   (make-app
+;                    (list (make-lam
+;                           (list (xform (make-ref '() k)))
+;                           (list k))
+;                          cont-ast))))))
+;
+;          ((prim? ast)
+;           (cps-list (ast-subx ast)
+;                     (lambda (args)
+;                       (make-app
+;                        (list cont-ast
+;                              (make-prim args
+;                                         (prim-op ast)))))))
+;
+;          ((app? ast)
+;           (let ((fn (car (ast-subx ast))))
+;             (if (lam? fn)
+;                 (cps-list (cdr (ast-subx ast))
+;                           (lambda (vals)
+;                             (make-app
+;                              (cons (make-lam
+;                                     (list (cps-seq (ast-subx fn)
+;                                                    cont-ast))
+;                                     (lam-params fn))
+;                                    vals))))
+;                 (cps-list (ast-subx ast)
+;                           (lambda (args)
+;                             (make-app
+;                              (cons (car args)
+;                                    (cons cont-ast
+;                                          (cdr args)))))))))
+;
+;          ((lam? ast)
+;           (let ((k (new-var 'k)))
+;             (make-app
+;              (list cont-ast
+;                    (make-lam
+;                     (list (cps-seq (ast-subx ast)
+;                                    (make-ref '() k)))
+;                     (cons k (lam-params ast)))))))
+;
+;          ((seq? ast)
+;           (cps-seq (ast-subx ast) cont-ast))
+;
+;          (else
+;           (error "unknown ast" ast))))
+          (else
+           ast)))
+;
+;  (define (cps-list asts inner)
+;
+;    (define (body x)
+;      (cps-list (cdr asts)
+;                (lambda (new-asts)
+;                  (inner (cons x new-asts)))))
+;
+;    (cond ((null? asts)
+;           (inner '()))
+;          ((or (lit? (car asts))
+;               (ref? (car asts)))
+;           (body (car asts)))
+;          (else
+;           (let ((r (new-var 'r)))
+;             (cps (car asts)
+;                  (make-lam (list (body (make-ref '() r)))
+;                            (list r)))))))
+;
+;  (define (cps-seq asts cont-ast)
+;    (cond ((null? asts)
+;           (make-app (list cont-ast #f)))
+;          ((null? (cdr asts))
+;           (cps (car asts) cont-ast))
+;          (else
+;           (let ((r (new-var 'r)))
+;             (cps (car asts)
+;                  (make-lam
+;                   (list (cps-seq (cdr asts) cont-ast))
+;                   (list r)))))))
+
+  (let ((ast-cps
+         (cps ast
+            `(lambda (r) (%halt r))
+             ; (let ((r (new-var 'r)))
+             ;   (make-lam
+             ;    (list (make-prim (list (make-ref '() r))
+             ;                     '%halt))
+             ;    (list r)))
+              )))
+  ; TODO:
+    (if #t
+        ast-cps)
+    ))
+;    (if (lookup 'call/cc (fv ast))
+;        ; add this definition for call/cc if call/cc is needed
+;        (make-app
+;         (list (make-lam
+;                (list ast-cps)
+;                (list (new-var '_)))
+;               (xe '(set! call/cc
+;                          (lambda (k f)
+;                            (f k (lambda (_ result) (k result)))))
+;                   '())))
+;        ast-cps)
+;    ))
 
 
 ;; Closure-conversion.
@@ -1028,6 +1172,14 @@
 
   (set! input-program (desugar (wrap-mutables input-program)))
 
+;; JAE - TODO
+(display "---------------- before CPS:\n")
+(write input-program) ;pretty-print
+  (set! input-program (cps-convert input-program))
+(display "---------------- after CPS:\n")
+(write input-program) ;pretty-print
+
+;; JAE TODO: compare this closure conversion with the one from "90 mins"
   (set! input-program (closure-convert input-program))
   
 
@@ -1101,8 +1253,8 @@ Value __numEqual ;
 
 ;; Compile and emit:
 
-(define the-program ;(read))
-    (cons 'begin (read-all)))
+(define the-program
+    (cons 'begin (read-all))) ;; read-all is non-standard
 
 (c-compile-and-emit emit the-program)
 
