@@ -294,6 +294,7 @@
       (eq? exp '-)
       (eq? exp '*)
       (eq? exp '=)
+      (eq? exp '%halt)
       (eq? exp 'display)))
 
 ; begin? : exp -> boolean
@@ -713,9 +714,10 @@
   (define (cps ast cont-ast)
 
     (cond
-;          ((lit? ast)
-;           (make-app (list cont-ast ast)))
-;
+          ((const? ast)
+           (list cont-ast ast))
+           ;(make-app (list cont-ast ast)))
+
 ;          ((ref? ast)
 ;           (make-app (list cont-ast ast)))
 ;
@@ -936,6 +938,7 @@
      "  __sum         = MakePrimitive(__prim_sum) ;\n" 
      "  __product     = MakePrimitive(__prim_product) ;\n" 
      "  __difference  = MakePrimitive(__prim_difference) ;\n" 
+     "  __halt        = MakePrimitive(__prim_halt) ;\n" 
      "  __display     = MakePrimitive(__prim_display) ;\n" 
      "  __numEqual    = MakePrimitive(__prim_numEqual) ;\n"      
      "  " body " ;\n"
@@ -982,6 +985,7 @@
     ((eq? '- p)       "__difference")
     ((eq? '* p)       "__product")
     ((eq? '= p)       "__numEqual")
+    ((eq? '%halt p)   "__halt")
     ((eq? 'display p) "__display")
     (else             (error "unhandled primitive: " p))))
 
@@ -1173,10 +1177,10 @@
   (set! input-program (desugar (wrap-mutables input-program)))
 
 ;; JAE - TODO
-(display "---------------- before CPS:\n")
+(display "// ---------------- before CPS:\n //")
 (write input-program) ;pretty-print
   (set! input-program (cps-convert input-program))
-(display "---------------- after CPS:\n")
+(display "// ---------------- after CPS:\n //")
 (write input-program) ;pretty-print
 
 ;; JAE TODO: compare this closure conversion with the one from "90 mins"
@@ -1195,6 +1199,7 @@
 Value __sum ;
 Value __difference ;
 Value __product ;
+Value __halt ;
 Value __display ;
 Value __numEqual ;
 ")
@@ -1220,6 +1225,12 @@ Value __numEqual ;
   (emit 
    "Value __prim_difference(Value e, Value a, Value b) {
   return MakeInt(a.z.value - b.z.value) ;
+}")
+  
+  (emit
+   "Value __prim_halt(Value e, Value v) {
+  printf(\"%i\\n\",v.z.value) ;
+  exit(0);
 }")
   
   (emit
