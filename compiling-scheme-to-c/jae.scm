@@ -736,7 +736,7 @@
   ;;                            (make-set val
   ;;                                      (set-var ast)))))))
 
-;          ((cnd? ast)
+          ((if? ast)
 ;           (let ((xform
 ;                  (lambda (cont-ast)
 ;                    (cps-list (list (car (ast-subx ast)))
