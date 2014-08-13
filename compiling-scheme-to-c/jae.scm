@@ -796,13 +796,12 @@
 ;                                    (make-ref '() k)))
 ;                     (cons k (lam-params ast)))))))
 ;
+; TODO: begin is expanded already by desugar code... better to do it here?
 ;          ((seq? ast)
 ;           (cps-seq (ast-subx ast) cont-ast))
-;
-;          (else
-;           (error "unknown ast" ast))))
+
           (else
-           ast)))
+           (error "unknown ast" ast))))
 
   (define (cps-list asts inner)
 (write `(cps-list ,asts ,inner))
@@ -837,7 +836,8 @@
 
   (let ((ast-cps
          (cps ast
-            `(lambda (r) (%halt r))
+            (let ((r (gensym 'r)))
+                `(lambda (,r) (%halt ,r)))
              ; (let ((r (new-var 'r)))
              ;   (make-lam
              ;    (list (make-prim (list (make-ref '() r))
