@@ -720,13 +720,12 @@
           ((ref? ast)
            (list cont-ast ast))
 
-          ((set!? ast)
-           (cps-list (ast-subx ast)
+          ;((set!? ast)
+          ((tagged-list? 'set-cell! ast)
+           (cps-list (caddr ast)
                      (lambda (val)
-                       (make-app
-                        (list cont-ast
-                              (make-set val
-                                        (set-var ast)))))))
+                       (list cont-ast 
+                         (list 'set! (cadr ast) val)))))
   ;;         (cps-list (ast-subx ast)
   ;;                   (lambda (val)
   ;;                     (make-app
@@ -1188,7 +1187,7 @@
   (set! input-program (cps-convert input-program))
 (display "// ---------------- after CPS:\n //")
 (write input-program) ;pretty-print
-
+(exit)
 ;; JAE TODO: compare this closure conversion with the one from "90 mins"
   (set! input-program (closure-convert input-program))
   
