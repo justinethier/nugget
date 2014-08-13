@@ -716,19 +716,24 @@
     (cond
           ((const? ast)
            (list cont-ast ast))
-           ;(make-app (list cont-ast ast)))
 
-;          ((ref? ast)
-;           (make-app (list cont-ast ast)))
-;
-;          ((set? ast)
-;           (cps-list (ast-subx ast)
-;                     (lambda (val)
-;                       (make-app
-;                        (list cont-ast
-;                              (make-set val
-;                                        (set-var ast)))))))
-;
+          ((ref? ast)
+           (list cont-ast ast))
+
+          ((set!? ast)
+           (cps-list (ast-subx ast)
+                     (lambda (val)
+                       (make-app
+                        (list cont-ast
+                              (make-set val
+                                        (set-var ast)))))))
+  ;;         (cps-list (ast-subx ast)
+  ;;                   (lambda (val)
+  ;;                     (make-app
+  ;;                      (list cont-ast
+  ;;                            (make-set val
+  ;;                                      (set-var ast)))))))
+
 ;          ((cnd? ast)
 ;           (let ((xform
 ;                  (lambda (cont-ast)
@@ -791,25 +796,26 @@
 ;           (error "unknown ast" ast))))
           (else
            ast)))
-;
-;  (define (cps-list asts inner)
-;
-;    (define (body x)
-;      (cps-list (cdr asts)
-;                (lambda (new-asts)
-;                  (inner (cons x new-asts)))))
-;
-;    (cond ((null? asts)
-;           (inner '()))
-;          ((or (lit? (car asts))
-;               (ref? (car asts)))
-;           (body (car asts)))
-;          (else
-;           (let ((r (new-var 'r)))
-;             (cps (car asts)
+
+  (define (cps-list asts inner)
+
+    (define (body x)
+      (cps-list (cdr asts)
+                (lambda (new-asts)
+                  (inner (cons x new-asts)))))
+
+    (cond ((null? asts)
+           (inner '()))
+          ((or (const? (car asts))
+               (ref? (car asts)))
+           (body (car asts)))
+          (else
+           (let ((r (new-var 'r)))
+             (cps (car asts)
+                  `(lambda (r) ,(body 'r)))))))
 ;                  (make-lam (list (body (make-ref '() r)))
 ;                            (list r)))))))
-;
+
 ;  (define (cps-seq asts cont-ast)
 ;    (cond ((null? asts)
 ;           (make-app (list cont-ast #f)))
