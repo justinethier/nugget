@@ -297,6 +297,9 @@
       (eq? exp '%halt)
       (eq? exp 'display)))
 
+(define (prim-call? exp)
+  (and (list? exp) (prim? (car exp))))
+
 ; begin? : exp -> boolean
 (define (begin? exp) 
   (tagged-list? 'begin exp))
@@ -712,7 +715,7 @@
 (define (cps-convert ast)
 
   (define (cps ast cont-ast)
-
+(write `(cps ,ast ,cont-ast))
     (cond
           ((const? ast)
            (list cont-ast ast))
@@ -722,10 +725,10 @@
 
           ;((set!? ast)
           ((tagged-list? 'set-cell! ast)
-           (cps-list (caddr ast)
+           (cps-list (cddr ast)
                      (lambda (val)
                        (list cont-ast 
-                         (list 'set! (cadr ast) val)))))
+                         `(set-cell! ,(cadr ast) ,@val)))))
   ;;         (cps-list (ast-subx ast)
   ;;                   (lambda (val)
   ;;                     (make-app
@@ -752,8 +755,13 @@
 ;                           (list (xform (make-ref '() k)))
 ;                           (list k))
 ;                          cont-ast))))))
-;
-;          ((prim? ast)
+
+          ((prim-call? ast)
+           (cps-list (cdr ast)
+                     (lambda (args)
+                        (list cont-ast
+                            `(,(car ast) ; op
+                              ,@args)))))
 ;           (cps-list (ast-subx ast)
 ;                     (lambda (args)
 ;                       (make-app
@@ -797,7 +805,7 @@
            ast)))
 
   (define (cps-list asts inner)
-
+(write `(cps-list ,asts ,inner))
     (define (body x)
       (cps-list (cdr asts)
                 (lambda (new-asts)
@@ -809,9 +817,9 @@
                (ref? (car asts)))
            (body (car asts)))
           (else
-           (let ((r (new-var 'r)))
+           (let ((r (gensym 'r))) ;(new-var 'r)))
              (cps (car asts)
-                  `(lambda (r) ,(body 'r)))))))
+                  `(lambda (,r) ,(body r)))))))
 ;                  (make-lam (list (body (make-ref '() r)))
 ;                            (list r)))))))
 
