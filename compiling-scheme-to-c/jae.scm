@@ -737,6 +737,23 @@
   ;;                                      (set-var ast)))))))
 
           ((if? ast)
+           (let ((xform
+                  (lambda (cont-ast)
+                    (cps-list (list (cadr ast))
+                              (lambda (test)
+                                 (list 'if
+                                       (car test)
+                                       (cps (caddr ast)
+                                            cont-ast)
+                                       (cps (cadddr ast)
+                                            cont-ast)))))))
+             (if (ref? cont-ast) ; prevent combinatorial explosion
+                 (xform cont-ast)
+                 (let ((k (gensym 'k)))
+                    (list (list 'lambda
+                           (list k)
+                           (xform k))
+                          cont-ast)))))
 ;           (let ((xform
 ;                  (lambda (cont-ast)
 ;                    (cps-list (list (car (ast-subx ast)))
