@@ -705,8 +705,9 @@
 
 
 
-;; JAE -
 ;; CPS conversion 
+;;
+;; JAE - This is a port of the code from 90-minute Scheme->C
 ;;
 ;; Convert intermediate code to continuation-passing style, to allow for
 ;; first-class continuations and call/cc
@@ -754,24 +755,6 @@
                            (list k)
                            (xform k))
                           cont-ast)))))
-;           (let ((xform
-;                  (lambda (cont-ast)
-;                    (cps-list (list (car (ast-subx ast)))
-;                              (lambda (test)
-;                                (make-cnd
-;                                 (list (car test)
-;                                       (cps (cadr (ast-subx ast))
-;                                            cont-ast)
-;                                       (cps (caddr (ast-subx ast))
-;                                            cont-ast))))))))
-;             (if (ref? cont-ast) ; prevent combinatorial explosion
-;                 (xform cont-ast)
-;                 (let ((k (new-var 'k)))
-;                   (make-app
-;                    (list (make-lam
-;                           (list (xform (make-ref '() k)))
-;                           (list k))
-;                          cont-ast))))))
 
           ((prim-call? ast)
            (cps-list (cdr ast)
@@ -803,7 +786,15 @@
 ;                              (cons (car args)
 ;                                    (cons cont-ast
 ;                                          (cdr args)))))))))
-;
+
+          ((lambda? ast)
+           (let ((k (gensym 'k)))
+(write `(debug ,(caddr ast)))
+             (list cont-ast
+                   `(lambda
+                      ,(cons k (cadr ast)) ; lam params
+                      ,(cps-seq (caddr ast) k)))))
+
 ;          ((lam? ast)
 ;           (let ((k (new-var 'k)))
 ;             (make-app
@@ -839,17 +830,30 @@
 ;                  (make-lam (list (body (make-ref '() r)))
 ;                            (list r)))))))
 
-;  (define (cps-seq asts cont-ast)
-;    (cond ((null? asts)
-;           (make-app (list cont-ast #f)))
-;          ((null? (cdr asts))
-;           (cps (car asts) cont-ast))
-;          (else
-;           (let ((r (new-var 'r)))
-;             (cps (car asts)
-;                  (make-lam
-;                   (list (cps-seq (cdr asts) cont-ast))
-;                   (list r)))))))
+  (define (cps-seq asts cont-ast)
+    (cond ((null? asts)
+           (list cont-ast #f))
+           ;(make-app (list cont-ast #f)))
+          ((null? (cdr asts))
+           (cps (car asts) cont-ast))
+          (else
+           (let ((r (gensym 'r)))
+             (cps (car asts)
+                  `(lambda
+                     (,r)
+                    ,(list (cps-seq (cdr asts) cont-ast))))))))
+;; orig function, delete once above works (compare w/90-min-scc)
+;;  (define (cps-seq asts cont-ast)
+;;    (cond ((null? asts)
+;;           (make-app (list cont-ast #f)))
+;;          ((null? (cdr asts))
+;;           (cps (car asts) cont-ast))
+;;          (else
+;;           (let ((r (new-var 'r)))
+;;             (cps (car asts)
+;;                  (make-lam
+;;                   (list (cps-seq (cdr asts) cont-ast))
+;;                   (list r)))))))
 
   (let ((ast-cps
          (cps ast
