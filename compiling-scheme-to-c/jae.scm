@@ -258,7 +258,7 @@
 
 ; lambda->exp : lambda-exp -> exp
 (define (lambda->exp exp)
-  (caddr exp))
+  (caddr exp)) ;; JAE TODO: shouldn't it be cddr, to get all as a list?
 
 ; if? : exp -> boolean
 (define (if? exp)
@@ -716,7 +716,6 @@
 (define (cps-convert ast)
 
   (define (cps ast cont-ast)
-(write `(cps ,ast ,cont-ast))
     (cond
           ((const? ast)
            (list cont-ast ast))
@@ -726,16 +725,10 @@
 
           ;((set!? ast)
           ((tagged-list? 'set-cell! ast)
-           (cps-list (cddr ast)
+           (cps-list (cddr ast) ;; expr passed to set
                      (lambda (val)
                        (list cont-ast 
-                         `(set-cell! ,(cadr ast) ,@val)))))
-  ;;         (cps-list (ast-subx ast)
-  ;;                   (lambda (val)
-  ;;                     (make-app
-  ;;                      (list cont-ast
-  ;;                            (make-set val
-  ;;                                      (set-var ast)))))))
+                         `(set-cell! ,(cadr ast) ,@val))))) ;; cadr => variable
 
           ((if? ast)
            (let ((xform
@@ -757,35 +750,11 @@
                           cont-ast)))))
 
           ((prim-call? ast)
-           (cps-list (cdr ast)
+           (cps-list (cdr ast) ; args to primitive function
                      (lambda (args)
                         (list cont-ast
                             `(,(car ast) ; op
                               ,@args)))))
-;           (cps-list (ast-subx ast)
-;                     (lambda (args)
-;                       (make-app
-;                        (list cont-ast
-;                              (make-prim args
-;                                         (prim-op ast)))))))
-
-;          ((app? ast)
-;           (let ((fn (car (ast-subx ast))))
-;             (if (lam? fn)
-;                 (cps-list (cdr (ast-subx ast))
-;                           (lambda (vals)
-;                             (make-app
-;                              (cons (make-lam
-;                                     (list (cps-seq (ast-subx fn)
-;                                                    cont-ast))
-;                                     (lam-params fn))
-;                                    vals))))
-;                 (cps-list (ast-subx ast)
-;                           (lambda (args)
-;                             (make-app
-;                              (cons (car args)
-;                                    (cons cont-ast
-;                                          (cdr args)))))))))
 
           ((lambda? ast)
            (let ((k (gensym 'k)))
@@ -794,24 +763,33 @@
                    `(lambda
                       ,(cons k (cadr ast)) ; lam params
                       ,(cps-seq (cddr ast) k)))))
-;          ((lam? ast)
-;           (let ((k (new-var 'k)))
-;             (make-app
-;              (list cont-ast
-;                    (make-lam
-;                     (list (cps-seq (ast-subx ast)
-;                                    (make-ref '() k)))
-;                     (cons k (lam-params ast)))))))
+
 ;
 ; TODO: begin is expanded already by desugar code... better to do it here?
 ;          ((seq? ast)
 ;           (cps-seq (ast-subx ast) cont-ast))
 
+          ((app? ast)
+           (let ((fn (app->fun ast)))
+             (if (lambda? fn)
+                 (cps-list (app->args ast)
+                           (lambda (vals)
+                             (cons (list
+                                     'lambda
+                                     (lambda->formals fn)
+                                     (cps-seq (cddr fn) ;(ast-subx fn)
+                                                    cont-ast))
+                                    vals)))
+                 (cps-list ast ;(ast-subx ast)
+                           (lambda (args)
+                              (cons (car args)
+                                    (cons cont-ast
+                                          (cdr args))))))))
+
           (else
            (error "unknown ast" ast))))
 
   (define (cps-list asts inner)
-(write `(cps-list ,asts ,inner))
     (define (body x)
       (cps-list (cdr asts)
                 (lambda (new-asts)
@@ -826,8 +804,6 @@
            (let ((r (gensym 'r))) ;(new-var 'r)))
              (cps (car asts)
                   `(lambda (,r) ,(body r)))))))
-;                  (make-lam (list (body (make-ref '() r)))
-;                            (list r)))))))
 
   (define (cps-seq asts cont-ast)
     (cond ((null? asts)
@@ -840,33 +816,27 @@
                   `(lambda
                      (,r)
                     ,(list (cps-seq (cdr asts) cont-ast))))))))
-;; orig function, delete once above works (compare w/90-min-scc)
-;;  (define (cps-seq asts cont-ast)
-;;    (cond ((null? asts)
-;;           (make-app (list cont-ast #f)))
-;;          ((null? (cdr asts))
-;;           (cps (car asts) cont-ast))
-;;          (else
-;;           (let ((r (new-var 'r)))
-;;             (cps (car asts)
-;;                  (make-lam
-;;                   (list (cps-seq (cdr asts) cont-ast))
-;;                   (list r)))))))
 
   (let ((ast-cps
          (cps ast
             (let ((r (gensym 'r)))
-                `(lambda (,r) (%halt ,r)))
-             ; (let ((r (new-var 'r)))
-             ;   (make-lam
-             ;    (list (make-prim (list (make-ref '() r))
-             ;                     '%halt))
-             ;    (list r)))
-              )))
+                `(lambda (,r) (%halt ,r))))))
   ; TODO:
     (if #t
         ast-cps)
     ))
+;; start of conversion:
+;;    (if (lookup 'call/cc (fv ast))
+;;        ; add this definition for call/cc if call/cc is needed
+;;         (list ('lambda
+;;                (list (gensym '_))
+;;                (list ast-cps))
+;;               (xe '(set! call/cc
+;;                          (lambda (k f)
+;;                            (f k (lambda (_ result) (k result)))))
+;;                   '()))
+;;        ast-cps)
+;
 ;    (if (lookup 'call/cc (fv ast))
 ;        ; add this definition for call/cc if call/cc is needed
 ;        (make-app
