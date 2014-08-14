@@ -768,7 +768,7 @@
 ;                        (list cont-ast
 ;                              (make-prim args
 ;                                         (prim-op ast)))))))
-;
+
 ;          ((app? ast)
 ;           (let ((fn (car (ast-subx ast))))
 ;             (if (lam? fn)
@@ -793,8 +793,7 @@
              (list cont-ast
                    `(lambda
                       ,(cons k (cadr ast)) ; lam params
-                      ,(cps-seq (caddr ast) k)))))
-
+                      ,(cps-seq (cddr ast) k)))))
 ;          ((lam? ast)
 ;           (let ((k (new-var 'k)))
 ;             (make-app
@@ -833,7 +832,6 @@
   (define (cps-seq asts cont-ast)
     (cond ((null? asts)
            (list cont-ast #f))
-           ;(make-app (list cont-ast #f)))
           ((null? (cdr asts))
            (cps (car asts) cont-ast))
           (else
