@@ -1245,7 +1245,6 @@ Value __numEqual ;
   
   (emit
    "Value __prim_halt(Value e, Value v) {
-  printf(\"%i\\n\",v.z.value) ;
   exit(0);
 }")
   
