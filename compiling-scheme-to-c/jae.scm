@@ -80,7 +80,17 @@
 ;;        |  (env-get <env-num> <symbol> <exp>)
 
 
-
+;; Trace
+(define *trace-level* 3)
+(define (trace level msg)
+    (if (>= *trace-level* level)
+      (begin
+        (display "// ")
+        (display msg)
+        (newline))))
+(define (trace:error msg) (trace 1 msg))
+(define (trace:warn msg)  (trace 2 msg))
+(define (trace:info msg)  (trace 3 msg))
 
 ;; Utilities.
 
@@ -758,7 +768,6 @@
 
           ((lambda? ast)
            (let ((k (gensym 'k)))
-(write `(debug ,(caddr ast)))
              (list cont-ast
                    `(lambda
                       ,(cons k (cadr ast)) ; lam params
@@ -1171,22 +1180,27 @@
 (define (c-compile-and-emit emit input-program)
 
   (define compiled-program "")
+  (trace:info "---------------- input program:")
+  (trace:info input-program) ;pretty-print
   
   (set! input-program (desugar input-program))
+  (trace:info "---------------- after desugar:")
+  (trace:info input-program) ;pretty-print
 
   (analyze-mutable-variables input-program)
 
   (set! input-program (desugar (wrap-mutables input-program)))
+  (trace:info "---------------- after wrap-mutables:")
+  (trace:info input-program) ;pretty-print
 
-;; JAE - TODO
-(display "// ---------------- before CPS:\n //")
-(write input-program) ;pretty-print
   (set! input-program (cps-convert input-program))
-(display "// ---------------- after CPS:\n //")
-(write input-program) ;pretty-print
-(exit)
+  (trace:info "---------------- after CPS:")
+  (trace:info input-program) ;pretty-print
+
 ;; JAE TODO: compare this closure conversion with the one from "90 mins"
   (set! input-program (closure-convert input-program))
+  (trace:info "---------------- after closure-convert:")
+  (trace:info input-program) ;pretty-print
   
 
 
