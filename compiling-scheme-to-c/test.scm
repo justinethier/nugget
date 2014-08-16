@@ -1,5 +1,16 @@
-;(+ 1 2)
+; TODO: recursion example
+;(set! fnc 
+;    (lambda (i) 
+;        (begin
+;            (display i)
+;            (if i (fnc (- i 1)) 0)))
 ;
-(define n 2)
-(define (comp x) (+ x n))
-(display (comp 10))
+
+(call/cc
+  (lambda (k) ; call it 'return' and things break... uh oh
+    (begin
+      (display 1)
+      (display 2)
+      (k 2)
+      (display 3)
+      (display 4))))
