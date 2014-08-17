@@ -1,4 +1,5 @@
 - Add call/cc to CPS phase
+- Example code - call/cc, recursive function calls. see test.scm
 - Examine each compiler phase, is it good enough?
 - Relocate C code generation to a separate file/module
 - Remove desugaring - let, begin, etc. In a real compiler the macro system would deal with them. This might be harder than it sounds, equivalent let and begin/set forms seemed to generate vastly different code - let was much more compact.

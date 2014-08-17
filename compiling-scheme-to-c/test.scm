@@ -1,4 +1,4 @@
-; TODO: recursion example
+; TODO: recursion example (try using letrec, then desugar it)
 ;(set! fnc 
 ;    (lambda (i) 
 ;        (begin
