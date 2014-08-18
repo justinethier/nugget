@@ -82,7 +82,7 @@
 ;; Tuning
 (define *do-desugar* #t) ; Eventually replace w/a macro system
 (define *do-cps* #t)
-(define *do-code-gen* #f) ; Eventually use a different C backend
+(define *do-code-gen* #t) ; Eventually use a different C backend
 
 ;; Trace
 (define *trace-level* 3)
@@ -737,12 +737,11 @@
           ((ref? ast)
            (list cont-ast ast))
 
-          ;((set!? ast)
-          ((tagged-list? 'set-cell! ast)
+          ((set!? ast)
            (cps-list (cddr ast) ;; expr passed to set
                      (lambda (val)
                        (list cont-ast 
-                         `(set-cell! ,(cadr ast) ,@val))))) ;; cadr => variable
+                         `(set! ,(cadr ast) ,@val))))) ;; cadr => variable
 
           ((if? ast)
            (let ((xform
