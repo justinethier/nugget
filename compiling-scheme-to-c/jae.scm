@@ -79,6 +79,10 @@
 ;;        |  (env-make <env-num> (<symbol> <exp>) ...)
 ;;        |  (env-get <env-num> <symbol> <exp>)
 
+;; Tuning
+(define *do-desugar* #t) ; Eventually replace w/a macro system
+(define *do-cps* #t)
+(define *do-code-gen* #f) ; Eventually use a different C backend
 
 ;; Trace
 (define *trace-level* 3)
@@ -1183,9 +1187,17 @@
   (trace:info "---------------- input program:")
   (trace:info input-program) ;pretty-print
   
-  (set! input-program (desugar input-program))
-  (trace:info "---------------- after desugar:")
-  (trace:info input-program) ;pretty-print
+  (if *do-desugar*
+    (begin
+      (set! input-program (desugar input-program))
+      (trace:info "---------------- after desugar:")
+      (trace:info input-program))) ;pretty-print
+
+  (if *do-cps*
+    (begin
+      (set! input-program (cps-convert input-program))
+      (trace:info "---------------- after CPS:")
+      (trace:info input-program))) ;pretty-print
 
   (analyze-mutable-variables input-program)
 
@@ -1193,17 +1205,15 @@
   (trace:info "---------------- after wrap-mutables:")
   (trace:info input-program) ;pretty-print
 
-;  (set! input-program (cps-convert input-program))
-;  (trace:info "---------------- after CPS:")
-;  (trace:info input-program) ;pretty-print
-
 ;; JAE TODO: compare this closure conversion with the one from "90 mins"
   (set! input-program (closure-convert input-program))
   (trace:info "---------------- after closure-convert:")
   (trace:info input-program) ;pretty-print
   
-;(trace:error "DEBUG, existing program")
-;(exit)
+  (if (not *do-code-gen*)
+    (begin
+      (trace:error "DEBUG, existing program")
+      (exit)))
 
   (emit "#include <stdlib.h>")
   (emit "#include <stdio.h>")

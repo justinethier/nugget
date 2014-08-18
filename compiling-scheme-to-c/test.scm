@@ -1,5 +1,6 @@
 ; TODO: recursion example (try using letrec, then desugar it)
 ; seems OK without CPS, but broken with it - ???
+;; test case, CPS conversion fails: (set! fnc (lambda (i) i))
 (letrec ((fnc (lambda (i) 
                 (begin
                     (display i)
