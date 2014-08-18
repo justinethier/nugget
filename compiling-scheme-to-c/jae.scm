@@ -1193,16 +1193,17 @@
   (trace:info "---------------- after wrap-mutables:")
   (trace:info input-program) ;pretty-print
 
-  (set! input-program (cps-convert input-program))
-  (trace:info "---------------- after CPS:")
-  (trace:info input-program) ;pretty-print
+;  (set! input-program (cps-convert input-program))
+;  (trace:info "---------------- after CPS:")
+;  (trace:info input-program) ;pretty-print
 
 ;; JAE TODO: compare this closure conversion with the one from "90 mins"
   (set! input-program (closure-convert input-program))
   (trace:info "---------------- after closure-convert:")
   (trace:info input-program) ;pretty-print
   
-
+;(trace:error "DEBUG, existing program")
+;(exit)
 
   (emit "#include <stdlib.h>")
   (emit "#include <stdio.h>")
