@@ -1,4 +1,11 @@
-- lambda only supports first expression of block. WTF?
+- interesting (but probably not a big deal):
+ (begin (let ((x #f)) (set! x (+ 2 (* 3 4))) (display x)))
+ after desugar:
+ ((lambda (x) (set! x (+ 2 (* 3 4)))) #f)
+
+ was the begin optimized away?
+
+- lambda (and presumably let forms) only supports first expression of block. WTF?
 - Examine each compiler phase, is it good enough?
 - Relocate C code generation to a separate file/module
 - Find a cboyer test file we can use
