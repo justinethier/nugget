@@ -833,21 +833,20 @@
          (cps ast
             (let ((r (gensym 'r)))
                 `(lambda (,r) (%halt ,r))))))
-  ; TODO:
-    (if #t
-        ast-cps)
-    ))
-;; start of conversion:
-;;    (if (lookup 'call/cc (fv ast))
-;;        ; add this definition for call/cc if call/cc is needed
-;;         (list ('lambda
-;;                (list (gensym '_))
-;;                (list ast-cps))
-;;               (xe '(set! call/cc
-;;                          (lambda (k f)
-;;                            (f k (lambda (_ result) (k result)))))
-;;                   '()))
+;;  ; TODO:
+;;    (if #t
 ;;        ast-cps)
+;;    ))
+;; start of conversion:
+    (if (member 'call/cc (free-vars ast))
+        ; add this definition for call/cc if call/cc is needed
+         (list ('lambda
+                (list (gensym '_))
+                (list ast-cps))
+               '(set! call/cc
+                      (lambda (k f)
+                              (f k (lambda (_ result) (k result))))))
+        ast-cps)
 
 ;    (if (lookup 'call/cc (fv ast))
 ;        ; add this definition for call/cc if call/cc is needed
@@ -860,7 +859,7 @@
 ;                            (f k (lambda (_ result) (k result)))))
 ;                   '())))
 ;        ast-cps)
-;    ))
+    ))
 
 
 ;; Closure-conversion.
