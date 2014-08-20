@@ -278,7 +278,7 @@
 
 ; lambda->exp : lambda-exp -> exp
 (define (lambda->exp exp)
-  (caddr exp)) ;; JAE TODO: shouldn't it be cddr, to get all as a list?
+  (cddr exp)) ;; JAE - changed from caddr, so we can handle multiple expressions
 
 ; if? : exp -> boolean
 (define (if? exp)
@@ -437,8 +437,12 @@
     ((prim? exp)        exp)
     ((ref? exp)         (substitute-var env exp))
     ((lambda? exp)      `(lambda ,(lambda->formals exp)
-                           ,(substitute (assq-remove-keys env (lambda->formals exp)) 
-                                        (lambda->exp exp))))
+                           ,@(map (lambda (body-exp) 
+                                    ;; TODO: could be more efficient
+                                    (substitute 
+                                        (assq-remove-keys env (lambda->formals exp)) 
+                                        body-exp))
+                                 (lambda->exp exp))))
     ((set!? exp)        `(set! ,(substitute-var env (set!->var exp))
                                ,(substitute env (set!->exp exp))))
     ((if? exp)          `(if ,(substitute env (if->condition exp))
@@ -526,7 +530,7 @@
     ((prim? exp)       exp)
     ((ref? exp)        exp)
     ((lambda? exp)     `(lambda ,(lambda->formals exp)
-                          ,(desugar (lambda->exp exp))))
+                          ,@(map desugar (lambda->exp exp))))
     ((set!? exp)       `(set! ,(set!->var exp) ,(set!->exp exp)))
     ((if? exp)         `(if ,(if->condition exp)
                             ,(if->then exp)
@@ -570,7 +574,7 @@
     ((const? exp)    '())
     ((prim? exp)     '())    
     ((ref? exp)      (list exp))
-    ((lambda? exp)   (difference (free-vars (lambda->exp exp))
+    ((lambda? exp)   (difference (reduce union (map free-vars (lambda->exp exp)) '())
                                  (lambda->formals exp)))
     ((if? exp)       (union (free-vars (if->condition exp))
                             (union (free-vars (if->then exp))
@@ -647,7 +651,9 @@
     ((const? exp)    (void))
     ((prim? exp)     (void))
     ((ref? exp)      (void))
-    ((lambda? exp)   (analyze-mutable-variables (lambda->exp exp)))
+    ((lambda? exp)   (begin
+                        (map analyze-mutable-variables (lambda->exp exp))
+                        (void)))
     ((set!? exp)     (begin (mark-mutable (set!->var exp))
                             (analyze-mutable-variables (set!->exp exp))))
     ((if? exp)       (begin
@@ -693,7 +699,7 @@
     ((prim? exp)     exp)
     ((lambda? exp)   `(lambda ,(lambda->formals exp)
                         ,(wrap-mutable-formals (lambda->formals exp)
-                                               (wrap-mutables (lambda->exp exp)))))
+                                               (wrap-mutables (car (lambda->exp exp)))))) ;; Assume single expr in lambda body, since after CPS phase
     ((set!? exp)     `(set-cell! ,(set!->var exp) ,(wrap-mutables (set!->exp exp))))
     ((if? exp)       `(if ,(wrap-mutables (if->condition exp))
                           ,(wrap-mutables (if->then exp))
@@ -910,7 +916,7 @@
     ((prim? exp)         exp)
     ((ref? exp)          exp)
     ((lambda? exp)       (let* (($env (gensym 'env))
-                                (body  (closure-convert (lambda->exp exp)))
+                                (body  (closure-convert (car (lambda->exp exp)))) ;; Assume single body exp in lambda, due to CPS phase
                                 (fv    (difference (free-vars body) (lambda->formals exp)))
                                 (id    (allocate-environment fv))
                                 (sub  (map (lambda (v)
@@ -1139,7 +1145,7 @@
          (append-preamble (lambda (s)
                             (set! preamble (string-append preamble "  " s "\n")))))
     (let ((formals (c-compile-formals (lambda->formals exp)))
-          (body    (c-compile-exp     (lambda->exp exp) append-preamble)))
+          (body    (c-compile-exp     (car (lambda->exp exp)) append-preamble))) ;; car ==> assume single expr in lambda body after CPS
       (lambda (name)
         (string-append "Value " name "(" formals ") {\n"
                        preamble
