@@ -1,2 +1,7 @@
 ;(set! x 1)
-(set! x (+ 2 (* 3 4)))
+(letrec ((x #f))
+;((lambda (x)
+    (set! x (+ 2 (* 3 4)))
+    (display x))
+; #f)
+

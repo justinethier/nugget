@@ -238,7 +238,7 @@
 
 ; let->exp : let-exp -> exp
 (define (let->exp exp)
-  (caddr exp))
+  (cddr exp))
 
 ; let->bound-vars : let-exp -> list[symbol]
 (define (let->bound-vars exp)
@@ -258,7 +258,7 @@
 
 ; letrec->exp : letrec-exp -> exp
 (define (letrec->exp exp)
-  (caddr exp))
+  (cddr exp))
 
 ; letrec->exp : letrec-exp -> list[symbol]
 (define (letrec->bound-vars exp)
@@ -453,12 +453,12 @@
     ((let? exp)         `(let ,(azip (let->bound-vars exp)
                                      (map (substitute-with env) (let->args exp)))
                            ,(substitute (assq-remove-keys env (let->bound-vars exp))
-                                        (let->exp exp))))
+                                        (car (let->exp exp)))))
     ((letrec? exp)      (let ((new-env (assq-remove-keys env (letrec->bound-vars exp))))
                           `(letrec ,(azip (letrec->bound-vars exp) 
                                           (map (substitute-with new-env) 
                                                (letrec->args exp)))
-                             ,(substitute new-env (letrec->exp exp)))))
+                             ,(substitute new-env (car (letrec->exp exp))))))
     ((begin? exp)       (cons 'begin (map (substitute-with env) (begin->exps exp))))
 
     ; IR (1):
@@ -492,7 +492,7 @@
   (if (let? exp)
       (let ((vars (map car (let->bindings exp)))
             (args (map cadr (let->bindings exp))))
-        `((lambda (,@vars) ,(let->exp exp)) ,@args))
+        `((lambda (,@vars) ,@(let->exp exp)) ,@args))
       exp))
 
 ; letrec=>lets+sets : letrec-exp -> exp
@@ -506,7 +506,7 @@
                              bindings))
              (args      (letrec->args exp)))
         `(let ,namings
-           (begin ,@(append sets (list (letrec->exp exp))))))))
+           (begin ,@(append sets (letrec->exp exp)))))))
 
 ; begin=>let : begin-exp -> let-exp
 (define (begin=>let exp)
@@ -664,10 +664,12 @@
     ; Sugar:
     ((let? exp)      (begin
                        (map analyze-mutable-variables (map cadr (let->bindings exp)))
-                       (analyze-mutable-variables (let->exp exp))))
+                       (map analyze-mutable-variables (let->exp exp))
+                       (void)))
     ((letrec? exp)   (begin
                        (map analyze-mutable-variables (map cadr (letrec->bindings exp)))
-                       (analyze-mutable-variables (letrec->exp exp))))
+                       (map analyze-mutable-variables (letrec->exp exp))
+                       (void)))
     ((begin? exp)    (begin
                        (map analyze-mutable-variables (begin->exps exp))
                        (void)))
