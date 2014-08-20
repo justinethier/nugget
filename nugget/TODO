@@ -1,3 +1,4 @@
+- lambda only supports first expression of block. WTF?
 - Examine each compiler phase, is it good enough?
 - Relocate C code generation to a separate file/module
 - Find a cboyer test file we can use
