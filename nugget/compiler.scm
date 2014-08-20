@@ -79,6 +79,10 @@
 ;;        |  (env-make <env-num> (<symbol> <exp>) ...)
 ;;        |  (env-get <env-num> <symbol> <exp>)
 
+;; Pretty printing
+(import (husk pretty-print)) ;; Non-standard, replace with below if necessary
+;; (define pretty-print display)
+
 ;; Tuning
 (define *do-desugar* #t) ; Eventually replace w/a macro system
 (define *do-cps* #t)
@@ -89,8 +93,10 @@
 (define (trace level msg)
     (if (>= *trace-level* level)
       (begin
-        (display "// ")
-        (display msg)
+        (display "/* ")
+        (newline)
+        (pretty-print msg)
+        (display " */")
         (newline))))
 (define (trace:error msg) (trace 1 msg))
 (define (trace:warn msg)  (trace 2 msg))
