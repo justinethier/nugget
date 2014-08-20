@@ -4,6 +4,10 @@ TESTFILES = $(addprefix tests/, $(addsuffix .scm, $(TESTSCM)))
 test: $(TESTFILES)
 	$(foreach f,$(TESTSCM), huski compiler.scm < tests/$(f).scm > $(f).c && gcc $(f).c -o $(f) && ./$(f);)
 
+.PHONY: repl
+repl:
+	huski compiler.scm
+
 .PHONY: clean
 clean:
 	rm -rf a.out *.o out.c tmp.c
