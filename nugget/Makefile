@@ -1,4 +1,4 @@
-TESTSCM = app begin if lambda prim recursion set square
+TESTSCM = app begin call-cc if lambda prim recursion set square
 TESTFILES = $(addprefix tests/, $(addsuffix .scm, $(TESTSCM)))
 
 test: $(TESTFILES)
