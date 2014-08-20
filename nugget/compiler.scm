@@ -846,7 +846,8 @@
 ;; start of conversion:
     (if (member 'call/cc (free-vars ast))
         ; add this definition for call/cc if call/cc is needed
-         (list ('lambda
+         (list (list
+                'lambda
                 (list (gensym '_))
                 (list ast-cps))
                '(set! call/cc
