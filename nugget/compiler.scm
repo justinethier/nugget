@@ -839,20 +839,15 @@
          (cps ast
             (let ((r (gensym 'r)))
                 `(lambda (,r) (%halt ,r))))))
-;;  ; TODO:
-;;    (if #t
-;;        ast-cps)
-;;    ))
-;; start of conversion:
     (if (member 'call/cc (free-vars ast))
         ; add this definition for call/cc if call/cc is needed
-         (list (list
+        (list 
+            (list
                 'lambda
-                (list (gensym '_))
+                (list 'call/cc)
                 (list ast-cps))
-               '(set! call/cc
-                      (lambda (k f)
-                              (f k (lambda (_ result) (k result))))))
+           '(lambda (k f)
+                (f k (lambda (_ result) (k result)))))
         ast-cps)
 
 ;    (if (lookup 'call/cc (fv ast))
