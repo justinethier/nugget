@@ -6,4 +6,4 @@ runtime: runtime.c
 
 .PHONY: clean
 clean:
-	rm -f a.out *.o runtime
+	rm -f a.out *.o runtime tags

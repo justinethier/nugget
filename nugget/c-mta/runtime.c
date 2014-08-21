@@ -206,6 +206,8 @@ static object test_exp1, test_exp2; /* Expressions used within test. */
 
 /* Define the Lisp atoms that we need. */
 
+defsymbol(f);
+defsymbol(t);
 /* JAE TODO: computed by compiler(?)
 defsymbol(add1);
 defsymbol(and);
@@ -330,6 +332,23 @@ static void apply_subst_cont1(env,dterm) closure2 env; list dterm;
  return_funcall1(env->elt1,&c);}
 */
 
+static void my_exit(closure) never_returns;
+
+static void my_exit(env) closure env;
+{printf("my_exit: heap bytes allocated=%ld  time=%ld ticks  no_gcs=%ld\n",
+        allocp-bottom,clock()-start,no_gcs);
+ printf("my_exit: ticks/second=%ld\n",(long) CLOCKS_PER_SEC);
+ exit(0);}
+
+static void test(env,cont) closure env,cont;
+{ //mclosure1(cont1,test_cont1,cont);
+ //return_check(apply_subst((closure) &cont1,test_exp1,test_exp2));
+
+ // JAE - temp testing, this is crap but for now it compiles
+ closure unused;
+ my_exit(unused);
+}
+
 static char *transport(x) char *x;
 /* Transport one object.  WARNING: x cannot be nil!!! */
 {switch (type_of(x))
@@ -437,14 +456,6 @@ static list mcons(a,d) object a,d;
  c->tag = cons_tag; c->cons_car = a; c->cons_cdr = d;
  return c;}
 
-static void my_exit(closure) never_returns;
-
-static void my_exit(env) closure env;
-{printf("my_exit: heap bytes allocated=%ld  time=%ld ticks  no_gcs=%ld\n",
-        allocp-bottom,clock()-start,no_gcs);
- printf("my_exit: ticks/second=%ld\n",(long) CLOCKS_PER_SEC);
- exit(0);}
-
 static void main_main (stack_size,heap_size,stack_base)
      long stack_size,heap_size; char *stack_base;
 {char in_my_frame;
@@ -500,7 +511,6 @@ static void main_main (stack_size,heap_size,stack_base)
 
 static long long_arg(argc,argv,name,dval)
      int argc; char **argv; char *name; long dval;
-/* Thanks to George Carrette. */
 {int j;
  for(j=1;(j+1)<argc;j += 2)
    if (strcmp(name,argv[j]) == 0)
@@ -516,4 +526,3 @@ main(int argc,char **argv)
   long heap_size = long_arg(argc,argv,"-h",HEAP_SIZE);
   main_main(stack_size,heap_size,(char *) &stack_size);
   return 0;}}
-/*--------------------- Cut Here -----------------------------------*/
