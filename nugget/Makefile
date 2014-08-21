@@ -2,7 +2,7 @@ TESTSCM = app begin call-cc if lambda prim recursion set square
 TESTFILES = $(addprefix tests/, $(addsuffix .scm, $(TESTSCM)))
 
 test: $(TESTFILES)
-	$(foreach f,$(TESTSCM), huski compiler.scm < tests/$(f).scm > $(f).c && gcc $(f).c -o $(f) && ./$(f);)
+	$(foreach f,$(TESTSCM), echo tests/$(f) ; huski compiler.scm < tests/$(f).scm > $(f).c && gcc $(f).c -o $(f) && ./$(f);)
 
 .PHONY: repl
 repl:
