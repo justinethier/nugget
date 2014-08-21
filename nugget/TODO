@@ -6,7 +6,6 @@
  was the begin optimized away?
 
 - Examine each compiler phase, is it good enough?
-- Relocate C code generation to a separate file/module
 - Find a cboyer test file we can use
 - Destructure cheney on mta runtime, and create code generation for it
 - Remove desugaring - let, begin, etc. In a real compiler the macro system would deal with them. This might be harder than it sounds, equivalent let and begin/set forms seemed to generate vastly different code - let was much more compact.
