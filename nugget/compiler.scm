@@ -1225,7 +1225,7 @@
 
   (emit "#include <stdlib.h>")
   (emit "#include <stdio.h>")
-  (emit "#include \"scheme.h\"")
+  (emit "#include \"c-matt-might/scheme.h\"")
   
   (emit "")
   
