@@ -8,7 +8,11 @@ test: $(TESTFILES)
 repl:
 	huski compiler.scm
 
+.PHONY: tags
+tags:
+	ctags -R *
+
 .PHONY: clean
 clean:
-	rm -rf a.out *.o out.c tmp.c
+	rm -rf a.out *.o out.c tmp.c tags
 	$(foreach f,$(TESTSCM), rm -rf $(f) $(f).c;)
