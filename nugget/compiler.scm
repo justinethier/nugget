@@ -1,5 +1,10 @@
 ;; A Scheme-to-C compiler.
 
+
+;; JAE - these comments are quickly becoming
+;;       out of date:
+
+
 ;; Author: Matthew Might
 ;; Site:   http://matt.might.net/
 ;;         http://www.ucombinator.org/
@@ -947,12 +952,9 @@
 
 
 ;; Code emission.
-(define (emit line)
-  (display line)
-  (newline))
   
 ; c-compile-and-emit : (string -> A) exp -> void
-(define (c-compile-and-emit emit input-program)
+(define (c-compile-and-emit input-program)
   (trace:info "---------------- input program:")
   (trace:info input-program) ;pretty-print
   
@@ -984,8 +986,8 @@
       (trace:error "DEBUG, existing program")
       (exit)))
 
-  (load "c-matt-might/cgen.scm")
-  (c-matt-might:code-gen input-program))
+  (load "c-mta/cgen.scm")
+  (c-mta:code-gen input-program))
 
 
 ;; Compile and emit:
@@ -993,7 +995,7 @@
 (define the-program
     (cons 'begin (read-all))) ;; read-all is non-standard
 
-(c-compile-and-emit emit the-program)
+(c-compile-and-emit the-program)
 
 ; Suitable definitions for the cell functions:
 ;(define (cell value) (lambda (get? new-value) 
