@@ -239,6 +239,8 @@
 ;    
 (define (c-mta:code-gen input-program)
   (define compiled-program "")
+
+; JAE TODO: will have another prelude for this runtime
 ;
 ;  (emit "#include <stdlib.h>")
 ;  (emit "#include <stdio.h>")
@@ -256,13 +258,18 @@
 ;Value __numEqual ;
 ;")
 ;  
+
+;; JAE TODO: how the hell to handle free variables in the environments??
 ;  (for-each 
 ;   (lambda (env)
 ;     (emit (c-compile-env-struct env)))
 ;   environments)
 ;
+
 ;  (set! compiled-program  (c-compile-program input-program))
 ;
+
+; JAE TODO: again, not applicable for mta runtime:
 ;  ;; Emit primitive procedures:
 ;  (emit 
 ;   "Value __prim_sum(Value e, Value a, Value b) {
