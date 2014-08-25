@@ -7,31 +7,32 @@
 ;; Compilation routines.
 
 ;; c-compile-program : exp -> string
-;(define (c-compile-program exp)
-;  (let* ((preamble "")
-;         (append-preamble (lambda (s)
-;                            (set! preamble (string-append preamble "  " s "\n"))))
-;         (body (c-compile-exp exp append-preamble)))
-;    (string-append 
+(define (c-compile-program exp)
+  (let* ((preamble "")
+         (append-preamble (lambda (s)
+                            (set! preamble (string-append preamble "  " s "\n"))))
+         (body (c-compile-exp exp append-preamble)))
+    (string-append 
 ;     "int main (int argc, char* argv[]) {\n"
-;     preamble 
+     preamble 
 ;     "  __sum         = MakePrimitive(__prim_sum) ;\n" 
 ;     "  __product     = MakePrimitive(__prim_product) ;\n" 
 ;     "  __difference  = MakePrimitive(__prim_difference) ;\n" 
 ;     "  __halt        = MakePrimitive(__prim_halt) ;\n" 
 ;     "  __display     = MakePrimitive(__prim_display) ;\n" 
 ;     "  __numEqual    = MakePrimitive(__prim_numEqual) ;\n"      
-;     "  " body " ;\n"
+     "  " body " ;\n"
 ;     "  return 0;\n"
-;     " }\n")))
-;
+;     " }\n"
+)))
+
 ;
 ;; c-compile-exp : exp (string -> void) -> string
-;(define (c-compile-exp exp append-preamble)
-;  (cond
-;    ; Core forms:
-;    ((const? exp)       (c-compile-const exp))
-;    ((prim?  exp)       (c-compile-prim exp))
+(define (c-compile-exp exp append-preamble)
+  (cond
+    ; Core forms:
+    ((const? exp)       (c-compile-const exp))
+    ((prim?  exp)       (c-compile-prim exp))
 ;    ((ref?   exp)       (c-compile-ref exp))
 ;    ((if? exp)          (c-compile-if exp append-preamble))
 ;
@@ -46,29 +47,31 @@
 ;    ((env-get? exp)     (c-compile-env-get exp append-preamble))
 ;    
 ;    ; Application:      
-;    ((app? exp)         (c-compile-app exp append-preamble))
-;    (else               (error "unknown exp in c-compile-exp: " exp))))
-;
+    ((app? exp)         (c-compile-app exp append-preamble))
+    (else               (error "unknown exp in c-compile-exp: " exp))))
+
 ;; c-compile-const : const-exp -> string
-;(define (c-compile-const exp)
-;  (cond
+(define (c-compile-const exp)
+  (cond
 ;    ((integer? exp) (string-append 
 ;                     "MakeInt(" (number->string exp) ")"))
-;    ((boolean? exp) (string-append
-;                     "MakeBoolean(" (if exp "1" "0") ")"))
-;    (else           (error "unknown constant: " exp))))
-;
+    ((boolean? exp) (string-append
+                     (if exp "quote_t" "quote_f")))
+                     ;"MakeBoolean(" (if exp "1" "0") ")"))
+    (else           (error "unknown constant: " exp))))
+
 ;; c-compile-prim : prim-exp -> string
-;(define (c-compile-prim p)
-;  (cond
+(define (c-compile-prim p)
+  (cond
 ;    ((eq? '+ p)       "__sum")
 ;    ((eq? '- p)       "__difference")
 ;    ((eq? '* p)       "__product")
 ;    ((eq? '= p)       "__numEqual")
 ;    ((eq? '%halt p)   "__halt")
 ;    ((eq? 'display p) "__display")
-;    (else             (error "unhandled primitive: " p))))
-;
+    ((eq? 'display p) "prin1")
+    (else             (error "unhandled primitive: " p))))
+
 ;; c-compile-ref : ref-exp -> string
 ;(define (c-compile-ref exp)
 ;  (mangle exp))
@@ -83,6 +86,10 @@
 ;           (string-append ", " (c-compile-args (cdr args) append-preamble))
 ;           ""))))
 ;
+
+
+;;; JAE - let's try to compile something simple like (display #t)
+
 ;; c-compile-app : app-exp (string -> void) -> string
 ;(define (c-compile-app exp append-preamble)
 ;  (let (($tmp (mangle (gensym 'tmp))))
@@ -260,9 +267,9 @@
 ;   (lambda (env)
 ;     (emit (c-compile-env-struct env)))
 ;   environments)
-;
-;  (set! compiled-program  (c-compile-program input-program))
-;
+
+  (set! compiled-program  (c-compile-program input-program))
+
 ;  ;; Emit primitive procedures:
 ;  (emit 
 ;   "Value __prim_sum(Value e, Value a, Value b) {
