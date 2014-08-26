@@ -318,22 +318,22 @@
 ;   "Value __prim_numEqual(Value e, Value a, Value b) {
 ;  return MakeBoolean(a.z.value == b.z.value) ;
 ;}")
-;  
-;  ;; Emit lambdas:
-;  ; Print the prototypes:
-;  (for-each
-;   (lambda (l)
-;     (emit (string-append "Value __lambda_" (number->string (car l)) "() ;")))
-;   lambdas)
-;  
-;  (emit "")
-;  
-;  ; Print the definitions:
-;  (for-each
-;   (lambda (l)
-;     (emit ((cadr l) (string-append "__lambda_" (number->string (car l))))))
-;   lambdas)
-;  
+  
+  ;; Emit lambdas:
+  ; Print the prototypes:
+  (for-each
+   (lambda (l)
+     (emit (string-append "Value __lambda_" (number->string (car l)) "() ;")))
+   lambdas)
+  
+  (emit "")
+  
+  ; Print the definitions:
+  (for-each
+   (lambda (l)
+     (emit ((cadr l) (string-append "__lambda_" (number->string (car l))))))
+   lambdas)
+  
   (emit compiled-program))
 
 
