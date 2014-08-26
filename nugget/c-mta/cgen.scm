@@ -49,7 +49,7 @@
 ;    ((set-cell!? exp)   (c-compile-set-cell! exp append-preamble))
 ;    
 ;    ; IR (2):
-;    ((closure? exp)     (c-compile-closure exp append-preamble))
+    ((closure? exp)     (c-compile-closure exp append-preamble))
 ;    ((env-make? exp)    (c-compile-env-make exp append-preamble))
 ;    ((env-get? exp)     (c-compile-env-get exp append-preamble))
 ;    
@@ -160,73 +160,76 @@
 ;   (c-compile-exp (env-get->env exp) append-preamble) ".env.env)->" 
 ;   (mangle (env-get->field exp))))
 ;
-;
-;
-;
-;;; Lambda compilation.
-;
-;;; Lambdas get compiled into procedures that, 
-;;; once given a C name, produce a C function
-;;; definition with that name.
-;
-;;; These procedures are stored up an eventually 
-;;; emitted.
-;
-;; type lambda-id = natural
-;
-;; num-lambdas : natural
-;(define num-lambdas 0)
-;
-;; lambdas : alist[lambda-id,string -> string]
-;(define lambdas '())
-;
-;; allocate-lambda : (string -> string) -> lambda-id
-;(define (allocate-lambda lam)
-;  (let ((id num-lambdas))
-;    (set! num-lambdas (+ 1 num-lambdas))
-;    (set! lambdas (cons (list id lam) lambdas))
-;    id))
-;
-;; get-lambda : lambda-id -> (symbol -> string)
-;(define (get-lambda id)
-;  (cdr (assv id lambdas)))
-;
-;; c-compile-closure : closure-exp (string -> void) -> string
-;(define (c-compile-closure exp append-preamble)
-;  (let* ((lam (closure->lam exp))
-;         (env (closure->env exp))
-;         (lid (allocate-lambda (c-compile-lambda lam))))
-;    (string-append
-;     "MakeClosure("
-;     "__lambda_" (number->string lid)
-;     ","
-;     (c-compile-exp env append-preamble)
-;     ")")))
-;
-;; c-compile-formals : list[symbol] -> string
-;(define (c-compile-formals formals)
-;  (if (not (pair? formals))
-;      ""
-;      (string-append
-;       "Value "
-;       (mangle (car formals))
-;       (if (pair? (cdr formals))
-;           (string-append ", " (c-compile-formals (cdr formals)))
-;           ""))))
-;
-;; c-compile-lambda : lamda-exp (string -> void) -> (string -> string)
-;(define (c-compile-lambda exp)
-;  (let* ((preamble "")
-;         (append-preamble (lambda (s)
-;                            (set! preamble (string-append preamble "  " s "\n")))))
-;    (let ((formals (c-compile-formals (lambda->formals exp)))
-;          (body    (c-compile-exp     (car (lambda->exp exp)) append-preamble))) ;; car ==> assume single expr in lambda body after CPS
-;      (lambda (name)
-;        (string-append "Value " name "(" formals ") {\n"
-;                       preamble
-;                       "  return " body " ;\n"
-;                       "}\n")))))
-;  
+
+
+
+;; Lambda compilation.
+
+;; Lambdas get compiled into procedures that, 
+;; once given a C name, produce a C function
+;; definition with that name.
+
+;; These procedures are stored up an eventually 
+;; emitted.
+
+; type lambda-id = natural
+
+; num-lambdas : natural
+(define num-lambdas 0)
+
+; lambdas : alist[lambda-id,string -> string]
+(define lambdas '())
+
+; allocate-lambda : (string -> string) -> lambda-id
+(define (allocate-lambda lam)
+  (let ((id num-lambdas))
+    (set! num-lambdas (+ 1 num-lambdas))
+    (set! lambdas (cons (list id lam) lambdas))
+    id))
+
+; get-lambda : lambda-id -> (symbol -> string)
+(define (get-lambda id)
+  (cdr (assv id lambdas)))
+
+; c-compile-closure : closure-exp (string -> void) -> string
+(define (c-compile-closure exp append-preamble)
+  (let* ((lam (closure->lam exp))
+         (env (closure->env exp))
+         (lid (allocate-lambda (c-compile-lambda lam))))
+;; JAE TODO: looks like we need to make a closure before calling
+;;           a function in the MTA runtime. but is that done here??
+;; IE: which closure is built here, in reference to the lambda?
+    (string-append
+     "MakeClosure("
+     "__lambda_" (number->string lid)
+     ","
+     (c-compile-exp env append-preamble)
+     ")")))
+
+; c-compile-formals : list[symbol] -> string
+(define (c-compile-formals formals)
+  (if (not (pair? formals))
+      ""
+      (string-append
+       "object "
+       (mangle (car formals))
+       (if (pair? (cdr formals))
+           (string-append ", " (c-compile-formals (cdr formals)))
+           ""))))
+
+; c-compile-lambda : lamda-exp (string -> void) -> (string -> string)
+(define (c-compile-lambda exp)
+  (let* ((preamble "")
+         (append-preamble (lambda (s)
+                            (set! preamble (string-append preamble "  " s "\n")))))
+    (let ((formals (c-compile-formals (lambda->formals exp)))
+          (body    (c-compile-exp     (car (lambda->exp exp)) append-preamble))) ;; car ==> assume single expr in lambda body after CPS
+      (lambda (name)
+        (string-append "static void " name "(" formals ") {\n"
+                       preamble
+                       "  return " body " ;\n"
+                       "}\n")))))
+  
 ;; c-compile-env-struct : list[symbol] -> string
 ;(define (c-compile-env-struct env)
 ;  (let* ((id     (car env))
