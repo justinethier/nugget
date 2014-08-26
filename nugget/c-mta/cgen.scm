@@ -26,7 +26,14 @@
 ;     " }\n"
 )))
 
-;
+;; JAE - for ref, input is (display #t)
+;;"---------------- after closure-convert:"
+;; ((closure
+;;    (lambda (env$2 r$1) (%halt r$1))
+;;       (env-make 0))
+;;  (display #t))
+;; TODO: how does matt-m handle this?
+
 ;; c-compile-exp : exp (string -> void) -> string
 (define (c-compile-exp exp append-preamble)
   (cond
@@ -88,7 +95,7 @@
 
 
 
-;;; JAE - let's try to compile something simple like (display #t)
+;;; JAE TODO - let's try to compile something simple like (display #t)
 
 ;; c-compile-app : app-exp (string -> void) -> string
 (define (c-compile-app exp append-preamble)
