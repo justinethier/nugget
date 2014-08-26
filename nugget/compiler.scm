@@ -987,6 +987,7 @@
       (exit)))
 
   (load "c-mta/cgen.scm")
+  (trace:info "---------------- C code:")
   (c-mta:code-gen input-program))
 
 
