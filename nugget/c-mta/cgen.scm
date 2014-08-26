@@ -199,6 +199,7 @@
 ;; JAE TODO: looks like we need to make a closure before calling
 ;;           a function in the MTA runtime. but is that done here??
 ;; IE: which closure is built here, in reference to the lambda?
+;; see app and display examples
     (string-append
      "MakeClosure("
      "__lambda_" (number->string lid)
