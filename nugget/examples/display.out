@@ -1,0 +1,36 @@
+/* 
+"---------------- input program:"
+ */
+/* 
+(begin (display #t))
+ */
+/* 
+"---------------- after desugar:"
+ */
+/* 
+(display #t)
+ */
+/* 
+"---------------- after CPS:"
+ */
+/* 
+((lambda (r$1) (%halt r$1)) (display #t))
+ */
+/* 
+"---------------- after wrap-mutables:"
+ */
+/* 
+((lambda (r$1) (%halt r$1)) (display #t))
+ */
+/* 
+"---------------- after closure-convert:"
+ */
+/* 
+((closure
+   (lambda (env$2 r$1) (%halt r$1))
+   (env-make 0))
+ (display #t))
+ */
+Error: unknown exp in c-compile-exp: 
+ closure
+
