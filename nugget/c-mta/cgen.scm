@@ -40,7 +40,7 @@
     ; Core forms:
     ((const? exp)       (c-compile-const exp))
     ((prim?  exp)       (c-compile-prim exp))
-;    ((ref?   exp)       (c-compile-ref exp))
+    ((ref?   exp)       (c-compile-ref exp))
 ;    ((if? exp)          (c-compile-if exp append-preamble))
 ;
 ;    ; IR (1):
@@ -60,8 +60,8 @@
 ;; c-compile-const : const-exp -> string
 (define (c-compile-const exp)
   (cond
-;    ((integer? exp) (string-append 
-;                     "MakeInt(" (number->string exp) ")"))
+    ((integer? exp) (string-append 
+                     "MakeInt(" (number->string exp) ")"))
     ((boolean? exp) (string-append
                      (if exp "quote_t" "quote_f")))
                      ;"MakeBoolean(" (if exp "1" "0") ")"))
@@ -74,14 +74,14 @@
 ;    ((eq? '- p)       "__difference")
 ;    ((eq? '* p)       "__product")
 ;    ((eq? '= p)       "__numEqual")
-;    ((eq? '%halt p)   "__halt")
+    ((eq? '%halt p)   "__halt")
 ;    ((eq? 'display p) "__display")
     ((eq? 'display p) "prin1")
     (else             (error "unhandled primitive: " p))))
 
-;; c-compile-ref : ref-exp -> string
-;(define (c-compile-ref exp)
-;  (mangle exp))
+; c-compile-ref : ref-exp -> string
+(define (c-compile-ref exp)
+  (mangle exp))
   
 ; c-compile-args : list[exp] (string -> void) -> string
 (define (c-compile-args args append-preamble)
@@ -201,7 +201,7 @@
 ;; IE: which closure is built here, in reference to the lambda?
 ;; see app and display examples
     (string-append
-     "MakeClosure("
+     "mclosure1("
      "__lambda_" (number->string lid)
      ","
      (c-compile-exp env append-preamble)
