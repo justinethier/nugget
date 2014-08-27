@@ -1,4 +1,19 @@
 ;; TODO: switch to the MTA runtime
+;
+; JAE observations:
+;
+; - a primitive can be executed inline, EG:
+;   static void apply_subst(cont,alist,term) closure cont; list alist,term;
+;   {if (atom(term))
+;      {list temp_temp = assq(term,alist);
+;       if (!nullp(temp_temp)) return_funcall1(cont,cdr(temp_temp));
+;       return_funcall1(cont,term);}
+; - a function can return a value to its continuation, eg:
+;   return_funcall1(cont, cdr(temp_temp))
+; - or if you have a new continuation to call into (EG: function to call),
+;   use return_check to do it 
+; - but how is closure allocated (is it for another continuation?) and what func
+;   is called into using return_check?
 
 (define (emit line)
   (display line)
@@ -50,7 +65,7 @@
 ;    
 ;    ; IR (2):
     ((closure? exp)     (c-compile-closure exp append-preamble))
-;    ((env-make? exp)    (c-compile-env-make exp append-preamble))
+    ((env-make? exp)    (c-compile-env-make exp append-preamble))
 ;    ((env-get? exp)     (c-compile-env-get exp append-preamble))
 ;    
 ;    ; Application:      
@@ -143,15 +158,15 @@
 ;(define (c-compile-cell exp append-preamble)
 ;  (string-append
 ;   "NewCell(" (c-compile-exp (cell->value exp) append-preamble) ")"))
-;
-;; c-compile-env-make : env-make-exp (string -> void) -> string
-;(define (c-compile-env-make exp append-preamble)
-;  (string-append
-;   "MakeEnv(__alloc_env" (number->string (env-make->id exp))
-;   "(" 
-;   (c-compile-args (env-make->values exp) append-preamble)
-;   "))"))
-;
+
+; c-compile-env-make : env-make-exp (string -> void) -> string
+(define (c-compile-env-make exp append-preamble)
+  (string-append
+   "MakeEnv(__alloc_env" (number->string (env-make->id exp))
+   "(" 
+   (c-compile-args (env-make->values exp) append-preamble)
+   "))"))
+
 ;; c-compile-env-get : env-get (string -> void) -> string
 ;(define (c-compile-env-get exp append-preamble)
 ;  (string-append
@@ -201,7 +216,7 @@
 ;; IE: which closure is built here, in reference to the lambda?
 ;; see app and display examples
     (string-append
-     "mclosure1("
+     "mclosure1(cont1,"
      "__lambda_" (number->string lid)
      ","
      (c-compile-exp env append-preamble)
@@ -323,7 +338,7 @@
   ; Print the prototypes:
   (for-each
    (lambda (l)
-     (emit (string-append "Value __lambda_" (number->string (car l)) "() ;")))
+     (emit (string-append "static void __lambda_" (number->string (car l)) "() ;")))
    lambdas)
   
   (emit "")
