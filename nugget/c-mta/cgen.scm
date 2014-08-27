@@ -1,5 +1,8 @@
 ;; TODO: switch to the MTA runtime
 ;
+; REMEMBER, the original cgen has no concept of continuations (the parameter k).
+; this will have to be added!!!
+;
 ; JAE observations:
 ;
 ; - a primitive can be executed inline, EG:
@@ -114,6 +117,7 @@
 
 ;; c-compile-app : app-exp (string -> void) -> string
 (define (c-compile-app exp append-preamble)
+(write `(DEBUG c-compile-app: ,exp))
   (let (($tmp (mangle (gensym 'tmp))))
     
 ;    (append-preamble (string-append
@@ -121,15 +125,19 @@
     
     (let* ((args     (app->args exp))
            (fun      (app->fun exp)))
+;TODO: call into this function - using return_check ???
       (string-append
        (c-compile-exp fun append-preamble)
-       "(" 
+       "("
+       (c-compile-args args append-preamble)
+       ");" ))))
+; JAE - Original code for reference:
 ;       "("  $tmp " = " (c-compile-exp fun append-preamble) 
 ;       ","
 ;       $tmp ".clo.lam("
 ;       "MakeEnv(" $tmp ".clo.env)"
-       (if (null? args) "" ",")
-       (c-compile-args args append-preamble) ")"))))
+;       (if (null? args) "" ",")
+;       (c-compile-args args append-preamble) ")"))))
   
 ;; c-compile-if : if-exp -> string
 ;(define (c-compile-if exp append-preamble)
@@ -162,10 +170,11 @@
 ; c-compile-env-make : env-make-exp (string -> void) -> string
 (define (c-compile-env-make exp append-preamble)
   (string-append
-   "MakeEnv(__alloc_env" (number->string (env-make->id exp))
-   "(" 
+   ; "MakeEnv(__alloc_env" (number->string (env-make->id exp))
+   ; "(" 
    (c-compile-args (env-make->values exp) append-preamble)
-   "))"))
+   ;"))"
+   ))
 
 ;; c-compile-env-get : env-get (string -> void) -> string
 ;(define (c-compile-env-get exp append-preamble)
@@ -210,17 +219,20 @@
 (define (c-compile-closure exp append-preamble)
   (let* ((lam (closure->lam exp))
          (env (closure->env exp))
+         (num-fv (- (length env) 2))
          (lid (allocate-lambda (c-compile-lambda lam))))
 ;; JAE TODO: looks like we need to make a closure before calling
 ;;           a function in the MTA runtime. but is that done here??
 ;; IE: which closure is built here, in reference to the lambda?
 ;; see app and display examples
     (string-append
-     "mclosure1(cont1,"
-     "__lambda_" (number->string lid)
-     ","
+     "return_check(__lambda_" (number->string lid)
+     "(cont"
+;     "mclosure" (number->string (+ 1 num-fv)) "(cont1,"
+;     "__lambda_" (number->string lid)
+     (if (> num-fv 0) "," "")
      (c-compile-exp env append-preamble)
-     ")")))
+     "));\n")))
 
 ; c-compile-formals : list[symbol] -> string
 (define (c-compile-formals formals)
@@ -243,7 +255,7 @@
       (lambda (name)
         (string-append "static void " name "(" formals ") {\n"
                        preamble
-                       "  return " body " ;\n"
+                       "  " body " \n"
                        "}\n")))))
   
 ;; c-compile-env-struct : list[symbol] -> string
@@ -273,66 +285,11 @@
 ;     )))
 ;    
 (define (c-mta:code-gen input-program)
-  (define compiled-program "")
+  (define compiled-program 
+    (c-compile-program input-program))
 
-; JAE TODO: will have another prelude for this runtime
-;
-;  (emit "#include <stdlib.h>")
-;  (emit "#include <stdio.h>")
-;  (emit "#include \"c-matt-might/scheme.h\"")
-;  
-;  (emit "")
-;  
-;  ; Create storage for primitives:
-;  (emit "
-;Value __sum ;
-;Value __difference ;
-;Value __product ;
-;Value __halt ;
-;Value __display ;
-;Value __numEqual ;
-;")
-;  
-
-;; JAE TODO: how the hell to handle free variables in the environments??
-;  (for-each 
-;   (lambda (env)
-;     (emit (c-compile-env-struct env)))
-;   environments)
-
-  (set! compiled-program  (c-compile-program input-program))
-
-;  ;; Emit primitive procedures:
-;  (emit 
-;   "Value __prim_sum(Value e, Value a, Value b) {
-;  return MakeInt(a.z.value + b.z.value) ;
-;}")
-;  
-;  (emit 
-;   "Value __prim_product(Value e, Value a, Value b) {
-;  return MakeInt(a.z.value * b.z.value) ;
-;}")
-;  
-;  (emit 
-;   "Value __prim_difference(Value e, Value a, Value b) {
-;  return MakeInt(a.z.value - b.z.value) ;
-;}")
-;  
-;  (emit
-;   "Value __prim_halt(Value e, Value v) {
-;  exit(0);
-;}")
-;  
-;  (emit
-;   "Value __prim_display(Value e, Value v) {
-;  printf(\"%i\\n\",v.z.value) ;
-;  return v ;
-;}")
-;  
-;  (emit
-;   "Value __prim_numEqual(Value e, Value a, Value b) {
-;  return MakeBoolean(a.z.value == b.z.value) ;
-;}")
+; JAE TODO: emit prelude for this runtime
+; TODO: Emit primitive procedures:
   
   ;; Emit lambdas:
   ; Print the prototypes:
