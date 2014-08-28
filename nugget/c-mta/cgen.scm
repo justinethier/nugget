@@ -39,7 +39,7 @@
 ;     "  __halt        = MakePrimitive(__prim_halt) ;\n" 
 ;     "  __display     = MakePrimitive(__prim_display) ;\n" 
 ;     "  __numEqual    = MakePrimitive(__prim_numEqual) ;\n"      
-     "  " body " ;\n"
+     "  " body ;" ;\n"
 ;     "  return 0;\n"
 ;     " }\n"
 )))
@@ -106,9 +106,10 @@
   (if (not (pair? args))
       ""
       (string-append
+       ", " 
        (c-compile-exp (car args) append-preamble)
        (if (pair? (cdr args))
-           (string-append ", " (c-compile-args (cdr args) append-preamble))
+           (string-append (c-compile-args (cdr args) append-preamble))
            ""))))
 
 
@@ -125,12 +126,16 @@
     
     (let* ((args     (app->args exp))
            (fun      (app->fun exp)))
-;TODO: call into this function - using return_check ???
-      (string-append
-       (c-compile-exp fun append-preamble)
-       "("
-       (c-compile-args args append-preamble)
-       ");" ))))
+;TODO: may be special cases depending upon what we are calling (prim, lambda, etc)
+      (cond
+        ((prim? fun)
+         (string-append "TODO"))
+        (else
+         (string-append
+          (c-compile-exp fun append-preamble)
+   ;       "("
+          (c-compile-args args append-preamble)
+          "));" ))))))
 ; JAE - Original code for reference:
 ;       "("  $tmp " = " (c-compile-exp fun append-preamble) 
 ;       ","
@@ -225,14 +230,22 @@
 ;;           a function in the MTA runtime. but is that done here??
 ;; IE: which closure is built here, in reference to the lambda?
 ;; see app and display examples
+;
+; TODO: if there is an env, pack it up and pass it along as an arg
+; to the function, since it is the function's closure:
+;     (c-compile-exp env append-preamble)
+
     (string-append
+    ; TODO: may not be appropriate place to return check
+    ;       (or maybe it is with env construction??)
      "return_check(__lambda_" (number->string lid)
      "(cont"
 ;     "mclosure" (number->string (+ 1 num-fv)) "(cont1,"
 ;     "__lambda_" (number->string lid)
      (if (> num-fv 0) "," "")
-     (c-compile-exp env append-preamble)
-     "));\n")))
+;     (c-compile-exp env append-preamble)
+;     "));\n"
+)))
 
 ; c-compile-formals : list[symbol] -> string
 (define (c-compile-formals formals)
