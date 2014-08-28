@@ -204,6 +204,13 @@ static jmp_buf jmp_main; /* Where to jump to. */
 
 static object test_exp1, test_exp2; /* Expressions used within test. */
 
+static void __lambda_0() ;
+
+static void __lambda_0(object env_732, object r_731) {
+    printf("halt\n");
+    prin1(r_731);
+    exit(0);
+}
 /* Define the Lisp atoms that we need. */
 
 defsymbol(f);
@@ -345,8 +352,8 @@ static void test(env,cont) closure env,cont;
  //return_check(apply_subst((closure) &cont1,test_exp1,test_exp2));
 
  // JAE - temp testing, this is crap but for now it compiles
- closure unused;
- my_exit(unused);
+ return_check(__lambda_0(cont, quote_t));
+ //my_exit(unused);
 }
 
 static char *transport(x) char *x;
