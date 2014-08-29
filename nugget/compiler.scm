@@ -7,21 +7,23 @@
 (define *do-cps* #t)    ; Turn off to reduce code size, but no call/cc. 
                         ; Also not sure if later phases work without CPS
 (define *do-code-gen* #t) ; Generate C code?
-(define *do-c-runtime* #f) ; Generate code for the C runtime?
+(define *do-c-runtime* #t) ; Generate code for the C runtime?
 
 ;; Trace
-(define *trace-level* 3)
-(define (trace level msg)
+(define *trace-level* 4)
+(define (trace level msg pp prefix)
     (if (>= *trace-level* level)
       (begin
         (display "/* ")
         (newline)
-        (pretty-print msg)
+        (display prefix)
+        (pp msg)
         (display " */")
         (newline))))
-(define (trace:error msg) (trace 1 msg))
-(define (trace:warn msg)  (trace 2 msg))
-(define (trace:info msg)  (trace 3 msg))
+(define (trace:error msg) (trace 1 msg pretty-print ""))
+(define (trace:warn msg)  (trace 2 msg pretty-print ""))
+(define (trace:info msg)  (trace 3 msg pretty-print ""))
+(define (trace:debug msg) (trace 4 msg display "DEBUG: "))
 
 ;; Utilities.
 
@@ -236,6 +238,7 @@
       (eq? exp '*)
       (eq? exp '=)
       (eq? exp '%halt)
+      (eq? exp 'cons)
       (eq? exp 'display)))
 
 (define (prim-call? exp)
