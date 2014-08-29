@@ -306,7 +306,7 @@
     (c-compile-program input-program))
 
   ; emit prelude for this runtime
-  (emit *mta:header*)
+  (if *do-c-runtime* (emit *mta:header*))
   
   ;; Emit lambdas:
   ; Print the prototypes:
@@ -329,6 +329,6 @@ static void test(env,cont) closure env,cont;
  ")
   (emit compiled-program)
   (emit "}")
-  (emit *mta:footer*))
+  (if *do-c-runtime* (emit *mta:footer*)))
 
 

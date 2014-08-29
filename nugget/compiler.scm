@@ -1,89 +1,3 @@
-;; A Scheme-to-C compiler.
-
-
-;; JAE - these comments are quickly becoming
-;;       out of date:
-
-
-;; Author: Matthew Might
-;; Site:   http://matt.might.net/
-;;         http://www.ucombinator.org/
-
-;; The purpose of this compiler is to demonstrate
-;; the most direct possible mapping of Scheme into C.
-;; Toward that end, the compiler uses only two
-;; intermediate transformations: mutable-variable
-;; elimination and closure-conversion.
-
-;; To run the compiler:
-
-;;  $ interp this-file.scm < program.scm > out.c
-;;  $ gcc -o out out.c
-
-;; (It's useful to compare this compiler to the 
-;; Scheme-to-Java compiler that started from the 
-;; same codebase.)
-
-;; The compiler handles Core Scheme and some extras.
-;; With a macro system like syntax-rules and some
-;; more primitives, all of R5RS could be supported.
-
-;; Unlike the Java version, this compiler handles
-;; recursion using a lets+sets transformation.
-
-;; The compilation proceeds from Core Scheme plus
-;; sugar through three intermediate languages:
-
-;; Core Scheme + Sugar
-
-;;    =[desugar]=>
-
-;; Core Scheme 
-
-;;    =[mutable variable elimination]=>
-
-;; Intermediate Scheme (1) 
-
-;;    =[closure conversion]=>
-
-;; Intermediate Scheme (2) 
-
-;;    =[code emission]=>
-
-;; C
-
-
-;; Core input language:
-
-;; <exp> ::= <const>
-;;        |  <prim>
-;;        |  <var>
-;;        |  (lambda (<var> ...) <exp>)
-;;        |  (if <exp> <exp> <exp>)
-;;        |  (set! <var> <exp>)
-;;        |  (<exp> <exp> ...)
-
-;; <const> ::= <int>
-;;          |  #f 
-
-;; Syntactic sugar:
-
-;; <exp> ::+ (let ((<var> <exp>) ...) <exp>)
-;;        |  (letrec ((<var> <exp>) ...) <exp>)
-;;        |  (begin <exp> ...)
-
-;; Intermediate language (1)
-
-;; <exp> ::+ (cell <exp>)
-;;        |  (cell-get <exp>)
-;;        |  (set-cell! <exp> <value>)
-
-;; Intermediate language (2)
-
-;; <exp> ::+ (closure <lambda-exp> <env-exp>)
-;;        |  (env-make <env-num> (<symbol> <exp>) ...)
-;;        |  (env-get <env-num> <symbol> <exp>)
-
 ;; Pretty printing
 (import (husk pretty-print)) ;; Non-standard, replace with below if necessary
 ;; (define pretty-print display)
@@ -92,6 +6,7 @@
 (define *do-desugar* #t) ; Eventually replace w/a macro system
 (define *do-cps* #t)
 (define *do-code-gen* #t) ; Eventually use a different C backend
+(define *do-c-runtime* #f)
 
 ;; Trace
 (define *trace-level* 3)
