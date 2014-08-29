@@ -301,7 +301,7 @@
 ;     "}\n\n"
 ;     )))
 ;    
-(define (c-mta:code-gen input-program)
+(define (mta:code-gen input-program)
   (define compiled-program 
     (c-compile-program input-program))
 

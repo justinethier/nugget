@@ -6,7 +6,7 @@
 (define *do-desugar* #t) ; Eventually replace w/a macro system
 (define *do-cps* #t)
 (define *do-code-gen* #t) ; Eventually use a different C backend
-(define *do-c-runtime* #f)
+(define *do-c-runtime* #t)
 
 ;; Trace
 (define *trace-level* 3)
@@ -901,10 +901,10 @@
       (trace:error "DEBUG, existing program")
       (exit)))
 
-  (load "c-mta/cgen.scm")
-  (load "c-mta/runtime.scm")
+  (load "mta/cgen.scm")
+  (load "mta/runtime.scm")
   (trace:info "---------------- C code:")
-  (c-mta:code-gen input-program))
+  (mta:code-gen input-program))
 
 
 ;; Compile and emit:
