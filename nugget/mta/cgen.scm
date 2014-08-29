@@ -31,14 +31,8 @@
                             (set! preamble (string-append preamble "  " s "\n"))))
          (body (c-compile-exp exp append-preamble)))
     (string-append 
-;     "int main (int argc, char* argv[]) {\n"
      preamble 
-;     "  __sum         = MakePrimitive(__prim_sum) ;\n" 
-;     "  __product     = MakePrimitive(__prim_product) ;\n" 
-;     "  __difference  = MakePrimitive(__prim_difference) ;\n" 
-;     "  __halt        = MakePrimitive(__prim_halt) ;\n" 
-;     "  __display     = MakePrimitive(__prim_display) ;\n" 
-;     "  __numEqual    = MakePrimitive(__prim_numEqual) ;\n"      
+;     "int main (int argc, char* argv[]) {\n"
      "  " body ;" ;\n"
 ;     "  return 0;\n"
 ;     " }\n"
@@ -95,6 +89,7 @@
     ((eq? '%halt p)   "__halt")
 ;    ((eq? 'display p) "__display")
     ((eq? 'display p) "prin1")
+    ((eq? 'cons p) "make_cons") ;; TODO: when to use mcons vs make_cons ?
     (else             (error "unhandled primitive: " p))))
 
 ; c-compile-ref : ref-exp -> string
@@ -112,13 +107,9 @@
            (string-append (c-compile-args (cdr args) append-preamble ", "))
            ""))))
 
-
-
-;;; JAE TODO - let's try to compile something simple like (display #t)
-
 ;; c-compile-app : app-exp (string -> void) -> string
 (define (c-compile-app exp append-preamble)
-;(write `(DEBUG c-compile-app: ,exp))
+  (trace:debug `(c-compile-app: ,exp))
   (let (($tmp (mangle (gensym 'tmp))))
     
 ;    (append-preamble (string-append
@@ -132,22 +123,39 @@
          (string-append
           (c-compile-exp fun append-preamble)
           "("
+          (if (prim/cvar? fun) ; prim creates local c var
+            "c, "
+            "")
           (c-compile-args args append-preamble "")
           ");"))
+;; TODO: closure?  may need to check whether args need to be pre-computed
+;; eg: mcons(c); return_check(.., &c);
+;; 
+        ((closure? fun)
+          (cond
+           ((and (list? (car args))
+                 (prim/cvar? (caar args)))
+            (let ((cvar (c-compile-exp (car args) append-preamble)))
+                (string-append
+                  cvar "\n  "
+                  (c-compile-exp fun append-preamble)
+                  ", &c));")))
+           (else
+            (string-append
+             (c-compile-exp fun append-preamble)
+             (c-compile-args args append-preamble ", ")
+             "));" ))))
         (else
          (string-append
           (c-compile-exp fun append-preamble)
-   ;       "("
           (c-compile-args args append-preamble ", ")
           "));" ))))))
-; JAE - Original code for reference:
-;       "("  $tmp " = " (c-compile-exp fun append-preamble) 
-;       ","
-;       $tmp ".clo.lam("
-;       "MakeEnv(" $tmp ".clo.env)"
-;       (if (null? args) "" ",")
-;       (c-compile-args args append-preamble) ")"))))
-  
+
+; Does primitive create a c variable?
+(define (prim/cvar? exp)
+    (and (prim? exp)
+         (member exp '(cons))))
+
 ;; c-compile-if : if-exp -> string
 ;(define (c-compile-if exp append-preamble)
 ;  (string-append
@@ -324,9 +332,7 @@
    lambdas)
 
   (emit "
-static void test(env,cont) closure env,cont;
-{
- ")
+static void test(env,cont) closure env,cont; { ")
   (emit compiled-program)
   (emit "}")
   (if *do-c-runtime* (emit *mta:footer*)))
