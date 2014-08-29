@@ -102,14 +102,14 @@
   (mangle exp))
   
 ; c-compile-args : list[exp] (string -> void) -> string
-(define (c-compile-args args append-preamble)
+(define (c-compile-args args append-preamble prefix)
   (if (not (pair? args))
       ""
       (string-append
-       ", " 
+       prefix 
        (c-compile-exp (car args) append-preamble)
        (if (pair? (cdr args))
-           (string-append (c-compile-args (cdr args) append-preamble))
+           (string-append (c-compile-args (cdr args) append-preamble ", "))
            ""))))
 
 
@@ -118,7 +118,7 @@
 
 ;; c-compile-app : app-exp (string -> void) -> string
 (define (c-compile-app exp append-preamble)
-(write `(DEBUG c-compile-app: ,exp))
+;(write `(DEBUG c-compile-app: ,exp))
   (let (($tmp (mangle (gensym 'tmp))))
     
 ;    (append-preamble (string-append
@@ -129,12 +129,16 @@
 ;TODO: may be special cases depending upon what we are calling (prim, lambda, etc)
       (cond
         ((prim? fun)
-         (string-append "TODO"))
+         (string-append
+          (c-compile-exp fun append-preamble)
+          "("
+          (c-compile-args args append-preamble "")
+          ");"))
         (else
          (string-append
           (c-compile-exp fun append-preamble)
    ;       "("
-          (c-compile-args args append-preamble)
+          (c-compile-args args append-preamble ", ")
           "));" ))))))
 ; JAE - Original code for reference:
 ;       "("  $tmp " = " (c-compile-exp fun append-preamble) 
@@ -177,7 +181,7 @@
   (string-append
    ; "MakeEnv(__alloc_env" (number->string (env-make->id exp))
    ; "(" 
-   (c-compile-args (env-make->values exp) append-preamble)
+   (c-compile-args (env-make->values exp) append-preamble "")
    ;"))"
    ))
 
@@ -301,8 +305,8 @@
   (define compiled-program 
     (c-compile-program input-program))
 
-; JAE TODO: emit prelude for this runtime
-; TODO: Emit primitive procedures:
+  ; emit prelude for this runtime
+  (emit *mta:header*)
   
   ;; Emit lambdas:
   ; Print the prototypes:
@@ -318,7 +322,13 @@
    (lambda (l)
      (emit ((cadr l) (string-append "__lambda_" (number->string (car l))))))
    lambdas)
-  
-  (emit compiled-program))
+
+  (emit "
+static void test(env,cont) closure env,cont;
+{
+ ")
+  (emit compiled-program)
+  (emit "}")
+  (emit *mta:footer*))
 
 
