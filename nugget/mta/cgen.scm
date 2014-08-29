@@ -29,7 +29,7 @@
   (let* ((preamble "")
          (append-preamble (lambda (s)
                             (set! preamble (string-append preamble "  " s "\n"))))
-         (body (c-compile-exp exp append-preamble)))
+         (body (c-compile-exp exp append-preamble "cont")))
     (string-append 
      preamble 
 ;     "int main (int argc, char* argv[]) {\n"
@@ -47,7 +47,7 @@
 ;; TODO: how does matt-m handle this?
 
 ;; c-compile-exp : exp (string -> void) -> string
-(define (c-compile-exp exp append-preamble)
+(define (c-compile-exp exp append-preamble cont)
   (cond
     ; Core forms:
     ((const? exp)       (c-compile-const exp))
@@ -61,12 +61,12 @@
 ;    ((set-cell!? exp)   (c-compile-set-cell! exp append-preamble))
 ;    
 ;    ; IR (2):
-    ((closure? exp)     (c-compile-closure exp append-preamble))
-    ((env-make? exp)    (c-compile-env-make exp append-preamble))
+    ((closure? exp)     (c-compile-closure exp append-preamble cont))
+    ((env-make? exp)    (c-compile-env-make exp append-preamble cont))
 ;    ((env-get? exp)     (c-compile-env-get exp append-preamble))
 ;    
 ;    ; Application:      
-    ((app? exp)         (c-compile-app exp append-preamble))
+    ((app? exp)         (c-compile-app exp append-preamble cont))
     (else               (error "unknown exp in c-compile-exp: " exp))))
 
 ;; c-compile-const : const-exp -> string
@@ -97,18 +97,18 @@
   (mangle exp))
   
 ; c-compile-args : list[exp] (string -> void) -> string
-(define (c-compile-args args append-preamble prefix)
+(define (c-compile-args args append-preamble prefix cont)
   (if (not (pair? args))
       ""
       (string-append
        prefix 
-       (c-compile-exp (car args) append-preamble)
+       (c-compile-exp (car args) append-preamble cont)
        (if (pair? (cdr args))
-           (string-append (c-compile-args (cdr args) append-preamble ", "))
+           (string-append (c-compile-args (cdr args) append-preamble ", " cont))
            ""))))
 
 ;; c-compile-app : app-exp (string -> void) -> string
-(define (c-compile-app exp append-preamble)
+(define (c-compile-app exp append-preamble cont)
   (trace:debug `(c-compile-app: ,exp))
   (let (($tmp (mangle (gensym 'tmp))))
     
@@ -121,12 +121,12 @@
       (cond
         ((prim? fun)
          (string-append
-          (c-compile-exp fun append-preamble)
+          (c-compile-exp fun append-preamble cont)
           "("
           (if (prim/cvar? fun) ; prim creates local c var
             "c, "
             "")
-          (c-compile-args args append-preamble "")
+          (c-compile-args args append-preamble "" cont)
           ");"))
 ;; TODO: closure?  may need to check whether args need to be pre-computed
 ;; eg: mcons(c); return_check(.., &c);
@@ -135,20 +135,20 @@
           (cond
            ((and (list? (car args))
                  (prim/cvar? (caar args)))
-            (let ((cvar (c-compile-exp (car args) append-preamble)))
+            (let ((cvar (c-compile-exp (car args) append-preamble cont)))
                 (string-append
                   cvar "\n  "
-                  (c-compile-exp fun append-preamble)
+                  (c-compile-exp fun append-preamble cont)
                   ", &c));")))
            (else
             (string-append
-             (c-compile-exp fun append-preamble)
-             (c-compile-args args append-preamble ", ")
+             (c-compile-exp fun append-preamble cont)
+             (c-compile-args args append-preamble ", " cont)
              "));" ))))
         (else
          (string-append
-          (c-compile-exp fun append-preamble)
-          (c-compile-args args append-preamble ", ")
+          (c-compile-exp fun append-preamble cont)
+          (c-compile-args args append-preamble ", " cont)
           "));" ))))))
 
 ; Does primitive create a c variable?
@@ -185,11 +185,11 @@
 ;   "NewCell(" (c-compile-exp (cell->value exp) append-preamble) ")"))
 
 ; c-compile-env-make : env-make-exp (string -> void) -> string
-(define (c-compile-env-make exp append-preamble)
+(define (c-compile-env-make exp append-preamble cont)
   (string-append
    ; "MakeEnv(__alloc_env" (number->string (env-make->id exp))
    ; "(" 
-   (c-compile-args (env-make->values exp) append-preamble "")
+   (c-compile-args (env-make->values exp) append-preamble "" cont)
    ;"))"
    ))
 
@@ -232,8 +232,12 @@
 (define (get-lambda id)
   (cdr (assv id lambdas)))
 
+(define (lambda->env exp)
+    (let ((formals (lambda->formals exp)))
+        (car formals)))
+
 ; c-compile-closure : closure-exp (string -> void) -> string
-(define (c-compile-closure exp append-preamble)
+(define (c-compile-closure exp append-preamble cont)
   (let* ((lam (closure->lam exp))
          (env (closure->env exp))
          (num-fv (- (length env) 2))
@@ -247,11 +251,13 @@
 ; to the function, since it is the function's closure:
 ;     (c-compile-exp env append-preamble)
 
+(trace:debug `(,exp ,(lambda->env lam)))
+
     (string-append
     ; TODO: may not be appropriate place to return check
     ;       (or maybe it is with env construction??)
      "return_check(__lambda_" (number->string lid)
-     "(cont"
+     "(" cont " " ;"(cont"
 ;     "mclosure" (number->string (+ 1 num-fv)) "(cont1,"
 ;     "__lambda_" (number->string lid)
      (if (> num-fv 0) "," "")
@@ -275,8 +281,12 @@
   (let* ((preamble "")
          (append-preamble (lambda (s)
                             (set! preamble (string-append preamble "  " s "\n")))))
-    (let ((formals (c-compile-formals (lambda->formals exp)))
-          (body    (c-compile-exp     (car (lambda->exp exp)) append-preamble))) ;; car ==> assume single expr in lambda body after CPS
+    (let* ((formals (c-compile-formals (lambda->formals exp)))
+           (env-closure (lambda->env exp))
+           (body    (c-compile-exp     
+                        (car (lambda->exp exp)) ;; car ==> assume single expr in lambda body after CPS
+                        append-preamble
+                        (mangle env-closure))))
       (lambda (name)
         (string-append "static void " name "(" formals ") {\n"
                        preamble
