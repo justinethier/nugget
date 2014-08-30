@@ -127,7 +127,7 @@
             "c, "
             "")
           (c-compile-args args append-preamble "" cont)
-          ");"))
+          ")"))
 ;; TODO: closure?  may need to check whether args need to be pre-computed
 ;; eg: mcons(c); return_check(.., &c);
 ;; 
@@ -290,7 +290,7 @@
       (lambda (name)
         (string-append "static void " name "(" formals ") {\n"
                        preamble
-                       "  " body " \n"
+                       "  " body "; \n"
                        "}\n")))))
   
 ;; c-compile-env-struct : list[symbol] -> string
