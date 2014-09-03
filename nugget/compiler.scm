@@ -836,39 +836,79 @@
 
 
 ; closure-convert : exp -> exp
+;
+; JAE - Original conversion:
+;(define (closure-convert exp)
+;  (cond
+;    ((const? exp)        exp)
+;    ((prim? exp)         exp)
+;    ((ref? exp)          exp)
+;    ((lambda? exp)       (let* (($env (gensym 'env))
+;                                (body  (closure-convert (car (lambda->exp exp)))) ;; Assume single body exp in lambda, due to CPS phase
+;                                (fv    (difference (free-vars body) (lambda->formals exp)))
+;                                (id    (allocate-environment fv))
+;                                (sub  (map (lambda (v)
+;                                             (list v `(env-get ,id ,v ,$env)))
+;                                           fv)))
+;                           `(closure (lambda (,$env ,@(lambda->formals exp))
+;                                       ,(substitute sub body))
+;                                     (env-make ,id ,@(azip fv fv)))))
+;    ((if? exp)           `(if ,(closure-convert (if->condition exp))
+;                              ,(closure-convert (if->then exp))
+;                              ,(closure-convert (if->else exp))))
+;    ((set!? exp)         `(set! ,(set!->var exp)
+;                                ,(closure-convert (set!->exp exp))))
+;    
+;    ; IR (1):
+;    
+;    ((cell? exp)         `(cell ,(closure-convert (cell->value exp))))
+;    ((cell-get? exp)     `(cell-get ,(closure-convert (cell-get->cell exp))))
+;    ((set-cell!? exp)    `(set-cell! ,(closure-convert (set-cell!->cell exp))
+;                                     ,(closure-convert (set-cell!->value exp))))
+;    
+;    ; Applications:
+;    ((app? exp)          (map closure-convert exp))
+;    (else                (error "unhandled exp: " exp))))
+    
 (define (closure-convert exp)
-  (cond
+ (define (convert ast self-var free-vars)
+  (define (cc exp)
+   (cond
     ((const? exp)        exp)
-    ((prim? exp)         exp)
-    ((ref? exp)          exp)
-    ((lambda? exp)       (let* (($env (gensym 'env))
-                                (body  (closure-convert (car (lambda->exp exp)))) ;; Assume single body exp in lambda, due to CPS phase
-                                (fv    (difference (free-vars body) (lambda->formals exp)))
-                                (id    (allocate-environment fv))
-                                (sub  (map (lambda (v)
-                                             (list v `(env-get ,id ,v ,$env)))
-                                           fv)))
-                           `(closure (lambda (,$env ,@(lambda->formals exp))
-                                       ,(substitute sub body))
-                                     (env-make ,id ,@(azip fv fv)))))
-    ((if? exp)           `(if ,(closure-convert (if->condition exp))
-                              ,(closure-convert (if->then exp))
-                              ,(closure-convert (if->else exp))))
-    ((set!? exp)         `(set! ,(set!->var exp)
-                                ,(closure-convert (set!->exp exp))))
-    
-    ; IR (1):
-    
-    ((cell? exp)         `(cell ,(closure-convert (cell->value exp))))
-    ((cell-get? exp)     `(cell-get ,(closure-convert (cell-get->cell exp))))
-    ((set-cell!? exp)    `(set-cell! ,(closure-convert (set-cell!->cell exp))
-                                     ,(closure-convert (set-cell!->value exp))))
-    
-    ; Applications:
-    ((app? exp)          (map closure-convert exp))
-    (else                (error "unhandled exp: " exp))))
-    
 
+TODO: refer to 90 scm functions:
+;    ((prim? exp)         exp)
+;    ((ref? exp)          exp)
+;    ((lambda? exp)       (let* (($env (gensym 'env))
+;                                (body  (closure-convert (car (lambda->exp exp)))) ;; Assume single body exp in lambda, due to CPS phase
+;                                (fv    (difference (free-vars body) (lambda->formals exp)))
+;                                (id    (allocate-environment fv))
+;                                (sub  (map (lambda (v)
+;                                             (list v `(env-get ,id ,v ,$env)))
+;                                           fv)))
+;                           `(closure (lambda (,$env ,@(lambda->formals exp))
+;                                       ,(substitute sub body))
+;                                     (env-make ,id ,@(azip fv fv)))))
+;    ((if? exp)           `(if ,(closure-convert (if->condition exp))
+;                              ,(closure-convert (if->then exp))
+;                              ,(closure-convert (if->else exp))))
+;    ((set!? exp)         `(set! ,(set!->var exp)
+;                                ,(closure-convert (set!->exp exp))))
+;    
+;    ; IR (1):
+;    
+;    ((cell? exp)         `(cell ,(closure-convert (cell->value exp))))
+;    ((cell-get? exp)     `(cell-get ,(closure-convert (cell-get->cell exp))))
+;    ((set-cell!? exp)    `(set-cell! ,(closure-convert (set-cell!->cell exp))
+;                                     ,(closure-convert (set-cell!->value exp))))
+;    
+;    ; Applications:
+;    ((app? exp)          (map closure-convert exp))
+    (else                (error "unhandled exp: " exp))))
+  (cc exp))
+
+ `(lambda ()
+    ,(convert exp #f '())))
 
 ;; Code emission.
   
