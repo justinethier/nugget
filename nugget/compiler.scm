@@ -870,18 +870,31 @@
 ;    ((app? exp)          (map closure-convert exp))
 ;    (else                (error "unhandled exp: " exp))))
     
+(define (pos-in-list x lst)
+  (let loop ((lst lst) (i 0))
+    (cond ((not (pair? lst)) #f)
+          ((eq? (car lst) x) i)
+          (else              (loop (cdr lst) (+ i 1))))))
+
 (define (closure-convert exp)
  (define (convert ast self-var free-vars)
   (define (cc exp)
    (cond
     ((const? exp)        exp)
+    ((ref? exp)
+      (let ((i (pos-in-list exp free-vars)))
+        (if i
+            `(%closure-ref
+              ,self-var
+              ,(+ i 1))
+            exp)))
     ((prim? exp)  `(,(car exp)
                     ,(map cc (cdr exp)))) ;; TODO: need to splice?
     ((set!? exp)  `(set! ,(set!->var exp)
                          ,(map cc (set!->exp exp)))) ;; TODO: splice?
 
 TODO: refer to 90 scm functions:
-;    ((ref? exp)          exp)
+
 ;    ((lambda? exp)       (let* (($env (gensym 'env))
 ;                                (body  (closure-convert (car (lambda->exp exp)))) ;; Assume single body exp in lambda, due to CPS phase
 ;                                (fv    (difference (free-vars body) (lambda->formals exp)))
@@ -892,10 +905,8 @@ TODO: refer to 90 scm functions:
 ;                           `(closure (lambda (,$env ,@(lambda->formals exp))
 ;                                       ,(substitute sub body))
 ;                                     (env-make ,id ,@(azip fv fv)))))
-;    ((if? exp)           `(if ,(closure-convert (if->condition exp))
-;                              ,(closure-convert (if->then exp))
-;                              ,(closure-convert (if->else exp))))
-;    
+    ((if? exp)  `(if ,@(map cc (cdr exp))))
+
 ;    ; IR (1):
 ;    
 ;    ((cell? exp)         `(cell ,(closure-convert (cell->value exp))))
