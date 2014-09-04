@@ -875,9 +875,12 @@
   (define (cc exp)
    (cond
     ((const? exp)        exp)
+    ((prim? exp)  `(,(car exp)
+                    ,(map cc (cdr exp)))) ;; TODO: need to splice?
+    ((set!? exp)  `(set! ,(set!->var exp)
+                         ,(map cc (set!->exp exp)))) ;; TODO: splice?
 
 TODO: refer to 90 scm functions:
-;    ((prim? exp)         exp)
 ;    ((ref? exp)          exp)
 ;    ((lambda? exp)       (let* (($env (gensym 'env))
 ;                                (body  (closure-convert (car (lambda->exp exp)))) ;; Assume single body exp in lambda, due to CPS phase
@@ -892,8 +895,6 @@ TODO: refer to 90 scm functions:
 ;    ((if? exp)           `(if ,(closure-convert (if->condition exp))
 ;                              ,(closure-convert (if->then exp))
 ;                              ,(closure-convert (if->else exp))))
-;    ((set!? exp)         `(set! ,(set!->var exp)
-;                                ,(closure-convert (set!->exp exp))))
 ;    
 ;    ; IR (1):
 ;    
