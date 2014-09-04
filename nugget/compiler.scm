@@ -905,6 +905,27 @@ TODO: refer to 90 scm functions:
 ;                           `(closure (lambda (,$env ,@(lambda->formals exp))
 ;                                       ,(substitute sub body))
 ;                                     (env-make ,id ,@(azip fv fv)))))
+    ((lambda? exp)
+     (let* ((new-self-var (gensym 'self))
+            (body  (lambda->exp exp))
+            (new-free-vars (difference (free-vars body) (lambda->formals exp))))
+       `(%closure
+          (lambda
+            ,(cons new-self-var (lambda->formals exp))
+            ,@(list (convert body new-self-var new-free-vars)))
+TODO: map
+;; 90 min scc code:
+;;                (cons (make-lam
+;;                       (list (convert (car (ast-subx ast))
+;;                                      new-self-var
+;;                                      new-free-vars))
+;;                       (cons new-self-var
+;;                             (lam-params ast)))
+;;                      (map (lambda (v)
+;;                             (cc (make-ref '() v)))
+;;                           new-free-vars))
+)
+
     ((if? exp)  `(if ,@(map cc (cdr exp))))
 
 ;    ; IR (1):
