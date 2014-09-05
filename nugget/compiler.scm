@@ -888,7 +888,7 @@
               ,self-var
               ,(+ i 1))
             exp)))
-    ((prim? exp)  `(,(car exp)
+    ((prim-call? exp)  `(,(car exp)
                     ,@(map cc (cdr exp)))) ;; TODO: need to splice?
     ((set!? exp)  `(set! ,(set!->var exp)
                          ,@(map cc (set!->exp exp)))) ;; TODO: splice?
@@ -910,7 +910,7 @@
           (lambda
             ,(cons new-self-var (lambda->formals exp))
             ,@(list (convert body new-self-var new-free-vars)))
-          (map (lambda (v)
+          ,(map (lambda (v)
             (cc v)
             new-free-vars)))))
     ((if? exp)  `(if ,@(map cc (cdr exp))))
@@ -931,7 +931,7 @@
        (if (lambda? fn)
            `((lambda ,(lambda->formals fn)
                 ,@(list (cc (lambda->exp fn))))
-             args)
+             ,args)
            (let ((f (cc fn)))
             `((%closure-ref ,f 0)
               ,f
