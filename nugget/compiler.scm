@@ -879,6 +879,7 @@
 (define (closure-convert exp)
  (define (convert exp self-var free-var-lst)
   (define (cc exp)
+(write `(DEBUG cc ,exp))
    (cond
     ((const? exp)        exp)
     ((ref? exp)
@@ -909,7 +910,7 @@
        `(%closure
           (lambda
             ,(cons new-self-var (lambda->formals exp))
-            ,@(convert body new-self-var new-free-vars)) ;; TODO: should this be a map??? was a list in 90-min-scc
+            ,@(convert (car body) new-self-var new-free-vars)) ;; TODO: should this be a map??? was a list in 90-min-scc. anyway, I think this is still broken and inserts one too many sets of parens. see tests/lambda.scm for an example
           ,@(map (lambda (v) ;; TODO: splice here?
                     (cc v))
             new-free-vars))))
@@ -935,7 +936,7 @@
            (let ((f (cc fn)))
             `((%closure-ref ,f 0)
               ,f
-              ,args)))))
+              ,@args)))))
     (else                
       (error "unhandled exp: " exp))))
   (cc exp))
