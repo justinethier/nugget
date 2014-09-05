@@ -835,6 +835,10 @@
   (cdr (assv id environments)))
 
 
+TODO: 
+(closure-convert '(lambda (k.4 x.1 y.2) k.4))
+Unable to evaluate form: (() (k.4))
+
 ; closure-convert : exp -> exp
 ;
 ; JAE - Original conversion:
@@ -877,7 +881,7 @@
           (else              (loop (cdr lst) (+ i 1))))))
 
 (define (closure-convert exp)
- (define (convert ast self-var free-vars)
+ (define (convert exp self-var free-vars)
   (define (cc exp)
 (write `(DEBUG cc ,exp))
    (cond
