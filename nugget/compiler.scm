@@ -6,8 +6,8 @@
 (define *do-desugar* #t) ; Eventually replace w/a macro system
 (define *do-cps* #t)    ; Turn off to reduce code size, but no call/cc. 
                         ; Also not sure if later phases work without CPS
-(define *do-code-gen* #t) ; Generate C code?
-(define *do-c-runtime* #t) ; Generate code for the C runtime?
+(define *do-code-gen* #f) ; Generate C code?
+(define *do-c-runtime* #f) ; Generate code for the C runtime?
 
 ;; Trace
 (define *trace-level* 4)
@@ -889,12 +889,9 @@
               ,(+ i 1))
             exp)))
     ((prim? exp)  `(,(car exp)
-                    ,(map cc (cdr exp)))) ;; TODO: need to splice?
+                    ,@(map cc (cdr exp)))) ;; TODO: need to splice?
     ((set!? exp)  `(set! ,(set!->var exp)
-                         ,(map cc (set!->exp exp)))) ;; TODO: splice?
-
-TODO: refer to 90 scm functions:
-
+                         ,@(map cc (set!->exp exp)))) ;; TODO: splice?
 ;    ((lambda? exp)       (let* (($env (gensym 'env))
 ;                                (body  (closure-convert (car (lambda->exp exp)))) ;; Assume single body exp in lambda, due to CPS phase
 ;                                (fv    (difference (free-vars body) (lambda->formals exp)))
@@ -913,31 +910,34 @@ TODO: refer to 90 scm functions:
           (lambda
             ,(cons new-self-var (lambda->formals exp))
             ,@(list (convert body new-self-var new-free-vars)))
-TODO: map
-;; 90 min scc code:
-;;                (cons (make-lam
-;;                       (list (convert (car (ast-subx ast))
-;;                                      new-self-var
-;;                                      new-free-vars))
-;;                       (cons new-self-var
-;;                             (lam-params ast)))
-;;                      (map (lambda (v)
-;;                             (cc (make-ref '() v)))
-;;                           new-free-vars))
-)
-
+          (map (lambda (v)
+            (cc v)
+            new-free-vars)))))
     ((if? exp)  `(if ,@(map cc (cdr exp))))
 
 ;    ; IR (1):
 ;    
 ;    ((cell? exp)         `(cell ,(closure-convert (cell->value exp))))
 ;    ((cell-get? exp)     `(cell-get ,(closure-convert (cell-get->cell exp))))
-;    ((set-cell!? exp)    `(set-cell! ,(closure-convert (set-cell!->cell exp))
-;                                     ,(closure-convert (set-cell!->value exp))))
+    ((cell? exp)       `(cell ,@(map cc (cell->value exp))))
+    ((cell-get? exp)   `(cell-get ,@(map cc (cell-get->cell exp))))
+    ((set-cell!? exp)  `(set-cell! ,(set-cell!->cell exp)
+                                   ,@(map cc (set-cell!->value exp))))
 ;    
 ;    ; Applications:
-;    ((app? exp)          (map closure-convert exp))
-    (else                (error "unhandled exp: " exp))))
+    ((app? exp)
+     (let ((fn (car exp))
+           (args (map cc (cdr exp))))
+       (if (lambda? fn)
+           `((lambda ,(lambda->formals fn)
+                ,@(list (cc (lambda->exp fn))))
+             args)
+           (let ((f (cc fn)))
+            `((%closure-ref ,f 0)
+              ,f
+              ,args)))))
+    (else                
+      (error "unhandled exp: " exp))))
   (cc exp))
 
  `(lambda ()
