@@ -879,6 +879,7 @@
 (define (closure-convert exp)
  (define (convert ast self-var free-vars)
   (define (cc exp)
+(write `(DEBUG cc ,exp))
    (cond
     ((const? exp)        exp)
     ((ref? exp)
@@ -891,7 +892,7 @@
     ((prim-call? exp)  `(,(car exp)
                     ,@(map cc (cdr exp)))) ;; TODO: need to splice?
     ((set!? exp)  `(set! ,(set!->var exp)
-                         ,@(map cc (set!->exp exp)))) ;; TODO: splice?
+                         ,(cc (set!->exp exp))))
 ;    ((lambda? exp)       (let* (($env (gensym 'env))
 ;                                (body  (closure-convert (car (lambda->exp exp)))) ;; Assume single body exp in lambda, due to CPS phase
 ;                                (fv    (difference (free-vars body) (lambda->formals exp)))
@@ -909,10 +910,10 @@
        `(%closure
           (lambda
             ,(cons new-self-var (lambda->formals exp))
-            ,@(list (convert body new-self-var new-free-vars)))
-          ,(map (lambda (v)
-            (cc v)
-            new-free-vars)))))
+            ,@(convert body new-self-var new-free-vars)) ;; TODO: should this be a map??? was a list in 90-min-scc
+          ,@(map (lambda (v) ;; TODO: splice here?
+                    (cc v))
+            new-free-vars))))
     ((if? exp)  `(if ,@(map cc (cdr exp))))
 
 ;    ; IR (1):
@@ -926,12 +927,13 @@
 ;    
 ;    ; Applications:
     ((app? exp)
+(write `(DEBUG app fn ,(car exp)))
      (let ((fn (car exp))
            (args (map cc (cdr exp))))
        (if (lambda? fn)
            `((lambda ,(lambda->formals fn)
-                ,@(list (cc (lambda->exp fn))))
-             ,args)
+                ,@(map cc (lambda->exp fn)))
+             ,@args)
            (let ((f (cc fn)))
             `((%closure-ref ,f 0)
               ,f
@@ -986,10 +988,10 @@
 
 ;; Compile and emit:
 
-(define the-program
-    (cons 'begin (read-all))) ;; read-all is non-standard
-
-(c-compile-and-emit the-program)
+;;(define the-program
+;;    (cons 'begin (read-all))) ;; read-all is non-standard
+;;
+;;(c-compile-and-emit the-program)
 
 ; Suitable definitions for the cell functions:
 ;(define (cell value) (lambda (get? new-value) 
