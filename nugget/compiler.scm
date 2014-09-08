@@ -910,7 +910,7 @@
        `(%closure
           (lambda
             ,(cons new-self-var (lambda->formals exp))
-            ,@(convert (car body) new-self-var new-free-vars)) ;; TODO: should this be a map??? was a list in 90-min-scc. anyway, I think this is still broken and inserts one too many sets of parens. see tests/lambda.scm for an example
+            ,(convert (car body) new-self-var new-free-vars)) ;; TODO: should this be a map??? was a list in 90-min-scc.
           ,@(map (lambda (v) ;; TODO: splice here?
                     (cc v))
             new-free-vars))))
