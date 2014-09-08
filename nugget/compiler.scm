@@ -879,7 +879,7 @@
 (define (closure-convert exp)
  (define (convert exp self-var free-var-lst)
   (define (cc exp)
-(write `(DEBUG cc ,exp))
+;(write `(DEBUG cc ,exp))
    (cond
     ((const? exp)        exp)
     ((ref? exp)
