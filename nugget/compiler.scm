@@ -889,8 +889,12 @@
               ,self-var
               ,(+ i 1))
             exp)))
-    ((prim-call? exp)  `(,(car exp)
-                    ,@(map cc (cdr exp)))) ;; TODO: need to splice?
+    ((or
+        (tagged-list? '%closure-ref exp)
+        (tagged-list? '%closure exp)
+        (prim-call? exp))
+        `(,(car exp)
+          ,@(map cc (cdr exp)))) ;; TODO: need to splice?
     ((set!? exp)  `(set! ,(set!->var exp)
                          ,(cc (set!->exp exp))))
 ;    ((lambda? exp)       (let* (($env (gensym 'env))
@@ -907,6 +911,7 @@
      (let* ((new-self-var (gensym 'self))
             (body  (lambda->exp exp))
             (new-free-vars (difference (free-vars body) (lambda->formals exp))))
+(write `(DEBUG ,new-self-var new-free-vars ,new-free-vars))
        `(%closure
           (lambda
             ,(cons new-self-var (lambda->formals exp))
@@ -927,12 +932,12 @@
     ((app? exp)
      (let ((fn (car exp))
            (args (map cc (cdr exp))))
+;(write `(DEBUG cc-app ,f))
        (if (lambda? fn)
            `((lambda ,(lambda->formals fn)
                 ,@(map cc (lambda->exp fn)))
              ,@args)
            (let ((f (cc fn)))
-(write `(DEBUG cc-app ,f))
             `((%closure-ref ,f 0)
               ,f
               ,@args)))))
