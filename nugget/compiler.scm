@@ -1,3 +1,7 @@
+;;
+;; Front-end for the compiler itself
+;;
+
 (load "trans.scm")
 
 ;; Code emission.

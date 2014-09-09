@@ -1,3 +1,7 @@
+;;
+;; Scheme-to-scheme transformations and utility functions used by the compiler
+;;
+
 ;; Pretty printing
 (import (husk pretty-print)) ;; Non-standard, replace with below if necessary
 ;; (define pretty-print display)
@@ -6,8 +10,8 @@
 (define *do-desugar* #t) ; Eventually replace w/a macro system
 (define *do-cps* #t)    ; Turn off to reduce code size, but no call/cc. 
                         ; Also not sure if later phases work without CPS
-(define *do-code-gen* #f) ; Generate C code?
-(define *do-c-runtime* #f) ; Generate code for the C runtime?
+(define *do-code-gen* #t) ; Generate C code?
+(define *do-c-runtime* #t) ; Generate code for the C runtime?
 
 ;; Trace
 (define *trace-level* 4)
