@@ -48,26 +48,22 @@
 
 (test
     "set.scm"
-   '(x (lambda (r.7)
-         (r.7 (lambda (r.2)
-                ((lambda (r.6)
-                   ((lambda (r.5) ((lambda (r.3) ((lambda (r.4) (letrec (lambda (r.1) (%halt r.1)) r.2 r.3 r.4)) (%display x))) (set! x r.5))) (+ 2 r.6)))
-                 (* 3 4)))))
-       #f)
-   '(lambda ()
-      ((%closure-ref x 0)
-       x
-       (%closure
-        (lambda (self.8 r.7)
-          ((%closure-ref r.7 0)
-           r.7
-           (%closure
-            (lambda (self.9 r.2)
-              ((lambda (r.6)
-                 ((lambda (r.5)
-                    ((lambda (r.3) ((lambda (r.4) ((%closure-ref letrec 0) letrec (%closure (lambda (self.10 r.1) (%halt r.1))) r.2 r.3 r.4)) (%display x)))
-                     (set! x r.5)))
-                  (+ 2 r.6)))
-               (* 3 4)))))))
-       #f)))
+    '((lambda (r.3) ((lambda (r.2) ((lambda (r.1) (%halt r.1)) (set! x r.2))) (+ 2 r.3))) (* 3 4))
+    '(lambda () ((lambda (r.3) ((lambda (r.2) ((lambda (r.1) (%halt r.1)) (set! x r.2))) (+ 2 r.3))) (* 3 4))))
 
+(test
+    "adder.scm"
+   '((lambda (r.8)
+       ((lambda (r.4) (make-adder (lambda (r.7) ((lambda (r.5) (increment (lambda (r.6) ((lambda (r.3) (%halt r.3)) (%display r.6))) 41)) (set! increment r.7))) 1)) (set! make-adder r.8)))
+     (lambda (k.9 x.1) (k.9 (lambda (k.10 y.2) (k.10 (+ x.1 y.2))))))
+   '(lambda ()
+      ((lambda (r.8)
+         ((lambda (r.4)
+            ((%closure-ref make-adder 0)
+             make-adder
+             (%closure
+              (lambda (self$5 r.7) ((lambda (r.5) ((%closure-ref increment 0) increment (%closure (lambda (self$6 r.6) ((lambda (r.3) (%halt r.3)) (%display r.6)))) 41)) (set! increment r.7))))
+             1))
+          (set! make-adder r.8)))
+       (%closure (lambda (self$3 k.9 x.1) ((%closure-ref k.9 0) k.9 (%closure (lambda (self$4 k.10 y.2) ((%closure-ref k.10 0) k.10 (+ (%closure-ref self$4 1) y.2))) x.1)))))))
+    
