@@ -1,7 +1,7 @@
 ;; Test cases for closure-conversion phase, based on
 ;; results from using the 90 min scheme->c compiler
 (import (husk pretty-print))
-(load "compiler.scm")
+(load "trans.scm")
 (define (test label ast expected)
   (let ((actual (closure-convert ast)))
 
