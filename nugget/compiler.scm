@@ -924,8 +924,6 @@
     ((cell-get? exp)   `(cell-get ,@(map cc (cell-get->cell exp))))
     ((set-cell!? exp)  `(set-cell! ,(set-cell!->cell exp)
                                    ,@(map cc (set-cell!->value exp))))
-;    
-;    ; Applications:
     ((app? exp)
      (let ((fn (car exp))
            (args (map cc (cdr exp))))
@@ -934,6 +932,7 @@
                 ,@(map cc (lambda->exp fn)))
              ,@args)
            (let ((f (cc fn)))
+(write `(DEBUG cc-app ,f))
             `((%closure-ref ,f 0)
               ,f
               ,@args)))))

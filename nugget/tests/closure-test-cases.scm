@@ -54,7 +54,7 @@
 (test
     "adder.scm"
    '((lambda (r.8)
-       ((lambda (r.4) (make-adder (lambda (r.7) ((lambda (r.5) (increment (lambda (r.6) ((lambda (r.3) (%halt r.3)) (%display r.6))) 41)) (set! increment r.7))) 1)) (set! make-adder r.8)))
+       ((lambda (r.4) (make-adder (lambda (r.7) ((lambda (r.5) (increment (lambda (r.6) ((lambda (r.3) (%halt r.3)) (display r.6))) 41)) (set! increment r.7))) 1)) (set! make-adder r.8)))
      (lambda (k.9 x.1) (k.9 (lambda (k.10 y.2) (k.10 (+ x.1 y.2))))))
    '(lambda ()
       ((lambda (r.8)
@@ -62,7 +62,7 @@
             ((%closure-ref make-adder 0)
              make-adder
              (%closure
-              (lambda (self$5 r.7) ((lambda (r.5) ((%closure-ref increment 0) increment (%closure (lambda (self$6 r.6) ((lambda (r.3) (%halt r.3)) (%display r.6)))) 41)) (set! increment r.7))))
+              (lambda (self$5 r.7) ((lambda (r.5) ((%closure-ref increment 0) increment (%closure (lambda (self$6 r.6) ((lambda (r.3) (%halt r.3)) (display r.6)))) 41)) (set! increment r.7))))
              1))
           (set! make-adder r.8)))
        (%closure (lambda (self$3 k.9 x.1) ((%closure-ref k.9 0) k.9 (%closure (lambda (self$4 k.10 y.2) ((%closure-ref k.10 0) k.10 (+ (%closure-ref self$4 1) y.2))) x.1)))))))
