@@ -121,11 +121,22 @@
       (cond
         ((lambda? fun)
          (let* ((lid (allocate-lambda (c-compile-lambda fun))))
-          (string-append
-            "return_check(__lambda_" (number->string lid)
-            "(" ; TODO: how to propagate continuation - cont " "
-             (c-compile-args args append-preamble "" cont) ;", " cont)
-            "));" )))
+          (cond
+           ((and (list? (car args))
+                 (prim/cvar? (caar args)))
+            (let ((cvar (c-compile-exp (car args) append-preamble cont)))
+                (string-append
+                  cvar "\n  "
+                  "return_check(__lambda_" (number->string lid)
+                  "(" ; TODO: how to propagate continuation - cont " "
+                  ;", "
+                  "&c));")))
+           (else
+            (string-append
+              "return_check(__lambda_" (number->string lid)
+              "(" ; TODO: how to propagate continuation - cont " "
+               (c-compile-args args append-preamble "" cont) ;", " cont)
+              "));" )))))
         ((prim? fun)
          (string-append
           (c-compile-exp fun append-preamble cont)

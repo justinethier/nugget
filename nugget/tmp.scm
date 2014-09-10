@@ -1,6 +1,6 @@
 ; Adding examples here as one-line baby steps for the compiler
-#t ; Bare minimum 
-;((lambda (x) x) (cons #t #f))
+;#t ; Bare minimum 
+((lambda (x) x) (cons #t #f))
 ;((lambda (x) x) (cons #t (cons #t #f)))
 ; (display #t)
 ; (display #f)
