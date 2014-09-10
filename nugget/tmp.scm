@@ -1,9 +1,9 @@
 ; Adding examples here as one-line baby steps for the compiler
-;#t ; Bare minimum 
+#t ; Bare minimum 
 ;((lambda (x) x) (cons #t #f))
-((lambda (x) x) (cons #t (cons #t #f)))
- (display #t)
- (display #f)
+;((lambda (x) x) (cons #t (cons #t #f)))
+; (display #t)
+; (display #f)
 ; (display 1)
 ; (display '(1 2 3)
 ; (display '(a b c)

@@ -61,8 +61,8 @@
 ;    ((set-cell!? exp)   (c-compile-set-cell! exp append-preamble))
 ;    
 ;    ; IR (2):
-    ((closure? exp)     (c-compile-closure exp append-preamble cont))
-    ((env-make? exp)    (c-compile-env-make exp append-preamble cont))
+;    ((closure? exp)     (c-compile-closure exp append-preamble cont))
+;    ((env-make? exp)    (c-compile-env-make exp append-preamble cont))
 ;    ((env-get? exp)     (c-compile-env-get exp append-preamble))
 ;    
 ;    ; Application:      
@@ -119,6 +119,13 @@
            (fun      (app->fun exp)))
 ;TODO: may be special cases depending upon what we are calling (prim, lambda, etc)
       (cond
+        ((lambda? fun)
+         (let* ((lid (allocate-lambda (c-compile-lambda fun))))
+          (string-append
+            "return_check(__lambda_" (number->string lid)
+            "(" cont " "
+             (c-compile-args args append-preamble ", " cont)
+            "));" )))
         ((prim? fun)
          (string-append
           (c-compile-exp fun append-preamble cont)
