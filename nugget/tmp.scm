@@ -1,11 +1,11 @@
 ; Adding examples here as one-line baby steps for the compiler
-#t ; Bare minimum 
-(display ((lambda (x) x) (cons #t #f)))
-; TODO: (display "\n")
-(display ((lambda (x) x) (cons #t (cons #t #f))))
- (display #t)
- (display #f)
-; TODO: if demonstration, maybe (if #t (display #t) (display #f))
+;#t ; Bare minimum 
+;(display ((lambda (x) x) (cons #t #f)))
+;; TODO: (display "\n")
+;(display ((lambda (x) x) (cons #t (cons #t #f))))
+; (display #t)
+; (display #f)
+(if #t (display #t) (display #f))
 ; 1
 ; 'done
 ; (display 1)
