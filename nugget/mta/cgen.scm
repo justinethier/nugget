@@ -123,8 +123,8 @@
          (let* ((lid (allocate-lambda (c-compile-lambda fun))))
           (string-append
             "return_check(__lambda_" (number->string lid)
-            "(" cont " "
-             (c-compile-args args append-preamble ", " cont)
+            "(" ; TODO: how to propagate continuation - cont " "
+             (c-compile-args args append-preamble "" cont) ;", " cont)
             "));" )))
         ((prim? fun)
          (string-append
