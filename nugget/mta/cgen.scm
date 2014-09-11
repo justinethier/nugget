@@ -263,6 +263,7 @@
   (let* ((lam (closure->lam exp))
          ;(env (closure->env exp))
          ;(num-fv (- (length env) 2))
+         (num-args (length (lambda->formals lam)))
          (lid (allocate-lambda (c-compile-lambda lam))))
 ;; JAE TODO: looks like we need to make a closure before calling
 ;;           a function in the MTA runtime. but is that done here??
@@ -278,10 +279,10 @@
     (string-append
     ; TODO: may not be appropriate place to return check
     ;       (or maybe it is with env construction??)
-     "return_check(__lambda_" (number->string lid)
-     "(" cont " " ;"(cont"
-;     "mclosure" (number->string (+ 1 num-fv)) "(cont1,"
-;     "__lambda_" (number->string lid)
+;     "return_check(__lambda_" (number->string lid)
+;     "(" cont " " ;"(cont"
+     "mclosure" (number->string (+ 1 num-args)) "(cont1," ; TODO: or is it always mclosure0?
+     "__lambda_" (number->string lid)
      "" ;(if (> num-fv 0) "," "")
 ;     (c-compile-exp env append-preamble)
 ;     "));\n"
