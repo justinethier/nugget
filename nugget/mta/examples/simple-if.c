@@ -408,13 +408,14 @@ static void __halt(object obj) {
 static void __lambda_1() ;
 static void __lambda_0() ;
 
-static void __lambda_1(object r_731) {
+static void __lambda_1(closure k, object r_731) {
   __halt(r_731); 
+//funcall0(((closure1)k)->elt1);
 }
 
-static void __lambda_0(closure0_type k) {
+static void __lambda_0(closure1 k) { // Need to know closure1 somehow?
  if (1){
-   return_funcall1(k, quote_t);
+   return_funcall1(k, prin1(quote_t));
  }
  else {
  }
@@ -423,8 +424,8 @@ static void __lambda_0(closure0_type k) {
 
 
 static void test(env,cont) closure env,cont; { 
-  mclosure0(cont1, __lambda_1);
-  return_check(__lambda_0(cont1));
+  mclosure1(cont1, __lambda_1, cont); // TODO: is cont lost? how to find later?
+  return_check(__lambda_0((closure) &cont1));
 }
 
 
