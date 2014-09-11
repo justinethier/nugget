@@ -915,7 +915,7 @@
      (let* ((new-self-var (gensym 'self))
             (body  (lambda->exp exp))
             (new-free-vars (difference (free-vars body) (lambda->formals exp))))
-(write `(DEBUG ,new-self-var new-free-vars ,new-free-vars))
+;(write `(DEBUG ,new-self-var new-free-vars ,new-free-vars))
        `(%closure
           (lambda
             ,(cons new-self-var (lambda->formals exp))

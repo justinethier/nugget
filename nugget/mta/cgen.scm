@@ -61,6 +61,8 @@
 ;    ((set-cell!? exp)   (c-compile-set-cell! exp append-preamble))
 ;    
 ;    ; IR (2):
+    ((tagged-list? '%closure exp)
+     (c-compile-closure exp append-preamble cont))
 ;    ((closure? exp)     (c-compile-closure exp append-preamble cont))
 ;    ((env-make? exp)    (c-compile-env-make exp append-preamble cont))
 ;    ((env-get? exp)     (c-compile-env-get exp append-preamble))
@@ -149,20 +151,22 @@
 ;; TODO: closure?  may need to check whether args need to be pre-computed
 ;; eg: mcons(c); return_check(.., &c);
 ;; 
-        ((closure? fun)
-          (cond
-           ((and (list? (car args))
-                 (prim/cvar? (caar args)))
-            (let ((cvar (c-compile-exp (car args) append-preamble cont)))
-                (string-append
-                  cvar "\n  "
-                  (c-compile-exp fun append-preamble cont)
-                  ", &c));")))
-           (else
-            (string-append
-             (c-compile-exp fun append-preamble cont)
-             (c-compile-args args append-preamble ", " cont)
-             "));" ))))
+        ((tagged-list? '%closure fun)
+         (write `(TODO app %closure ,fun))
+         ;; (cond
+         ;;  ((and (list? (car args))
+         ;;        (prim/cvar? (caar args)))
+         ;;   (let ((cvar (c-compile-exp (car args) append-preamble cont)))
+         ;;       (string-append
+         ;;         cvar "\n  "
+         ;;         (c-compile-exp fun append-preamble cont)
+         ;;         ", &c));")))
+         ;;  (else
+         ;;   (string-append
+         ;;    (c-compile-exp fun append-preamble cont)
+         ;;    (c-compile-args args append-preamble ", " cont)
+         ;;    "));" )))
+          )
         (else
          (string-append
           (c-compile-exp fun append-preamble cont)
@@ -257,8 +261,8 @@
 ; c-compile-closure : closure-exp (string -> void) -> string
 (define (c-compile-closure exp append-preamble cont)
   (let* ((lam (closure->lam exp))
-         (env (closure->env exp))
-         (num-fv (- (length env) 2))
+         ;(env (closure->env exp))
+         ;(num-fv (- (length env) 2))
          (lid (allocate-lambda (c-compile-lambda lam))))
 ;; JAE TODO: looks like we need to make a closure before calling
 ;;           a function in the MTA runtime. but is that done here??
@@ -269,7 +273,7 @@
 ; to the function, since it is the function's closure:
 ;     (c-compile-exp env append-preamble)
 
-(trace:debug `(,exp ,(lambda->env lam)))
+;(trace:debug `(,exp ,(lambda->env lam)))
 
     (string-append
     ; TODO: may not be appropriate place to return check
@@ -278,7 +282,7 @@
      "(" cont " " ;"(cont"
 ;     "mclosure" (number->string (+ 1 num-fv)) "(cont1,"
 ;     "__lambda_" (number->string lid)
-     (if (> num-fv 0) "," "")
+     "" ;(if (> num-fv 0) "," "")
 ;     (c-compile-exp env append-preamble)
 ;     "));\n"
 )))
