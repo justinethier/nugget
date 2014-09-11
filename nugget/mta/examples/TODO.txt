@@ -1,0 +1,2 @@
+- Add an example that uses a 'real' closure
+- TBD: Can there be a lambda reference that is not a closure or a direct call?
