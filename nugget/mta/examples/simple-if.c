@@ -409,13 +409,14 @@ static void __lambda_1() ;
 static void __lambda_0() ;
 
 static void __lambda_1(closure k, object r_731) {
-  __halt(r_731); 
-//funcall0(((closure1)k)->elt1);
+//  __halt(r_731); 
+return_funcall1(k, r_731);
 }
 
 static void __lambda_0(closure1 k) { // Need to know closure1 somehow?
  if (1){
-   return_funcall1(k, prin1(quote_t));
+   //return_funcall1(k, prin1(quote_t));
+   return_funcall1(k->elt1, prin1(quote_t)); // NOTE: funcall1 passes fn as arg 1
  }
  else {
  }
