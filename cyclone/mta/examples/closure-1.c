@@ -444,7 +444,7 @@ static void __lambda_0() ;
 //
 
 static void __lambda_4(object x_931) {
-    mclosure1(c, __lambda_3 /*TODO: cont arg above*/);
+    mclosure1(c, /*TODO: cont arg above*/ __lambda_3, x_931);
     return_check(__lambda_2((closure) &c));
 
     // closure4 - WTF?
@@ -452,10 +452,17 @@ static void __lambda_4(object x_931) {
 }
 
 static void __lambda_3(object self_735, object k_734, object y_932) {
+// cons func
 //  _75closure_91ref, k_734, MakeInt(0)));, k_734, make_cons(c, _75closure_91ref, self_735, MakeInt(1)));, y_932)));; 
 }
 
-static void __lambda_2(object r_733) {
+static void __lambda_2(closure k){
+// TODO: need to pass a closure for lambda1, and also the #f arg
+//mclosure1(c, __lambda_1, quote_f); Not sure if this is correct
+// I think we call into k as Scheme is a call to r$3
+//return_funcall1(k, c);
+
+//static void __lambda_2(object r_733) {
 //  _75closure_91ref, r_733, MakeInt(0)));, r_733, mclosure3(cont1,__lambda_1, quote_f));; 
 }
 
