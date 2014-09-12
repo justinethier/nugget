@@ -326,7 +326,7 @@ static object prin1(x) object x;
     case closure2_tag:
     case closure3_tag:
     case closure4_tag:
-      printf("<%ld>",((closure) x)->fn);
+      printf("<%p>",(void *)((closure) x)->fn);
       break;
     case symbol_tag:
       printf("%s ",((symbol_type *) x)->pname);
@@ -335,7 +335,7 @@ static object prin1(x) object x;
       printf("("); prin1(car(x)); printf("."); prin1(cdr(x)); printf(")");
       break;
     default:
-      printf("prin1: bad tag x=%ld\n",x); getchar(); exit(0);}
+      printf("prin1: bad tag x=%ld\n", ((closure)x)->tag); getchar(); exit(0);}
  return x;}
 
 /* Some of these non-consing functions have been optimized from CPS. */
@@ -347,7 +347,7 @@ static object memberp(x,l) object x; list l;
 static object get(x,i) object x,i;
 {register object plist; register object plistd;
  if (nullp(x)) return x;
- if (type_of(x)!=symbol_tag) {printf("get: bad x=%ld\n",x); exit(0);}
+ if (type_of(x)!=symbol_tag) {printf("get: bad x=%ld\n",((closure)x)->tag); exit(0);}
  plist = symbol_plist(x);
  for (; !nullp(plist); plist = cdr(plistd))
    {plistd = cdr(plist);
@@ -394,7 +394,7 @@ static void apply_subst_cont1(env,dterm) closure2 env; list dterm;
 static void my_exit(closure) never_returns;
 
 static void my_exit(env) closure env;
-{printf("my_exit: heap bytes allocated=%ld  time=%ld ticks  no_gcs=%ld\n",
+{printf("my_exit: heap bytes allocated=%d  time=%ld ticks  no_gcs=%ld\n",
         allocp-bottom,clock()-start,no_gcs);
  printf("my_exit: ticks/second=%ld\n",(long) CLOCKS_PER_SEC);
  exit(0);}
@@ -404,6 +404,7 @@ static void __halt(object obj) {
     prin1(obj);
     exit(0);
 }
+
 
 static void __lambda_1() ;
 static void __lambda_0() ;
@@ -426,7 +427,7 @@ static void __lambda_0(closure1 k) { // Need to know closure1 somehow?
 
 static void test(env,cont) closure env,cont; { 
   mclosure1(cont1, __lambda_1, cont); // TODO: is cont lost? how to find later?
-  return_check(__lambda_0((closure) &cont1));
+  return_check(__lambda_0((closure1) &cont1));
 }
 
 
@@ -482,7 +483,7 @@ static char *transport(x) char *x;
     case forward_tag:	return (char *) forward(x);
     case symbol_tag:
     default:
-      printf("transport: bad tag x=%ld x.tag=%ld\n",x,type_of(x)); exit(0);}
+      printf("transport: bad tag x=%p x.tag=%ld\n",(void *)x,type_of(x)); exit(0);}
  return x;}
 
 /* Use overflow macro which already knows which way the stack goes. */
@@ -526,7 +527,7 @@ static void GC(cont,ans) closure cont; object ans;
 	transp(((closure4) scanp)->elt3); transp(((closure4) scanp)->elt4);
 	scanp += sizeof(closure4_type); break;
       case symbol_tag: default:
-	printf("GC: bad tag scanp=%ld scanp.tag=%ld\n",scanp,type_of(scanp));
+	printf("GC: bad tag scanp=%p scanp.tag=%ld\n",(void *)scanp,type_of(scanp));
 	exit(0);}
  longjmp(jmp_main,1); /* Return globals gc_cont, gc_ans. */
 }
@@ -558,8 +559,8 @@ static void main_main (stack_size,heap_size,stack_base)
  if (check_overflow(stack_base,&in_my_frame))
    {printf("main: Recompile with STACK_GROWS_DOWNWARD set to %ld\n",
            (long) (1-STACK_GROWS_DOWNWARD)); exit(0);}
- printf("main: stack_size=%ld  stack_base=%ld  stack_limit1=%ld\n",
-        stack_size,stack_base,stack_limit1);
+ printf("main: stack_size=%ld  stack_base=%p  stack_limit1=%p\n",
+        stack_size,(void *)stack_base,(void *)stack_limit1);
  printf("main: Try different stack sizes from 4 K to 1 Meg.\n");
  /* Do initializations of Lisp objects and rewrite rules. */
  quote_list_f = mlist1(quote_f); quote_list_t = mlist1(quote_t);
@@ -579,8 +580,8 @@ static void main_main (stack_size,heap_size,stack_base)
   bottom = calloc(1,heap_size);
   allocp = (char *) ((((long) bottom)+7) & -8);
   alloc_end = allocp + heap_size - 8;
-  printf("main: heap_size=%ld  allocp=%ld  alloc_end=%ld\n",
-         (long) heap_size,allocp,alloc_end);
+  printf("main: heap_size=%ld  allocp=%p  alloc_end=%p\n",
+         (long) heap_size,(void *)allocp,(void *)alloc_end);
   printf("main: Try a larger heap_size if program bombs.\n");
   printf("Starting...\n");
   start = clock(); /* Start the timing clock. */
