@@ -451,17 +451,18 @@ static void __lambda_4(object x_931) {
 //  return_check(__lambda_2(mclosure4(cont1,__lambda_3));; 
 }
 
-static void __lambda_3(closure self_735, object k_734, object y_932) {
+static void __lambda_3(closure1 self_735, object k_734, object y_932) {
+    make_cons(cons1, self_735->elt1, y_932);
     (k_734->fn)( // TODO: return_funcallX
 //static void __lambda_3(object self_735, object k_734, object y_932) {
 // cons func
 //  _75closure_91ref, k_734, MakeInt(0)));, k_734, make_cons(c, _75closure_91ref, self_735, MakeInt(1)));, y_932)));; 
 }
 
-static void __lambda_2(closure k){
-// I think we call into k as Scheme is a call to r$3
-mclosure(c1);
-(k->fn)(k, c1, quote_f);//want return_funcallX
+static void __lambda_2(closure r3){
+// I think we call into r3 as Scheme is a call to r$3
+mclosure(c1, __lambda_1);
+(r3->fn)(r3, c1, quote_f);//want return_funcallX
 
 //static void __lambda_2(object r_733) {
 //  _75closure_91ref, r_733, MakeInt(0)));, r_733, mclosure3(cont1,__lambda_1, quote_f));; 
