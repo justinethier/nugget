@@ -410,14 +410,13 @@ static void __lambda_1() ;
 static void __lambda_0() ;
 
 static void __lambda_1(closure k, object r_731) {
-//  __halt(r_731); 
-return_funcall1(k, r_731);
+  __halt(r_731); 
+//return_funcall1(((closure1)k)->elt1, r_731);
 }
 
-static void __lambda_0(closure1 k) { // Need to know closure1 somehow?
+static void __lambda_0(closure k) { // Need to know closure1 somehow?
  if (1){
-   //return_funcall1(k, prin1(quote_t));
-   return_funcall1(k->elt1, prin1(quote_t)); // NOTE: funcall1 passes fn as arg 1
+   return_funcall1(k, prin1(quote_t));
  }
  else {
  }
@@ -427,7 +426,7 @@ static void __lambda_0(closure1 k) { // Need to know closure1 somehow?
 
 static void test(env,cont) closure env,cont; { 
   mclosure1(cont1, __lambda_1, cont); // TODO: is cont lost? how to find later?
-  return_check(__lambda_0((closure1) &cont1));
+  return_check(__lambda_0((closure) &cont1));
 }
 
 
