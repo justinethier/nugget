@@ -1,9 +1,4 @@
-;; TODO: switch to the MTA runtime
-;
-; REMEMBER, the original cgen has no concept of continuations (the parameter k).
-; this will have to be added!!!
-;
-; JAE observations:
+; JAE notes:
 ;
 ; - a primitive can be executed inline, EG:
 ;   static void apply_subst(cont,alist,term) closure cont; list alist,term;
@@ -38,15 +33,14 @@
 ;     " }\n"
 )))
 
-;; JAE - for ref, input is (display #t)
-;;"---------------- after closure-convert:"
-;; ((closure
-;;    (lambda (env$2 r$1) (%halt r$1))
-;;       (env-make 0))
-;;  (display #t))
-;; TODO: how does matt-m handle this?
-
 ;; c-compile-exp : exp (string -> void) -> string
+;;
+;; exp - expression to compiler
+;; append-preamble - ??
+;; cont - name of the next continuation
+;;        this is experimental and probably needs refinement
+;; free-var-list - list of free variables, for creating closures
+;;                 this is experimental but based off of closure-convert
 (define (c-compile-exp exp append-preamble cont)
   (cond
     ; Core forms:
