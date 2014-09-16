@@ -24,7 +24,7 @@
   (let* ((preamble "")
          (append-preamble (lambda (s)
                             (set! preamble (string-append preamble "  " s "\n"))))
-         (body (c-compile-exp exp append-preamble "cont")))
+         (body (c-compile-exp exp append-preamble "cont" '())))
     (string-append 
      preamble 
 ;     "int main (int argc, char* argv[]) {\n"
@@ -39,15 +39,15 @@
 ;; append-preamble - ??
 ;; cont - name of the next continuation
 ;;        this is experimental and probably needs refinement
-;; free-var-list - list of free variables, for creating closures
+;; free-var-lst - list of free variables, for creating closures
 ;;                 this is experimental but based off of closure-convert
-(define (c-compile-exp exp append-preamble cont)
+(define (c-compile-exp exp append-preamble cont free-var-lst)
   (cond
     ; Core forms:
     ((const? exp)       (c-compile-const exp))
     ((prim?  exp)       (c-compile-prim exp))
     ((ref?   exp)       (c-compile-ref exp))
-    ((if? exp)          (c-compile-if exp append-preamble cont))
+    ((if? exp)          (c-compile-if exp append-preamble cont free-var-lst))
 ;
 ;    ; IR (1):
 ;    ((cell? exp)        (c-compile-cell exp append-preamble))
@@ -56,13 +56,11 @@
 ;    
 ;    ; IR (2):
     ((tagged-list? '%closure exp)
-     (c-compile-closure exp append-preamble cont))
-;    ((closure? exp)     (c-compile-closure exp append-preamble cont))
-;    ((env-make? exp)    (c-compile-env-make exp append-preamble cont))
+     (c-compile-closure exp append-preamble cont free-var-lst))
 ;    ((env-get? exp)     (c-compile-env-get exp append-preamble))
 ;    
 ;    ; Application:      
-    ((app? exp)         (c-compile-app exp append-preamble cont))
+    ((app? exp)         (c-compile-app exp append-preamble cont free-var-lst))
     (else               (error "unknown exp in c-compile-exp: " exp))))
 
 ;; c-compile-const : const-exp -> string
@@ -93,18 +91,18 @@
   (mangle exp))
   
 ; c-compile-args : list[exp] (string -> void) -> string
-(define (c-compile-args args append-preamble prefix cont)
+(define (c-compile-args args append-preamble prefix cont free-var-lst)
   (if (not (pair? args))
       ""
       (string-append
        prefix 
-       (c-compile-exp (car args) append-preamble cont)
+       (c-compile-exp (car args) append-preamble cont free-var-lst)
        (if (pair? (cdr args))
-           (string-append (c-compile-args (cdr args) append-preamble ", " cont))
+           (string-append (c-compile-args (cdr args) append-preamble ", " cont free-var-lst))
            ""))))
 
 ;; c-compile-app : app-exp (string -> void) -> string
-(define (c-compile-app exp append-preamble cont)
+(define (c-compile-app exp append-preamble cont free-var-lst)
   (trace:debug `(c-compile-app: ,exp))
   (let (($tmp (mangle (gensym 'tmp))))
     
@@ -116,12 +114,13 @@
 ;TODO: may be special cases depending upon what we are calling (prim, lambda, etc)
       (cond
         ((lambda? fun)
-         (let* ((lid (allocate-lambda (c-compile-lambda fun))))
+         (let* ((lid (allocate-lambda (c-compile-lambda fun)))) ;; TODO: pass in free vars? may be needed to track closures
+                                                                ;; properly, wait until this comes up in an example
           (cond
            ((and (list? (car args))
                  (or (prim/cvar? (caar args))
                      (tagged-list? '%closure (car args))))
-            (let ((cvar (c-compile-exp (car args) append-preamble cont)))
+            (let ((cvar (c-compile-exp (car args) append-preamble cont free-var-lst)))
                 (string-append
                   cvar "\n  "
                   "return_check(__lambda_" (number->string lid)
@@ -132,44 +131,44 @@
             (string-append
               "return_check(__lambda_" (number->string lid)
               "(" ; TODO: how to propagate continuation - cont " "
-               (c-compile-args args append-preamble "" cont) ;", " cont)
+               (c-compile-args args append-preamble "" cont free-var-lst) ;", " cont free-var-lst)
               "));" )))))
         ((prim? fun)
          (string-append
-          (c-compile-exp fun append-preamble cont)
+          (c-compile-exp fun append-preamble cont free-var-lst)
           "("
           (if (prim/cvar? fun) ; prim creates local c var
             "c, "
             "")
-          (c-compile-args args append-preamble "" cont)
+          (c-compile-args args append-preamble "" cont free-var-lst)
           ")"))
         ((tagged-list? '%closure-ref fun)
          (string-append
-          ;TODO: need to consider - (c-compile-exp fun append-preamble cont)
+          ;TODO: need to consider - (c-compile-exp fun append-preamble cont free-var-lst)
           "return_funcall1"
           "("
-          (c-compile-args args append-preamble "" cont)
+          (c-compile-args args append-preamble "" cont free-var-lst)
           ");"))
         ((tagged-list? '%closure fun)
          (write `(TODO app %closure ,fun))
          ;; (cond
          ;;  ((and (list? (car args))
          ;;        (prim/cvar? (caar args)))
-         ;;   (let ((cvar (c-compile-exp (car args) append-preamble cont)))
+         ;;   (let ((cvar (c-compile-exp (car args) append-preamble cont free-var-lst)))
          ;;       (string-append
          ;;         cvar "\n  "
-         ;;         (c-compile-exp fun append-preamble cont)
+         ;;         (c-compile-exp fun append-preamble cont free-var-lst)
          ;;         ", &c));")))
          ;;  (else
          ;;   (string-append
-         ;;    (c-compile-exp fun append-preamble cont)
-         ;;    (c-compile-args args append-preamble ", " cont)
+         ;;    (c-compile-exp fun append-preamble cont free-var-lst)
+         ;;    (c-compile-args args append-preamble ", " cont free-var-lst)
          ;;    "));" )))
           )
         (else
          (string-append
-          (c-compile-exp fun append-preamble cont)
-          (c-compile-args args append-preamble ", " cont)
+          (c-compile-exp fun append-preamble cont free-var-lst)
+          (c-compile-args args append-preamble ", " cont free-var-lst)
           "));" ))))))
 
 ; Does primitive create a c variable?
@@ -178,22 +177,22 @@
          (member exp '(cons))))
 
 ; c-compile-if : if-exp -> string
-(define (c-compile-if exp append-preamble cont)
+(define (c-compile-if exp append-preamble cont free-var-lst)
   (string-append
-   "if(" (c-compile-exp (if->condition exp) append-preamble cont) "){ \n"
-   "" (c-compile-exp (if->then exp) append-preamble cont)      "\n} else { \n"
-   "" (c-compile-exp (if->else exp) append-preamble cont)      "}\n"))
+   "if(" (c-compile-exp (if->condition exp) append-preamble cont free-var-lst) "){ \n"
+   "" (c-compile-exp (if->then exp) append-preamble cont free-var-lst)      "\n} else { \n"
+   "" (c-compile-exp (if->else exp) append-preamble cont free-var-lst)      "}\n"))
 ;   "(" (c-compile-exp (if->condition exp) append-preamble) ").b.value ? "
 ;   "(" (c-compile-exp (if->then exp) append-preamble)      ") : "
 ;   "(" (c-compile-exp (if->else exp) append-preamble)      ")"))
 
 ; c-compile-set-cell! : set-cell!-exp (string -> void) -> string 
-(define (c-compile-set-cell! exp append-preamble)
-  (string-append
-   "(*"
-   "(" (c-compile-exp (set-cell!->cell exp) append-preamble) ".cell.addr)" " = "
-   (c-compile-exp (set-cell!->value exp) append-preamble)
-   ")"))
+;(define (c-compile-set-cell! exp append-preamble)
+;  (string-append
+;   "(*"
+;   "(" (c-compile-exp (set-cell!->cell exp) append-preamble) ".cell.addr)" " = "
+;   (c-compile-exp (set-cell!->value exp) append-preamble)
+;   ")"))
 
 ;; c-compile-cell-get : cell-get-exp (string -> void) -> string 
 ;(define (c-compile-cell-get exp append-preamble)
@@ -207,15 +206,6 @@
 ;(define (c-compile-cell exp append-preamble)
 ;  (string-append
 ;   "NewCell(" (c-compile-exp (cell->value exp) append-preamble) ")"))
-
-; c-compile-env-make : env-make-exp (string -> void) -> string
-(define (c-compile-env-make exp append-preamble cont)
-  (string-append
-   ; "MakeEnv(__alloc_env" (number->string (env-make->id exp))
-   ; "(" 
-   (c-compile-args (env-make->values exp) append-preamble "" cont)
-   ;"))"
-   ))
 
 ;; c-compile-env-get : env-get (string -> void) -> string
 ;(define (c-compile-env-get exp append-preamble)
@@ -261,7 +251,7 @@
         (car formals)))
 
 ; c-compile-closure : closure-exp (string -> void) -> string
-(define (c-compile-closure exp append-preamble cont)
+(define (c-compile-closure exp append-preamble cont free-var-lst)
   (let* ((lam (closure->lam exp))
          ;(env (closure->env exp))
          ;(num-fv (- (length env) 2))
@@ -276,12 +266,15 @@
 ; to the function, since it is the function's closure:
 ;     (c-compile-exp env append-preamble)
 
-;(trace:debug `(,exp ,(lambda->env lam)))
+(trace:debug `(,exp fv: ,free-var-lst))
 
     (string-append
      ;"mclosure" (number->string (+ 1 num-args)) "(c," ; TODO: or is it always mclosure0?
      "mclosure0(c, "
      "__lambda_" (number->string lid)
+TODO:
+;     ","
+;     free-var-lst ;; TESTING
      ");" ;(if (> num-fv 0) "," "")
 )))
 
@@ -306,7 +299,9 @@
            (body    (c-compile-exp     
                         (car (lambda->exp exp)) ;; car ==> assume single expr in lambda body after CPS
                         append-preamble
-                        (mangle env-closure))))
+                        (mangle env-closure)
+                        (map mangle (lambda->formals exp))
+                        )))
       (lambda (name)
         (string-append "static void " name "(" formals ") {\n"
                        preamble
