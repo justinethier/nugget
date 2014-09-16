@@ -17,6 +17,18 @@
   (display line)
   (newline))
 
+(define (string-join lst delim)
+  (cond
+    ((null? lst) 
+      "")
+    ((= (length lst) 1) 
+      (car lst))
+    (else
+      (string-append 
+        (car lst) 
+        delim 
+        (string-join (cdr lst) delim)))))
+
 ;; Compilation routines.
 
 ;; c-compile-program : exp -> string
@@ -270,11 +282,10 @@
 
     (string-append
      ;"mclosure" (number->string (+ 1 num-args)) "(c," ; TODO: or is it always mclosure0?
-     "mclosure0(c, "
+     "mclosure" (number->string (length free-var-lst)) "(c, "
      "__lambda_" (number->string lid)
-TODO:
-;     ","
-;     free-var-lst ;; TESTING
+     ","
+     (string-join free-var-lst ", ")
      ");" ;(if (> num-fv 0) "," "")
 )))
 
