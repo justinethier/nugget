@@ -53,7 +53,7 @@
     ((const? exp)       (c-compile-const exp))
     ((prim?  exp)       (c-compile-prim exp))
     ((ref?   exp)       (c-compile-ref exp))
-;    ((if? exp)          (c-compile-if exp append-preamble))
+    ((if? exp)          (c-compile-if exp append-preamble cont))
 ;
 ;    ; IR (1):
 ;    ((cell? exp)        (c-compile-cell exp append-preamble))
@@ -125,7 +125,8 @@
          (let* ((lid (allocate-lambda (c-compile-lambda fun))))
           (cond
            ((and (list? (car args))
-                 (prim/cvar? (caar args)))
+                 (or (prim/cvar? (caar args))
+                     (tagged-list? '%closure (car args))))
             (let ((cvar (c-compile-exp (car args) append-preamble cont)))
                 (string-append
                   cvar "\n  "
@@ -148,9 +149,13 @@
             "")
           (c-compile-args args append-preamble "" cont)
           ")"))
-;; TODO: closure?  may need to check whether args need to be pre-computed
-;; eg: mcons(c); return_check(.., &c);
-;; 
+        ((tagged-list? '%closure-ref fun)
+         (string-append
+          ;TODO: need to consider - (c-compile-exp fun append-preamble cont)
+          "return_funcall1"
+          "("
+          (c-compile-args args append-preamble "" cont)
+          ");"))
         ((tagged-list? '%closure fun)
          (write `(TODO app %closure ,fun))
          ;; (cond
@@ -178,21 +183,24 @@
     (and (prim? exp)
          (member exp '(cons))))
 
-;; c-compile-if : if-exp -> string
-;(define (c-compile-if exp append-preamble)
-;  (string-append
+; c-compile-if : if-exp -> string
+(define (c-compile-if exp append-preamble cont)
+  (string-append
+   "if(" (c-compile-exp (if->condition exp) append-preamble cont) "){ \n"
+   "" (c-compile-exp (if->then exp) append-preamble cont)      "\n} else { \n"
+   "" (c-compile-exp (if->else exp) append-preamble cont)      "}\n"))
 ;   "(" (c-compile-exp (if->condition exp) append-preamble) ").b.value ? "
 ;   "(" (c-compile-exp (if->then exp) append-preamble)      ") : "
 ;   "(" (c-compile-exp (if->else exp) append-preamble)      ")"))
-;
-;; c-compile-set-cell! : set-cell!-exp (string -> void) -> string 
-;(define (c-compile-set-cell! exp append-preamble)
-;  (string-append
-;   "(*"
-;   "(" (c-compile-exp (set-cell!->cell exp) append-preamble) ".cell.addr)" " = "
-;   (c-compile-exp (set-cell!->value exp) append-preamble)
-;   ")"))
-;
+
+; c-compile-set-cell! : set-cell!-exp (string -> void) -> string 
+(define (c-compile-set-cell! exp append-preamble)
+  (string-append
+   "(*"
+   "(" (c-compile-exp (set-cell!->cell exp) append-preamble) ".cell.addr)" " = "
+   (c-compile-exp (set-cell!->value exp) append-preamble)
+   ")"))
+
 ;; c-compile-cell-get : cell-get-exp (string -> void) -> string 
 ;(define (c-compile-cell-get exp append-preamble)
 ;  (string-append
@@ -277,15 +285,10 @@
 ;(trace:debug `(,exp ,(lambda->env lam)))
 
     (string-append
-    ; TODO: may not be appropriate place to return check
-    ;       (or maybe it is with env construction??)
-;     "return_check(__lambda_" (number->string lid)
-;     "(" cont " " ;"(cont"
-     "mclosure" (number->string (+ 1 num-args)) "(cont1," ; TODO: or is it always mclosure0?
+     ;"mclosure" (number->string (+ 1 num-args)) "(c," ; TODO: or is it always mclosure0?
+     "mclosure0(c, "
      "__lambda_" (number->string lid)
-     "" ;(if (> num-fv 0) "," "")
-;     (c-compile-exp env append-preamble)
-;     "));\n"
+     ");" ;(if (> num-fv 0) "," "")
 )))
 
 ; c-compile-formals : list[symbol] -> string
@@ -316,32 +319,6 @@
                        "  " body "; \n"
                        "}\n")))))
   
-;; c-compile-env-struct : list[symbol] -> string
-;(define (c-compile-env-struct env)
-;  (let* ((id     (car env))
-;         (fields (cdr env))
-;         (sid    (number->string id))
-;         (tyname (string-append "struct __env_" sid)))
-;    (string-append 
-;     "struct __env_" (number->string id) " {\n" 
-;     (apply string-append (map (lambda (f)
-;                                 (string-append
-;                                  " Value "
-;                                  (mangle f) 
-;                                  " ; \n"))
-;                               fields))
-;     "} ;\n\n"
-;     tyname "*" " __alloc_env" sid 
-;     "(" (c-compile-formals fields) ")" "{\n"
-;     "  " tyname "*" " t = malloc(sizeof(" tyname "))" ";\n"
-;     (apply string-append 
-;            (map (lambda (f)
-;                   (string-append "  t->" (mangle f) " = " (mangle f) ";\n"))
-;                 fields))
-;     "  return t;\n"
-;     "}\n\n"
-;     )))
-;    
 (define (mta:code-gen input-program)
   (define compiled-program 
     (c-compile-program input-program))
