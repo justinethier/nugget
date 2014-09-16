@@ -1,3 +1,3 @@
-- Get rid of gcc warnings (here and in compiler's emitter)
-- Add an example that uses a 'real' closure
+- Add closure-01 support to compiler
+- Extract runtime into a header file. This needs to be done anyway and will simplify the generated code, as well as allow C code to be edited in a C file instead of as an embedded string.
 - TBD: Can there be a lambda reference that is not a closure or a direct call?
