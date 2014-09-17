@@ -342,7 +342,7 @@
      ;"mclosure" (number->string (+ 1 num-args)) "(c," ; TODO: or is it always mclosure0?
      "mclosure" (number->string (length free-var-lst)) "(c, "
      "__lambda_" (number->string lid)
-     ","
+     (if (> (length free-var-lst) 0) "," "")
      (string-join free-var-lst ", ")
      ");" ;(if (> num-fv 0) "," "")
 )))
