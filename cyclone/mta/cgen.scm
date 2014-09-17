@@ -129,9 +129,7 @@
          (let* ((lid (allocate-lambda (c-compile-lambda fun)))) ;; TODO: pass in free vars? may be needed to track closures
                                                                 ;; properly, wait until this comes up in an example
           (cond
-           ((and (list? (car args))
-                 (or (prim/cvar? (caar args))
-                     (tagged-list? '%closure (car args))))
+           ((exp/cvar? (car args))
             (let ((cvar (c-compile-exp (car args) append-preamble cont free-var-lst)))
                 (string-append
                   cvar "\n  "
@@ -164,11 +162,15 @@
                     ", "))
                 (comp-cvars
                   (string-join
-                    (map cadr comp-pairs)
-                    ";\n")))
-(trace:debug `(JAE ,comp-pairs))
+                    (filter 
+                      (lambda (s) 
+                         (and (string? s) (not (equal? s ""))))
+                      (map cadr comp-pairs))
+                    "\n")))
+(trace:debug `(JAE pairs ,comp-pairs scheme ,fun ,args))
          (string-append
           comp-cvars
+          (if (> (string-length comp-cvars) 0) "\n" "")
           "return_funcall1"
           "("
           comp-args
@@ -220,23 +222,29 @@
 (define (c-compile-args/cvars args append-preamble cont free-var-lst)
     (map
         (lambda (a)
-          (if (and (list a) (prim/cvar? a))
+          (if (exp/cvar? a)
               ;; exp introduces a C variable
               (let ((cvar (gensym 'c)))
                 (list
-;;; TODO: need to pass var-name somehow so code knows
+                    (mangle cvar)
+;;; TODO: need to pass cvar somehow so code knows
 ;;;       to generate C using that var name
-                    (c-compile-exp a append-preamble cont free-var-lst)
-                    (mangle cvar)))
+                    (c-compile-exp a append-preamble cont free-var-lst)))
               (list
                 (c-compile-exp a append-preamble cont free-var-lst)
-                ""))) ; No C variable
+                ""))) ; Not assigning a C variable
         args))
 
 ; Does primitive create a c variable?
 (define (prim/cvar? exp)
     (and (prim? exp)
          (member exp '(cons))))
+
+; Does compiling exp create a c variable?
+(define (exp/cvar? exp)
+  (and (list? exp)
+       (or (prim/cvar? (car exp))
+           (tagged-list? '%closure exp))))
 
 ; c-compile-if : if-exp -> string
 (define (c-compile-if exp append-preamble cont free-var-lst)
