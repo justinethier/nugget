@@ -152,6 +152,9 @@
             "")
           (c-compile-args args append-preamble "" cont free-var-lst)
           ")"))
+
+
+TODO: how to reconcile below with encountering %closure-ref by itself, not as part of a list?
         ((tagged-list? '%closure-ref fun)
          (let* ((comp-pairs
                   (c-compile-args/cvars 
@@ -175,23 +178,6 @@
           "("
           comp-args
           ");")))
-;; Comments WRT above condition
-;;          ;TODO: need to consider - (c-compile-exp fun append-preamble cont free-var-lst)
-;;;          ; need to compile each of args
-;;;          ; each one that is a cvar, need to place before return_funcall1
-;;;          ; need to collect a list of vars, and place them in the call to return_funcall1
-;;;; TODO: integrate with
-;;;;(define (compile-args-as-maybe-cvars args append-preamble cont free-var-lst)
-;;;; use to build cvars field and actual args to return_funcallX
-;;;; TBD: how to handle if more than 1 arg?
-;;;
-;;;         (string-append
-;;;          "return_funcall1"
-;;;          "("
-;;;          (c-compile-args args append-preamble "" cont free-var-lst)
-;;;          ");"))
-
-
         ((tagged-list? '%closure fun)
          (write `(TODO app %closure ,fun))
          ;; (cond
