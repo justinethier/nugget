@@ -155,20 +155,41 @@
           (c-compile-args args append-preamble "" cont free-var-lst)
           ")"))
         ((tagged-list? '%closure-ref fun)
+         (let* ((comp-pairs
+                  (c-compile-args/cvars 
+                     args append-preamble cont free-var-lst))
+                (comp-args 
+                  (string-join
+                    (map car comp-pairs)
+                    ", "))
+                (comp-cvars
+                  (string-join
+                    (map cadr comp-pairs)
+                    ";\n")))
+(trace:debug `(JAE ,comp-pairs))
          (string-append
-          ;TODO: need to consider - (c-compile-exp fun append-preamble cont free-var-lst)
-          ; need to compile each of args
-          ; each one that is a cvar, need to place before return_funcall1
-          ; need to collect a list of vars, and place them in the call to return_funcall1
-; TODO: integrate with
-;(define (compile-args-as-maybe-cvars args append-preamble cont free-var-lst)
-; use to build cvars field and actual args to return_funcallX
-; TBD: how to handle if more than 1 arg?
-
+          comp-cvars
           "return_funcall1"
           "("
-          (c-compile-args args append-preamble "" cont free-var-lst)
-          ");"))
+          comp-args
+          ");")))
+;; Comments WRT above condition
+;;          ;TODO: need to consider - (c-compile-exp fun append-preamble cont free-var-lst)
+;;;          ; need to compile each of args
+;;;          ; each one that is a cvar, need to place before return_funcall1
+;;;          ; need to collect a list of vars, and place them in the call to return_funcall1
+;;;; TODO: integrate with
+;;;;(define (compile-args-as-maybe-cvars args append-preamble cont free-var-lst)
+;;;; use to build cvars field and actual args to return_funcallX
+;;;; TBD: how to handle if more than 1 arg?
+;;;
+;;;         (string-append
+;;;          "return_funcall1"
+;;;          "("
+;;;          (c-compile-args args append-preamble "" cont free-var-lst)
+;;;          ");"))
+
+
         ((tagged-list? '%closure fun)
          (write `(TODO app %closure ,fun))
          ;; (cond
@@ -191,19 +212,25 @@
           (c-compile-args args append-preamble ", " cont free-var-lst)
           "));" ))))))
 
-(define (compile-args-as-maybe-cvars args append-preamble cont free-var-lst)
+;; Compile args to a function a return a list of pairs:
+;;
+;; - Code to pass as the arg
+;; - Code to insert before the function call to introduce a C variable,
+;;   for example to create a closure to pass as an arg
+(define (c-compile-args/cvars args append-preamble cont free-var-lst)
     (map
         (lambda (a)
-          (let ((var-name
-                    (cond 
-                      ((ref? a) #f) ;; No extra C expression needed
-                      ((and (list a) (prim/cvar? a))
-                       (gensym 'c))
-                      (else 
-                       (error "unhandled exp in caamc" a)))))
-            (list
-              var-name ; var introduced by c expression
-              (c-compile-exp a append-preamble cont free-var-lst))))
+          (if (and (list a) (prim/cvar? a))
+              ;; exp introduces a C variable
+              (let ((cvar (gensym 'c)))
+                (list
+;;; TODO: need to pass var-name somehow so code knows
+;;;       to generate C using that var name
+                    (c-compile-exp a append-preamble cont free-var-lst)
+                    (mangle cvar)))
+              (list
+                (c-compile-exp a append-preamble cont free-var-lst)
+                ""))) ; No C variable
         args))
 
 ; Does primitive create a c variable?
