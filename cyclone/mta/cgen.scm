@@ -157,6 +157,14 @@
         ((tagged-list? '%closure-ref fun)
          (string-append
           ;TODO: need to consider - (c-compile-exp fun append-preamble cont free-var-lst)
+          ; need to compile each of args
+          ; each one that is a cvar, need to place before return_funcall1
+          ; need to collect a list of vars, and place them in the call to return_funcall1
+; TODO: integrate with
+;(define (compile-args-as-maybe-cvars args append-preamble cont free-var-lst)
+; use to build cvars field and actual args to return_funcallX
+; TBD: how to handle if more than 1 arg?
+
           "return_funcall1"
           "("
           (c-compile-args args append-preamble "" cont free-var-lst)
@@ -182,6 +190,21 @@
           (c-compile-exp fun append-preamble cont free-var-lst)
           (c-compile-args args append-preamble ", " cont free-var-lst)
           "));" ))))))
+
+(define (compile-args-as-maybe-cvars args append-preamble cont free-var-lst)
+    (map
+        (lambda (a)
+          (let ((var-name
+                    (cond 
+                      ((ref? a) #f) ;; No extra C expression needed
+                      ((and (list a) (prim/cvar? a))
+                       (gensym 'c))
+                      (else 
+                       (error "unhandled exp in caamc" a)))))
+            (list
+              var-name ; var introduced by c expression
+              (c-compile-exp a append-preamble cont free-var-lst))))
+        args))
 
 ; Does primitive create a c variable?
 (define (prim/cvar? exp)
