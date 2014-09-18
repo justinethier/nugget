@@ -218,9 +218,9 @@
               ;; exp introduces a C variable
               (let ((cvar (gensym 'c)))
                 (list
-                    (mangle cvar)
-TODO: need to pass cvar somehow so code knows
-to generate C using that var name
+                    (string-append "&" (mangle cvar)) ; pass by ref
+;TODO: need to pass cvar somehow so code knows
+;to generate C using that var name
                     (c-compile-exp a append-preamble cont free-var-lst)))
               (list
                 (c-compile-exp a append-preamble cont free-var-lst)
