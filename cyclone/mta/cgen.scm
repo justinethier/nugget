@@ -151,10 +151,16 @@
             "c, "
             "")
           (c-compile-args args append-preamble "" cont free-var-lst)
-          ")"))
+          ")"
+          (if (prim/cvar? fun) ";" "")))
 
+        ((equal? '%closure-ref fun)
+         (string-append
+            (mangle (car args))
+            "->elt"
+            (number->string (cadr args))))
 
-TODO: how to reconcile below with encountering %closure-ref by itself, not as part of a list?
+        ;; TODO: may not be good enough, closure app could be from an elt
         ((tagged-list? '%closure-ref fun)
          (let* ((comp-pairs
                   (c-compile-args/cvars 
@@ -170,7 +176,7 @@ TODO: how to reconcile below with encountering %closure-ref by itself, not as pa
                          (and (string? s) (not (equal? s ""))))
                       (map cadr comp-pairs))
                     "\n")))
-(trace:debug `(JAE pairs ,comp-pairs scheme ,fun ,args))
+;(trace:debug `(JAE pairs ,comp-pairs scheme ,fun ,args))
          (string-append
           comp-cvars
           (if (> (string-length comp-cvars) 0) "\n" "")
@@ -213,8 +219,8 @@ TODO: how to reconcile below with encountering %closure-ref by itself, not as pa
               (let ((cvar (gensym 'c)))
                 (list
                     (mangle cvar)
-;;; TODO: need to pass cvar somehow so code knows
-;;;       to generate C using that var name
+TODO: need to pass cvar somehow so code knows
+to generate C using that var name
                     (c-compile-exp a append-preamble cont free-var-lst)))
               (list
                 (c-compile-exp a append-preamble cont free-var-lst)
@@ -238,9 +244,6 @@ TODO: how to reconcile below with encountering %closure-ref by itself, not as pa
    "if(" (c-compile-exp (if->condition exp) append-preamble cont free-var-lst) "){ \n"
    "" (c-compile-exp (if->then exp) append-preamble cont free-var-lst)      "\n} else { \n"
    "" (c-compile-exp (if->else exp) append-preamble cont free-var-lst)      "}\n"))
-;   "(" (c-compile-exp (if->condition exp) append-preamble) ").b.value ? "
-;   "(" (c-compile-exp (if->then exp) append-preamble)      ") : "
-;   "(" (c-compile-exp (if->else exp) append-preamble)      ")"))
 
 ; c-compile-set-cell! : set-cell!-exp (string -> void) -> string 
 ;(define (c-compile-set-cell! exp append-preamble)
