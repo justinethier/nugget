@@ -165,8 +165,11 @@
 
         ((equal? '%closure-ref fun)
          (string-append
+            "("
+            ;; TODO: probably not the ideal solution, but works for now
+            "(closure" (number->string (cadr args)) ")"
             (mangle (car args))
-            "->elt"
+            ")->elt"
             (number->string (cadr args))))
 
         ;; TODO: may not be good enough, closure app could be from an elt
