@@ -1,0 +1,350 @@
+
+/* STACK_GROWS_DOWNWARD is a machine-specific preprocessor switch. */
+/* It is true for the Macintosh 680X0 and the Intel 80860. */
+#define STACK_GROWS_DOWNWARD 1
+
+/* STACK_SIZE is the size of the stack buffer, in bytes.           */
+/* Some machines like a smallish stack--i.e., 4k-16k, while others */
+/* like a biggish stack--i.e., 100k-500k.                          */
+#define STACK_SIZE 100000
+
+/* HEAP_SIZE is the size of the 2nd generation, in bytes. */
+/* HEAP_SIZE should be at LEAST 225000*sizeof(cons_type). */
+#define HEAP_SIZE 6000000
+
+/* Define size of Lisp tags.  Options are "short" or "long". */
+#ifdef THINK_C
+typedef short tag_type;
+#undef STACK_SIZE
+#define STACK_SIZE 14000
+#undef HEAP_SIZE
+#define HEAP_SIZE 3000000
+#define const  
+#define volatile  
+#else
+typedef long tag_type;
+#endif
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <time.h>
+#include <setjmp.h>
+#include <string.h>
+
+#ifndef CLOCKS_PER_SEC
+/* gcc doesn't define this, even though ANSI requires it in <time.h>.. */
+#define CLOCKS_PER_SEC 0
+#define setjmp _setjmp
+#define longjmp _longjmp
+#endif
+
+/* The preprocessor symbol THINK_C is used for the Macintosh. */
+/* (There apparently isn't a separate Macintosh Operating System switch). */
+#ifdef THINK_C
+#include <MemoryMgr.h>
+#include <console.h>
+#endif
+
+/* The following sparc hack is courtesy of Roger Critchlow. */
+/* It speeds up the output by more than a factor of THREE. */
+/* Do 'gcc -O -S cboyer13.c'; 'perlscript >cboyer.s'; 'gcc cboyer.s'. */
+#ifdef __GNUC__
+#ifdef sparc
+#define never_returns __attribute__ ((noreturn))
+#else
+#define never_returns /* __attribute__ ((noreturn)) */
+#endif
+#else
+#define never_returns /* __attribute__ ((noreturn)) */
+#endif
+
+#if STACK_GROWS_DOWNWARD
+#define check_overflow(x,y) ((x) < (y))
+#else
+#define check_overflow(x,y) ((x) > (y))
+#endif
+
+/* Return to continuation after checking for stack overflow. */
+#define return_funcall1(cfn,a1) \
+{char stack; \
+ if (check_overflow(&stack,stack_limit1)) {GC(cfn,a1); return;} \
+    else {funcall1((closure) (cfn),a1); return;}}
+
+/* Evaluate an expression after checking for stack overflow. */
+/* (Overflow checking has been "optimized" away for this version). */
+#define return_check(exp) {exp; return;}
+
+/* Define tag values.  (I don't trust compilers to optimize enums.) */
+#define cons_tag 0
+#define symbol_tag 1
+#define forward_tag 2
+#define closure0_tag 3
+#define closure1_tag 4
+#define closure2_tag 5
+#define closure3_tag 6
+#define closure4_tag 7
+
+#define nil NULL
+#define eq(x,y) (x == y)
+#define nullp(x) (x == NULL)
+#define or(x,y) (x || y)
+#define and(x,y) (x && y)
+
+/* Define general object type. */
+
+typedef void *object;
+
+#define type_of(x) (((list) x)->tag)
+#define forward(x) (((list) x)->cons_car)
+
+/* Define function type. */
+
+typedef void (*function_type)();
+
+/* Define symbol type. */
+
+typedef struct {const tag_type tag; const char *pname; object plist;} symbol_type;
+typedef symbol_type *symbol;
+
+#define symbol_plist(x) (((symbol_type *) x)->plist)
+
+#define defsymbol(name) \
+static symbol_type name##_symbol = {symbol_tag, #name, nil}; \
+static const object quote_##name = &name##_symbol
+
+/* Define cons type. */
+
+typedef struct {tag_type tag; object cons_car,cons_cdr;} cons_type;
+typedef cons_type *list;
+
+#define car(x) (((list) x)->cons_car)
+#define cdr(x) (((list) x)->cons_cdr)
+#define caar(x) (car(car(x)))
+#define cadr(x) (car(cdr(x)))
+#define cdar(x) (cdr(car(x)))
+#define cddr(x) (cdr(cdr(x)))
+#define caddr(x) (car(cdr(cdr(x))))
+#define cadddr(x) (car(cdr(cdr(cdr(x)))))
+
+#define make_cons(n,a,d) \
+cons_type n; n.tag = cons_tag; n.cons_car = a; n.cons_cdr = d;
+
+#define atom(x) ((x == NULL) || (((cons_type *) x)->tag != cons_tag))
+
+/* Closure types.  (I don't trust compilers to optimize vector refs.) */
+
+typedef struct {tag_type tag; function_type fn;} closure0_type;
+typedef struct {tag_type tag; function_type fn; object elt1;} closure1_type;
+typedef struct {tag_type tag; function_type fn; object elt1,elt2;} closure2_type;
+typedef struct {tag_type tag; function_type fn; object elt1,elt2,elt3;} closure3_type;
+typedef struct {tag_type tag; function_type fn; object elt1,elt2,elt3,elt4;} closure4_type;
+
+typedef closure0_type *closure0;
+typedef closure1_type *closure1;
+typedef closure2_type *closure2;
+typedef closure3_type *closure3;
+typedef closure4_type *closure4;
+typedef closure0_type *closure;
+
+#define mclosure0(c,f) closure0_type c; c.tag = closure0_tag; c.fn = f;
+#define mclosure1(c,f,a) closure1_type c; c.tag = closure1_tag; \
+   c.fn = f; c.elt1 = a;
+#define mclosure2(c,f,a1,a2) closure2_type c; c.tag = closure2_tag; \
+   c.fn = f; c.elt1 = a1; c.elt2 = a2;
+#define mclosure3(c,f,a1,a2,a3) closure3_type c; c.tag = closure3_tag; \
+   c.fn = f; c.elt1 = a1; c.elt2 = a2; c.elt3 = a3;
+#define mclosure4(c,f,a1,a2,a3,a4) closure4_type c; c.tag = closure4_tag; \
+   c.fn = f; c.elt1 = a1; c.elt2 = a2; c.elt3 = a3; c.elt4 = a4;
+#define funcall0(cfn) ((cfn)->fn)(cfn)
+#define funcall1(cfn,a1) ((cfn)->fn)(cfn,a1)
+#define setq(x,e) x = e
+
+#define mlist1(e1) (mcons(e1,nil))
+#define mlist2(e2,e1) (mcons(e2,mlist1(e1)))
+#define mlist3(e3,e2,e1) (mcons(e3,mlist2(e2,e1)))
+#define mlist4(e4,e3,e2,e1) (mcons(e4,mlist3(e3,e2,e1)))
+#define mlist5(e5,e4,e3,e2,e1) (mcons(e5,mlist4(e4,e3,e2,e1)))
+#define mlist6(e6,e5,e4,e3,e2,e1) (mcons(e6,mlist5(e5,e4,e3,e2,e1)))
+#define mlist7(e7,e6,e5,e4,e3,e2,e1) (mcons(e7,mlist6(e6,e5,e4,e3,e2,e1)))
+
+#define rule(lhs,rhs) (mlist3(quote_equal,lhs,rhs))
+
+/* Prototypes for Lisp built-in functions. */
+
+static list mcons(object,object);
+static object terpri(void);
+static object prin1(object);
+static list assq(object,list);
+static object get(object,object);
+static object equalp(object,object);
+static object memberp(object,list);
+static char *transport(char *);
+static void GC(closure,object) never_returns;
+
+static void main_main(long stack_size,long heap_size,char *stack_base) never_returns;
+static long long_arg(int argc,char **argv,char *name,long dval);
+
+/* Global variables. */
+
+static clock_t start;   /* Starting time. */
+
+static char *stack_begin;   /* Initialized by main. */
+static char *stack_limit1;  /* Initialized by main. */
+static char *stack_limit2;
+
+static char *bottom;    /* Bottom of tospace. */
+static char *allocp;    /* Cheney allocate pointer. */
+static char *alloc_end;
+
+static long no_gcs = 0; /* Count the number of GC's. */
+
+static volatile object gc_cont;   /* GC continuation closure. */
+static volatile object gc_ans;    /* argument for GC continuation closure. */
+static jmp_buf jmp_main; /* Where to jump to. */
+
+static object test_exp1, test_exp2; /* Expressions used within test. */
+
+/* Define the Lisp atoms that we need. */
+
+defsymbol(f);
+defsymbol(t);
+/* JAE TODO: computed by compiler(?)
+defsymbol(add1);
+defsymbol(and);
+defsymbol(append);
+defsymbol(cons);
+defsymbol(delete);
+defsymbol(difference);
+defsymbol(equal);
+defsymbol(fix);
+defsymbol(flatten);
+defsymbol(foo);
+defsymbol(greatest_factor);
+defsymbol(if);
+defsymbol(implies);
+defsymbol(intersect);
+defsymbol(lemmas);
+defsymbol(length);
+defsymbol(lessp);
+defsymbol(member);
+defsymbol(nlistp);
+defsymbol(not);
+defsymbol(numberp);
+defsymbol(one);
+defsymbol(or);
+defsymbol(plus);
+defsymbol(quotient);
+defsymbol(remainder);
+defsymbol(reverse);
+defsymbol(six);
+defsymbol(sub1);
+defsymbol(times);
+defsymbol(two);
+defsymbol(x1);
+defsymbol(x2);
+defsymbol(x3);
+defsymbol(x4);
+defsymbol(x5);
+defsymbol(x6);
+defsymbol(x7);
+defsymbol(zero);
+defsymbol(zerop);
+*/
+
+static object quote_list_f;  /* Initialized by main to '(f) */
+static object quote_list_t;  /* Initialized by main to '(t) */
+
+static volatile object unify_subst = nil; /* This is a global Lisp variable. */
+
+/* These (crufty) printing functions are used for debugging. */
+static object terpri() {printf("\n"); return nil;}
+
+static object prin1(x) object x;
+{if (nullp(x)) {printf("nil "); return x;}
+ switch (type_of(x))
+   {case closure0_tag:
+    case closure1_tag:
+    case closure2_tag:
+    case closure3_tag:
+    case closure4_tag:
+      printf("<%ld>",((closure) x)->fn);
+      break;
+    case symbol_tag:
+      printf("%s ",((symbol_type *) x)->pname);
+      break;
+    case cons_tag:
+      printf("("); prin1(car(x)); printf("."); prin1(cdr(x)); printf(")");
+      break;
+    default:
+      printf("prin1: bad tag x=%ld\n",x); getchar(); exit(0);}
+ return x;}
+
+/* Some of these non-consing functions have been optimized from CPS. */
+
+static object memberp(x,l) object x; list l;
+{for (; !nullp(l); l = cdr(l)) if (equalp(x,car(l))) return quote_t;
+ return nil;}
+
+static object get(x,i) object x,i;
+{register object plist; register object plistd;
+ if (nullp(x)) return x;
+ if (type_of(x)!=symbol_tag) {printf("get: bad x=%ld\n",x); exit(0);}
+ plist = symbol_plist(x);
+ for (; !nullp(plist); plist = cdr(plistd))
+   {plistd = cdr(plist);
+    if (eq(car(plist),i)) return car(plistd);}
+ return nil;}
+
+static object equalp(x,y) object x,y;
+{for (; ; x = cdr(x), y = cdr(y))
+   {if (eq(x,y)) return quote_t;
+    if (nullp(x) || nullp(y) ||
+	type_of(x)!=cons_tag || type_of(y)!=cons_tag) return nil;
+    if (!equalp(car(x),car(y))) return nil;}}
+
+static list assq(x,l) object x; list l;
+{for (; !nullp(l); l = cdr(l))
+   {register list la = car(l); if (eq(x,car(la))) return la;}
+ return nil;}
+
+/* Examples:
+static list add_lemma(term) list term;
+{object plist = symbol_plist(car(cadr(term)));
+ if (nullp(plist))
+   {plist = mlist2(quote_lemmas,nil);
+    symbol_plist(car(cadr(term))) = plist;}
+ {object cell = cdr(plist);
+  car(cell) = mcons(term,car(cell));}
+ return term;}
+
+static void apply_subst_cont1(closure2,list) never_returns;
+
+static void apply_subst(cont,alist,term) closure cont; list alist,term;
+{if (atom(term))
+   {list temp_temp = assq(term,alist);
+    if (!nullp(temp_temp)) return_funcall1(cont,cdr(temp_temp));
+    return_funcall1(cont,term);}
+ {mclosure2(c,apply_subst_cont1,cont,car(term));
+  return_check(apply_subst_lst((closure) &c,alist,cdr(term)));}}
+
+static void apply_subst_cont1(env,dterm) closure2 env; list dterm;
+{make_cons(c,env->elt2,dterm);
+ return_funcall1(env->elt1,&c);}
+*/
+
+static void my_exit(closure) never_returns;
+
+static void my_exit(env) closure env;
+{printf("my_exit: heap bytes allocated=%ld  time=%ld ticks  no_gcs=%ld\n",
+        allocp-bottom,clock()-start,no_gcs);
+ printf("my_exit: ticks/second=%ld\n",(long) CLOCKS_PER_SEC);
+ exit(0);}
+
+static void __halt(object obj) {
+    printf("halt: ");
+    //prin1(obj);
+    //exit(0);
+    my_exit(obj);
+}
+
+
