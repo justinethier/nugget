@@ -17,6 +17,20 @@
   (display line)
   (newline))
 
+;; Echo file to stdout
+;
+; TODO: enhance and take a block of compiled code, and insert when the token is found:
+;/** SCHEME CODE ENTRY POINT **/
+;
+(define (emit-file fp)
+    (let ((l (read-line fp)))
+        (if (eof-object? l)
+            (close-port fp)
+            (begin 
+                (display l) 
+                (newline)
+                (emit-file fp)))))
+
 (define (string-join lst delim)
   (cond
     ((null? lst) 

@@ -347,14 +347,9 @@ static void my_exit(env) closure env;
  printf("my_exit: ticks/second=%ld\n",(long) CLOCKS_PER_SEC);
  exit(0);}
 
-static void test(env,cont) closure env,cont;
-{ //mclosure1(cont1,test_cont1,cont);
- //return_check(apply_subst((closure) &cont1,test_exp1,test_exp2));
 
- // JAE - temp testing, this is crap but for now it compiles
- return_check(__lambda_0(cont, quote_t));
- //my_exit(unused);
-}
+/** SCHEME CODE ENTRY POINT **/
+
 
 static char *transport(x) char *x;
 /* Transport one object.  WARNING: x cannot be nil!!! */
