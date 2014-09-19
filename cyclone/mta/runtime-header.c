@@ -267,7 +267,7 @@ static object prin1(x) object x;
     case closure2_tag:
     case closure3_tag:
     case closure4_tag:
-      printf("<%ld>",((closure) x)->fn);
+      printf("<%p>",(void *)((closure) x)->fn);
       break;
     case symbol_tag:
       printf("%s ",((symbol_type *) x)->pname);
@@ -276,7 +276,7 @@ static object prin1(x) object x;
       printf("("); prin1(car(x)); printf("."); prin1(cdr(x)); printf(")");
       break;
     default:
-      printf("prin1: bad tag x=%ld\n",x); getchar(); exit(0);}
+      printf("prin1: bad tag x=%ld\n", ((closure)x)->tag); getchar(); exit(0);}
  return x;}
 
 /* Some of these non-consing functions have been optimized from CPS. */
@@ -288,7 +288,7 @@ static object memberp(x,l) object x; list l;
 static object get(x,i) object x,i;
 {register object plist; register object plistd;
  if (nullp(x)) return x;
- if (type_of(x)!=symbol_tag) {printf("get: bad x=%ld\n",x); exit(0);}
+ if (type_of(x)!=symbol_tag) {printf("get: bad x=%ld\n",((closure)x)->tag); exit(0);}
  plist = symbol_plist(x);
  for (; !nullp(plist); plist = cdr(plistd))
    {plistd = cdr(plist);
@@ -335,7 +335,7 @@ static void apply_subst_cont1(env,dterm) closure2 env; list dterm;
 static void my_exit(closure) never_returns;
 
 static void my_exit(env) closure env;
-{printf("my_exit: heap bytes allocated=%ld  time=%ld ticks  no_gcs=%ld\n",
+{printf("my_exit: heap bytes allocated=%d  time=%ld ticks  no_gcs=%ld\n",
         allocp-bottom,clock()-start,no_gcs);
  printf("my_exit: ticks/second=%ld\n",(long) CLOCKS_PER_SEC);
  exit(0);}

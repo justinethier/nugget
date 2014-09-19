@@ -52,7 +52,7 @@ static char *transport(x) char *x;
     case forward_tag:	return (char *) forward(x);
     case symbol_tag:
     default:
-      printf("transport: bad tag x=%ld x.tag=%ld\n",x,type_of(x)); exit(0);}
+      printf("transport: bad tag x=%p x.tag=%ld\n",(void *)x,type_of(x)); exit(0);}
  return x;}
 
 /* Use overflow macro which already knows which way the stack goes. */
@@ -96,7 +96,7 @@ static void GC(cont,ans) closure cont; object ans;
 	transp(((closure4) scanp)->elt3); transp(((closure4) scanp)->elt4);
 	scanp += sizeof(closure4_type); break;
       case symbol_tag: default:
-	printf("GC: bad tag scanp=%ld scanp.tag=%ld\n",scanp,type_of(scanp));
+	printf("GC: bad tag scanp=%p scanp.tag=%ld\n",(void *)scanp,type_of(scanp));
 	exit(0);}
  longjmp(jmp_main,1); /* Return globals gc_cont, gc_ans. */
 }
@@ -124,13 +124,12 @@ static void main_main (stack_size,heap_size,stack_base)
  stack_limit1 = stack_begin + stack_size;
  stack_limit2 = stack_limit1 + 2000;
 #endif
- printf("main: CBOYER version 1.3 Copyright (c) 1994 by Nimble Computer Corporation\n");
  printf("main: sizeof(cons_type)=%ld\n",(long) sizeof(cons_type));
  if (check_overflow(stack_base,&in_my_frame))
    {printf("main: Recompile with STACK_GROWS_DOWNWARD set to %ld\n",
            (long) (1-STACK_GROWS_DOWNWARD)); exit(0);}
- printf("main: stack_size=%ld  stack_base=%ld  stack_limit1=%ld\n",
-        stack_size,stack_base,stack_limit1);
+ printf("main: stack_size=%ld  stack_base=%p  stack_limit1=%p\n",
+        stack_size,(void *)stack_base,(void *)stack_limit1);
  printf("main: Try different stack sizes from 4 K to 1 Meg.\n");
  /* Do initializations of Lisp objects and rewrite rules. */
  quote_list_f = mlist1(quote_f); quote_list_t = mlist1(quote_t);
@@ -150,8 +149,8 @@ static void main_main (stack_size,heap_size,stack_base)
   bottom = calloc(1,heap_size);
   allocp = (char *) ((((long) bottom)+7) & -8);
   alloc_end = allocp + heap_size - 8;
-  printf("main: heap_size=%ld  allocp=%ld  alloc_end=%ld\n",
-         (long) heap_size,allocp,alloc_end);
+  printf("main: heap_size=%ld  allocp=%p  alloc_end=%p\n",
+         (long) heap_size,(void *)allocp,(void *)alloc_end);
   printf("main: Try a larger heap_size if program bombs.\n");
   printf("Starting...\n");
   start = clock(); /* Start the timing clock. */
