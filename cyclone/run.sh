@@ -6,4 +6,8 @@ if [[ $# -eq 0 ]] ; then
     exit 0
 fi
 
-huski compiler.scm < $1 > tmp.c && gcc tmp.c && ./a.out
+huski compiler.scm < $1 > tmp.out \
+  && cat mta/runtime-header.c > tmp.c \
+  && cat tmp.out >> tmp.c \
+  && cat mta/runtime-footer.c >> tmp.c \
+  && gcc tmp.c && ./a.out && rm -f tmp.out

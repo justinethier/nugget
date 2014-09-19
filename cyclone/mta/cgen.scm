@@ -22,14 +22,34 @@
 ; TODO: enhance and take a block of compiled code, and insert when the token is found:
 ;/** SCHEME CODE ENTRY POINT **/
 ;
-(define (emit-file fp)
+(define (emit-fp fp)
     (let ((l (read-line fp)))
         (if (eof-object? l)
             (close-port fp)
             (begin 
                 (display l) 
                 (newline)
-                (emit-file fp)))))
+                (emit-fp fp)))))
+
+(define (read-runtime fp)
+  (letrec* 
+    ((break "/** SCHEME CODE ENTRY POINT **/")
+     (read-fp (lambda (header footer on-header?)
+       (let ((l (read-line fp)))
+         (cond
+           ((eof-object? l)
+             (close-port fp)
+             (cons (reverse header) (reverse footer)))
+           (else 
+             (cond
+               ((equal? l break)
+                 (read-fp header footer #f))
+               (else
+                 (if on-header?
+                   (read-fp (cons l header) footer on-header?)
+                   (read-fp header (cons l footer) on-header?))))))))))
+
+   (read-fp (list) (list) #t)))
 
 (define (string-join lst delim)
   (cond
@@ -382,11 +402,7 @@
                        "}\n")))))
   
 (define (mta:code-gen input-program)
-  (define compiled-program 
-    (c-compile-program input-program))
-
-  ; emit prelude for this runtime
-  (if *do-c-runtime* (emit *mta:header*))
+  (let ((compiled-program (c-compile-program input-program)))
   
   ;; Emit lambdas:
   ; Print the prototypes:
@@ -406,7 +422,5 @@
   (emit "
 static void test(env,cont) closure env,cont; { ")
   (emit compiled-program)
-  (emit "}")
-  (if *do-c-runtime* (emit *mta:footer*)))
-
+  (emit "}")))
 
