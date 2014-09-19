@@ -282,7 +282,7 @@ static object equalp(x,y) object x,y;
 {for (; ; x = cdr(x), y = cdr(y))
    {if (eq(x,y)) return quote_t;
     if (nullp(x) || nullp(y) ||
-	type_of(x)!=cons_tag || type_of(y)!=cons_tag) return nil;
+        type_of(x)!=cons_tag || type_of(y)!=cons_tag) return nil;
     if (!equalp(car(x),car(y))) return nil;}}
 
 static list assq(x,l) object x; list l;

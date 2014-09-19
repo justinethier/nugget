@@ -49,7 +49,8 @@ static char *transport(x) char *x;
        forward(x) = nx; type_of(x) = forward_tag;
        x = (char *) nx; allocp = ((char *) nx)+sizeof(closure4_type);
        return (char *) nx;}
-    case forward_tag:	return (char *) forward(x);
+    case forward_tag:
+       return (char *) forward(x);
     case symbol_tag:
     default:
       printf("transport: bad tag x=%p x.tag=%ld\n",(void *)x,type_of(x)); exit(0);}
@@ -77,27 +78,27 @@ static void GC(cont,ans) closure cont; object ans;
  while (scanp<allocp)       /* Scan the newspace. */
    switch (type_of(scanp))
      {case cons_tag:
-	transp(car(scanp)); transp(cdr(scanp));
-	scanp += sizeof(cons_type); break;
+        transp(car(scanp)); transp(cdr(scanp));
+        scanp += sizeof(cons_type); break;
       case closure0_tag:
-	scanp += sizeof(closure0_type); break;
+        scanp += sizeof(closure0_type); break;
       case closure1_tag:
-	transp(((closure1) scanp)->elt1);
-	scanp += sizeof(closure1_type); break;
+        transp(((closure1) scanp)->elt1);
+        scanp += sizeof(closure1_type); break;
       case closure2_tag:
-	transp(((closure2) scanp)->elt1); transp(((closure2) scanp)->elt2);
-	scanp += sizeof(closure2_type); break;
+        transp(((closure2) scanp)->elt1); transp(((closure2) scanp)->elt2);
+        scanp += sizeof(closure2_type); break;
       case closure3_tag:
-	transp(((closure3) scanp)->elt1); transp(((closure3) scanp)->elt2);
-	transp(((closure3) scanp)->elt3);
-	scanp += sizeof(closure3_type); break;
+        transp(((closure3) scanp)->elt1); transp(((closure3) scanp)->elt2);
+        transp(((closure3) scanp)->elt3);
+        scanp += sizeof(closure3_type); break;
       case closure4_tag:
-	transp(((closure4) scanp)->elt1); transp(((closure4) scanp)->elt2);
-	transp(((closure4) scanp)->elt3); transp(((closure4) scanp)->elt4);
-	scanp += sizeof(closure4_type); break;
+        transp(((closure4) scanp)->elt1); transp(((closure4) scanp)->elt2);
+        transp(((closure4) scanp)->elt3); transp(((closure4) scanp)->elt4);
+        scanp += sizeof(closure4_type); break;
       case symbol_tag: default:
-	printf("GC: bad tag scanp=%p scanp.tag=%ld\n",(void *)scanp,type_of(scanp));
-	exit(0);}
+        printf("GC: bad tag scanp=%p scanp.tag=%ld\n",(void *)scanp,type_of(scanp));
+        exit(0);}
  longjmp(jmp_main,1); /* Return globals gc_cont, gc_ans. */
 }
 
