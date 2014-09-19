@@ -113,9 +113,6 @@ static void main_main (stack_size,heap_size,stack_base)
  mclosure0(clos_exit,&my_exit);  /* Create a closure for exit function. */
  gc_ans = &clos_exit;            /* It becomes the argument to test. */
  /* Allocate stack buffer. */
-#ifdef THINK_C
- SetApplLimit((Ptr) (GetApplLimit()-stack_size)); MaxApplZone();
-#endif
  stack_begin = stack_base;
 #if STACK_GROWS_DOWNWARD
  stack_limit1 = stack_begin - stack_size;
@@ -168,11 +165,7 @@ static long long_arg(argc,argv,name,dval)
  return(dval);}
 
 main(int argc,char **argv)
-{
-#ifdef THINK_C
- argc = ccommand(&argv);
-#endif
- {long stack_size = long_arg(argc,argv,"-s",STACK_SIZE);
-  long heap_size = long_arg(argc,argv,"-h",HEAP_SIZE);
-  main_main(stack_size,heap_size,(char *) &stack_size);
-  return 0;}}
+{long stack_size = long_arg(argc,argv,"-s",STACK_SIZE);
+ long heap_size = long_arg(argc,argv,"-h",HEAP_SIZE);
+ main_main(stack_size,heap_size,(char *) &stack_size);
+ return 0;}
