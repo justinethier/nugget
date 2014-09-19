@@ -41,7 +41,6 @@
       (exit)))
 
   (load "mta/cgen.scm")
-  (load "mta/runtime.scm")
   (trace:info "---------------- C code:")
   (mta:code-gen input-program))
 
