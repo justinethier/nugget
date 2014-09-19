@@ -17,39 +17,35 @@
   (display line)
   (newline))
 
-;; Echo file to stdout
+;;; Echo file to stdout
+;(define (emit-fp fp)
+;    (let ((l (read-line fp)))
+;        (if (eof-object? l)
+;            (close-port fp)
+;            (begin 
+;                (display l) 
+;                (newline)
+;                (emit-fp fp)))))
 ;
-; TODO: enhance and take a block of compiled code, and insert when the token is found:
-;/** SCHEME CODE ENTRY POINT **/
+;(define (read-runtime fp)
+;  (letrec* 
+;    ((break "/** SCHEME CODE ENTRY POINT **/")
+;     (read-fp (lambda (header footer on-header?)
+;       (let ((l (read-line fp)))
+;         (cond
+;           ((eof-object? l)
+;             (close-port fp)
+;             (cons (reverse header) (reverse footer)))
+;           (else 
+;             (cond
+;               ((equal? l break)
+;                 (read-fp header footer #f))
+;               (else
+;                 (if on-header?
+;                   (read-fp (cons l header) footer on-header?)
+;                   (read-fp header (cons l footer) on-header?))))))))))
 ;
-(define (emit-fp fp)
-    (let ((l (read-line fp)))
-        (if (eof-object? l)
-            (close-port fp)
-            (begin 
-                (display l) 
-                (newline)
-                (emit-fp fp)))))
-
-(define (read-runtime fp)
-  (letrec* 
-    ((break "/** SCHEME CODE ENTRY POINT **/")
-     (read-fp (lambda (header footer on-header?)
-       (let ((l (read-line fp)))
-         (cond
-           ((eof-object? l)
-             (close-port fp)
-             (cons (reverse header) (reverse footer)))
-           (else 
-             (cond
-               ((equal? l break)
-                 (read-fp header footer #f))
-               (else
-                 (if on-header?
-                   (read-fp (cons l header) footer on-header?)
-                   (read-fp header (cons l footer) on-header?))))))))))
-
-   (read-fp (list) (list) #t)))
+;   (read-fp (list) (list) #t)))
 
 (define (string-join lst delim)
   (cond
@@ -211,10 +207,8 @@
          (let* ((comp-pairs
                   (c-compile-args/cvars 
                      args append-preamble cont free-var-lst))
-                (comp-args 
-                  (string-join
-                    (map car comp-pairs)
-                    ", "))
+                (comp-args-lst (map car comp-pairs))
+                (comp-args (string-join comp-args-lst ", "))
                 (comp-cvars
                   (string-join
                     (filter 
@@ -226,7 +220,7 @@
          (string-append
           comp-cvars
           (if (> (string-length comp-cvars) 0) "\n" "")
-          "return_funcall1"
+          "return_funcall" (number->string (- (length comp-args-lst) 1))
           "("
           comp-args
           ");")))
