@@ -13,17 +13,7 @@
 #define HEAP_SIZE 6000000
 
 /* Define size of Lisp tags.  Options are "short" or "long". */
-#ifdef THINK_C
-typedef short tag_type;
-#undef STACK_SIZE
-#define STACK_SIZE 14000
-#undef HEAP_SIZE
-#define HEAP_SIZE 3000000
-#define const  
-#define volatile  
-#else
 typedef long tag_type;
-#endif
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -36,13 +26,6 @@ typedef long tag_type;
 #define CLOCKS_PER_SEC 0
 #define setjmp _setjmp
 #define longjmp _longjmp
-#endif
-
-/* The preprocessor symbol THINK_C is used for the Macintosh. */
-/* (There apparently isn't a separate Macintosh Operating System switch). */
-#ifdef THINK_C
-#include <MemoryMgr.h>
-#include <console.h>
 #endif
 
 /* The following sparc hack is courtesy of Roger Critchlow. */
