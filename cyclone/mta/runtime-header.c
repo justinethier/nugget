@@ -53,6 +53,12 @@ typedef long tag_type;
  if (check_overflow(&stack,stack_limit1)) {GC(cfn,a1); return;} \
     else {funcall1((closure) (cfn),a1); return;}}
 
+/* TODO: need to check the stack, and figure out how to deal with
+         second arg with GC */
+#define return_funcall2(cfn,a1,a2) \
+    {funcall2((closure) (cfn),a1,a2); return;}
+
+
 /* Evaluate an expression after checking for stack overflow. */
 /* (Overflow checking has been "optimized" away for this version). */
 #define return_check(exp) {exp; return;}
@@ -140,6 +146,7 @@ typedef closure0_type *closure;
    c.fn = f; c.elt1 = a1; c.elt2 = a2; c.elt3 = a3; c.elt4 = a4;
 #define funcall0(cfn) ((cfn)->fn)(cfn)
 #define funcall1(cfn,a1) ((cfn)->fn)(cfn,a1)
+#define funcall2(cfn,a1,a2) ((cfn)->fn)(cfn,a1,a2)
 #define setq(x,e) x = e
 
 #define mlist1(e1) (mcons(e1,nil))
