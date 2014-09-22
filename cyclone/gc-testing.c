@@ -1,3 +1,6 @@
+// JAE - based off of closure-1.scm example, experimenting with 
+// generalizing/testing GC related functionality
+
 
 /* STACK_GROWS_DOWNWARD is a machine-specific preprocessor switch. */
 /* It is true for the Macintosh 680X0 and the Intel 80860. */
@@ -50,13 +53,19 @@ typedef long tag_type;
 /* Return to continuation after checking for stack overflow. */
 #define return_funcall1(cfn,a1) \
 {char stack; \
- if (check_overflow(&stack,stack_limit1)) {GC(cfn,a1); return;} \
-    else {funcall1((closure) (cfn),a1); return;}}
+ if (1 || check_overflow(&stack,stack_limit1)) { \
+     object buf[1]; buf[0] = a1; \
+     GC(cfn,buf,1); return; \
+ } else {funcall1((closure) (cfn),a1); return;}}
 
 /* TODO: need to check the stack, and figure out how to deal with
          second arg with GC */
 #define return_funcall2(cfn,a1,a2) \
-    {funcall2((closure) (cfn),a1,a2); return;}
+{char stack; \
+ if (1 || check_overflow(&stack,stack_limit1)) { \
+     object buf[2]; buf[0] = a1; buf[1] = a2; \
+     GC(cfn,buf,2); return; \
+ } else {funcall2((closure) (cfn),a1,a2); return;}}
 
 
 /* Evaluate an expression after checking for stack overflow. */
@@ -169,7 +178,7 @@ static object get(object,object);
 static object equalp(object,object);
 static object memberp(object,list);
 static char *transport(char *);
-static void GC(closure,object) never_returns;
+static void GC(closure,object*,int) never_returns;
 
 static void main_main(long stack_size,long heap_size,char *stack_base) never_returns;
 static long long_arg(int argc,char **argv,char *name,long dval);
@@ -189,7 +198,8 @@ static char *alloc_end;
 static long no_gcs = 0; /* Count the number of GC's. */
 
 static volatile object gc_cont;   /* GC continuation closure. */
-static volatile object gc_ans;    /* argument for GC continuation closure. */
+static volatile object gc_ans[10];    /* argument for GC continuation closure. */
+static volatile int gc_num_ans;
 static jmp_buf jmp_main; /* Where to jump to. */
 
 static object test_exp1, test_exp2; /* Expressions used within test. */
@@ -522,16 +532,22 @@ if (check_overflow(low_limit,temp) && \
     check_overflow(temp,high_limit)) \
    (p) = (object) transport(temp);
 
-static void GC(cont,ans) closure cont; object ans;
+static void GC(cont,ans,num_ans) closure cont; object *ans; int num_ans;
 {char foo;
+ int i;
  register char *scanp = allocp; /* Cheney scan pointer. */
  register object temp;
  register object low_limit = &foo; /* Move live data above us. */
  register object high_limit = stack_begin;
  no_gcs++;                      /* Count the number of minor GC's. */
  /* Transport GC's continuation and its argument. */
- transp(cont); transp(ans);
- gc_cont = cont; gc_ans = ans;
+ transp(cont);
+ gc_cont = cont; 
+ gc_num_ans = num_ans;
+ for (i = 0; i < num_ans; i++){ 
+     transp(ans[i]);
+     gc_ans[i] = ans[i];
+ }
  /* Transport global variable. */
  transp(unify_subst);
  while (scanp<allocp)       /* Scan the newspace. */
@@ -571,7 +587,8 @@ static void main_main (stack_size,heap_size,stack_base)
      long stack_size,heap_size; char *stack_base;
 {char in_my_frame;
  mclosure0(clos_exit,&my_exit);  /* Create a closure for exit function. */
- gc_ans = &clos_exit;            /* It becomes the argument to test. */
+ gc_ans[0] = &clos_exit;            /* It becomes the argument to test. */
+ gc_num_ans = 1;
  /* Allocate stack buffer. */
  stack_begin = stack_base;
 #if STACK_GROWS_DOWNWARD
@@ -612,7 +629,14 @@ static void main_main (stack_size,heap_size,stack_base)
   printf("Starting...\n");
   start = clock(); /* Start the timing clock. */
   /* These two statements form the most obscure loop in the history of C! */
-  setjmp(jmp_main); funcall1((closure) gc_cont,gc_ans);
+  setjmp(jmp_main); 
+  if (gc_num_ans == 1) {
+      funcall1((closure) gc_cont,gc_ans[0]);
+  } else if (gc_num_ans == 2) {
+      funcall2((closure) gc_cont,gc_ans[0],gc_ans[1]);
+  } else {
+      printf("Unsupported number of args from GC %d\n", gc_num_ans);
+  }
   /*                                                                      */
   printf("main: your setjmp and/or longjmp are broken.\n"); exit(0);}}
 
