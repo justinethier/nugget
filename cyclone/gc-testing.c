@@ -23,6 +23,7 @@ typedef long tag_type;
 #include <time.h>
 #include <setjmp.h>
 #include <string.h>
+#include <stdarg.h>
 
 #ifndef CLOCKS_PER_SEC
 /* gcc doesn't define this, even though ANSI requires it in <time.h>.. */
@@ -71,6 +72,23 @@ typedef long tag_type;
 /* Evaluate an expression after checking for stack overflow. */
 /* (Overflow checking has been "optimized" away for this version). */
 #define return_check(exp) {exp; return;}
+#define return_check2(fn, count, args) { \
+ char stack; \
+ if (0 || check_overflow(&stack,stack_limit1)) { \
+     GC_after(fn, args); return; \
+ } else { (fn)(args); }}
+
+// TODO: will args always be a list of objects?
+void GC_after(void (*fn)(), int count, ...) {
+    object ans[10];
+    int i;
+    va_list args;
+    va_start(args, fn);
+    for (i = 0; i < count; i++) {
+    }
+    GC(&fn // TODO: closure??
+    return;
+}
 
 /* Define tag values.  (I don't trust compilers to optimize enums.) */
 #define cons_tag 0
@@ -442,7 +460,8 @@ static void __lambda_0() ;
 
 static void __lambda_4(object x_931) {
   mclosure1(c_7314, __lambda_3,x_931);
-  return_check(__lambda_2(&c_7314));; 
+  //return_check(__lambda_2(&c_7314));; 
+  return_check2(__lambda_2, (&c_7314)); 
 }
 
 static void __lambda_3(object self_735, object k_734, object y_932) {
@@ -456,7 +475,8 @@ return_funcall2(r_733, &c_7310, quote_f);;
 }
 
 static void __lambda_1(object self_736, object r_732) {
-  return_check(__lambda_0(prin1(r_732)));; 
+  return_check2(__lambda_0, (prin1(r_732)));; 
+  //return_check(__lambda_0(prin1(r_732)));; 
 }
 
 static void __lambda_0(object r_731) {
@@ -465,7 +485,8 @@ static void __lambda_0(object r_731) {
 
 
 static void test(env,cont) closure env,cont; { 
-  return_check(__lambda_4(quote_t));
+  return_check2(__lambda_4, (quote_t));
+  //return_check(__lambda_4(quote_t));
 }
 
 
