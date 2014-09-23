@@ -1,3 +1,14 @@
-- Add closure-01 support to compiler
-- Extract runtime into a header file. This needs to be done anyway and will simplify the generated code, as well as allow C code to be edited in a C file instead of as an embedded string.
+- This is a bug, r_733 should not have been added to this closure:
+
+    static void __lambda_2(object r_733) {
+        mclosure1(c_7310, __lambda_1,r_733);
+
 - TBD: Can there be a lambda reference that is not a closure or a direct call?
+- interesting (but probably not a big deal):
+ (begin (let ((x #f)) (set! x (+ 2 (* 3 4))) (display x)))
+ after desugar:
+ ((lambda (x) (set! x (+ 2 (* 3 4)))) #f)
+
+ was the begin optimized away?
+
+- Just a thought: if this ever became self-hosting, could distribute compiled C files
