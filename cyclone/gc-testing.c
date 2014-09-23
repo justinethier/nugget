@@ -477,8 +477,8 @@ static void __lambda_0(object r_731) {
 
 
 static void test(env,cont) closure env,cont; { 
-  //return_check2(__lambda_4, 1, (quote_t));
-  return_check(__lambda_4(quote_t));
+  return_check2(__lambda_4, 1, (quote_t));
+  //return_check(__lambda_4(quote_t));
 }
 
 
