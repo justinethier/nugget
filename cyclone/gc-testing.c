@@ -72,12 +72,11 @@ typedef long tag_type;
 /* Evaluate an expression after checking for stack overflow. */
 /* (Overflow checking has been "optimized" away for this version). */
 #define return_check(exp) {exp; return;}
-#define return_check2(fn, count, args) { \
+#define return_check2(_fn, count, args) { \
  char stack; \
  if (0 || check_overflow(&stack,stack_limit1)) { \
-     mclosure0(c, &fn); \
-     GC_after(c, count, args); return; \
- } else { (fn)(args); }}
+     GC_after(_fn, count, args); return; \
+ } else { ((_fn)->fn)(args); }}
 
 /* Define tag values.  (I don't trust compilers to optimize enums.) */
 #define cons_tag 0
@@ -451,7 +450,13 @@ static void __lambda_0() ;
 static void __lambda_4(object x_931) {
   mclosure1(c_7314, __lambda_3,x_931);
   //return_check(__lambda_2(&c_7314));; 
-  return_check2(__lambda_2, 1, (&c_7314)); 
+
+  //GC_after(&c1, 0);
+  //((&c1)->fn)();
+  //return_check2(&c1, 1, (&c_7314)); 
+  mclosure0(c1, __lambda_2);
+  return_check2(&c1, 1, (&c_7314)); 
+  //return_check2(__lambda_2, 1, (&c_7314)); 
 }
 
 static void __lambda_3(object self_735, object k_734, object y_932) {
@@ -465,8 +470,8 @@ return_funcall2(r_733, &c_7310, quote_f);;
 }
 
 static void __lambda_1(object self_736, object r_732) {
-  return_check2(__lambda_0, 1, (prin1(r_732)));; 
-  //return_check(__lambda_0(prin1(r_732)));; 
+  //return_check2(__lambda_0, 1, (prin1(r_732)));; 
+  return_check(__lambda_0(prin1(r_732)));; 
 }
 
 static void __lambda_0(object r_731) {
@@ -475,8 +480,8 @@ static void __lambda_0(object r_731) {
 
 
 static void test(env,cont) closure env,cont; { 
-  return_check2(__lambda_4, 1, (quote_t));
-  //return_check(__lambda_4(quote_t));
+  //return_check2(__lambda_4, 1, (quote_t));
+  return_check(__lambda_4(quote_t));
 }
 
 
