@@ -75,8 +75,9 @@ typedef long tag_type;
 #define return_check2(_fn, count, args) { \
  char stack; \
  if (1 || check_overflow(&stack,stack_limit1)) { \
-     GC_after(_fn, count, args); return; \
- } else { ((_fn)->fn)(args); }}
+     mclosure0(c1, _fn); \
+     GC_after(&c1, count, args); return; \
+ } else { (_fn)(args); }}
 
 /* Define tag values.  (I don't trust compilers to optimize enums.) */
 #define cons_tag 0
@@ -449,12 +450,8 @@ static void __lambda_0() ;
 
 static void __lambda_4(object x_931) {
   mclosure1(c_7314, __lambda_3,x_931);
-  //return_check(__lambda_2(&c_7314));; 
-
-mclosure0(c1, __lambda_2); // TODO: relocate to return_check2
-  GC_after(&c1, 1, &c_7314);
-  //return_check2(&c1, 1, (&c_7314)); 
-  //return_check2(__lambda_2, 1, (&c_7314)); 
+//  return_check(__lambda_2(&c_7314));; 
+  return_check2(__lambda_2, 1, (&c_7314)); 
 }
 
 static void __lambda_3(object self_735, object k_734, object y_932) {
@@ -462,7 +459,9 @@ static void __lambda_3(object self_735, object k_734, object y_932) {
 return_funcall1(k_734, &c_7316);; 
 }
 
-static void __lambda_2(object r_733) {
+// TODO: had to add damn env param to allow calling convention
+//       to work with return_check functions
+static void __lambda_2(closure env, object r_733) {
   mclosure1(c_7310, __lambda_1,r_733);
 return_funcall2(r_733, &c_7310, quote_f);; 
 }
