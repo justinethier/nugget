@@ -74,7 +74,7 @@ typedef long tag_type;
 #define return_check(exp) {exp; return;}
 #define return_check2(_fn, count, args) { \
  char stack; \
- if (0 || check_overflow(&stack,stack_limit1)) { \
+ if (1 || check_overflow(&stack,stack_limit1)) { \
      GC_after(_fn, count, args); return; \
  } else { ((_fn)->fn)(args); }}
 
@@ -451,11 +451,9 @@ static void __lambda_4(object x_931) {
   mclosure1(c_7314, __lambda_3,x_931);
   //return_check(__lambda_2(&c_7314));; 
 
-  //GC_after(&c1, 0);
-  //((&c1)->fn)();
+mclosure0(c1, __lambda_2); // TODO: relocate to return_check2
+  GC_after(&c1, 1, &c_7314);
   //return_check2(&c1, 1, (&c_7314)); 
-  mclosure0(c1, __lambda_2);
-  return_check2(&c1, 1, (&c_7314)); 
   //return_check2(__lambda_2, 1, (&c_7314)); 
 }
 
