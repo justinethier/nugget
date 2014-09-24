@@ -1,9 +1,10 @@
-- Get gc-looping to work to verify loop constructs work on this runtime
-  Seems the program crashes after several hundred thousand GC's... not sure why
+- Migrate gc-loop changes back into runtime, and experiment with them
 - This is a bug, r_733 should not have been added to this closure:
 
     static void __lambda_2(object r_733) {
         mclosure1(c_7310, __lambda_1,r_733);
+- Look into set! support, and mutable variables
+- What other examples do not work yet? go through the list
 
 - TBD: Can there be a lambda reference that is not a closure or a direct call?
 - interesting (but probably not a big deal):
