@@ -1,5 +1,5 @@
-- Get gc-testing to work, with new version of return_check
 - Get gc-looping to work to verify loop constructs work on this runtime
+  Seems the program crashes after several hundred thousand GC's... not sure why
 - This is a bug, r_733 should not have been added to this closure:
 
     static void __lambda_2(object r_733) {
