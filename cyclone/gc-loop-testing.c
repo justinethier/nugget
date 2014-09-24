@@ -1,7 +1,3 @@
-/* This is a temporary file to test GC and looping capabilities
-   Our GC implementation needs to be extended to support this kind of behavior
-*/
-
 
 /* STACK_GROWS_DOWNWARD is a machine-specific preprocessor switch. */
 /* It is true for the Macintosh 680X0 and the Intel 80860. */
@@ -23,6 +19,7 @@ typedef long tag_type;
 #include <stdio.h>
 #include <time.h>
 #include <setjmp.h>
+// #include <stdarg.h>
 #include <string.h>
 
 #ifndef CLOCKS_PER_SEC
@@ -54,18 +51,30 @@ typedef long tag_type;
 /* Return to continuation after checking for stack overflow. */
 #define return_funcall1(cfn,a1) \
 {char stack; \
- if (check_overflow(&stack,stack_limit1)) {GC(cfn,a1); return;} \
-    else {funcall1((closure) (cfn),a1); return;}}
+ if (check_overflow(&stack,stack_limit1)) { \
+     object buf[1]; buf[0] = a1; \
+     GC(cfn,buf,1); return; \
+ } else {funcall1((closure) (cfn),a1); return;}}
 
 /* TODO: need to check the stack, and figure out how to deal with
          second arg with GC */
 #define return_funcall2(cfn,a1,a2) \
-    {funcall2((closure) (cfn),a1,a2); return;}
+{char stack; \
+ if (check_overflow(&stack,stack_limit1)) { \
+     object buf[2]; buf[0] = a1; buf[1] = a2; \
+     GC(cfn,buf,2); return; \
+ } else {funcall2((closure) (cfn),a1,a2); return;}}
 
 
 /* Evaluate an expression after checking for stack overflow. */
-/* (Overflow checking has been "optimized" away for this version). */
-#define return_check(exp) {exp; return;}
+#define return_check1(_fn, a1) { \
+ char stack; \
+ if (1 || check_overflow(&stack,stack_limit1)) { \
+     object buf[1]; buf[0] = a1; \
+     mclosure0(c1, _fn); \
+     GC(&c1, buf, 1); return; \
+ } else { (_fn)((closure)_fn, a1); }}
+//GC_after(&c1, count, args); return; 
 
 /* Define tag values.  (I don't trust compilers to optimize enums.) */
 #define cons_tag 0
@@ -173,7 +182,7 @@ static object get(object,object);
 static object equalp(object,object);
 static object memberp(object,list);
 static char *transport(char *);
-static void GC(closure,object) never_returns;
+static void GC(closure,object*,int) never_returns;
 
 static void main_main(long stack_size,long heap_size,char *stack_base) never_returns;
 static long long_arg(int argc,char **argv,char *name,long dval);
@@ -193,7 +202,8 @@ static char *alloc_end;
 static long no_gcs = 0; /* Count the number of GC's. */
 
 static volatile object gc_cont;   /* GC continuation closure. */
-static volatile object gc_ans;    /* argument for GC continuation closure. */
+static volatile object gc_ans[10];    /* argument for GC continuation closure. */
+static volatile int gc_num_ans;
 static jmp_buf jmp_main; /* Where to jump to. */
 
 static object test_exp1, test_exp2; /* Expressions used within test. */
@@ -347,134 +357,91 @@ static void __halt(object obj) {
  */
 /* 
 (begin
-  (let ((foo (lambda () (bar))) (bar (lambda () (foo))))
-    (foo)))
+  (display
+    (((lambda (x.1) (lambda (y.2) (cons x.1 y.2))) #t)
+     #f)))
  */
 /* 
 "---------------- after desugar:"
  */
 /* 
-((lambda (foo bar) (foo))
- (lambda () (bar))
- (lambda () (foo)))
+(display
+  (((lambda (x.1) (lambda (y.2) (cons x.1 y.2))) #t)
+   #f))
  */
 /* 
 "---------------- after CPS:"
  */
 /* 
-((lambda (r$2)
+((lambda (x.1)
    ((lambda (r$3)
-      ((lambda (foo bar)
-         (foo (lambda (r$1) (%halt r$1))))
-       r$2
-       r$3))
-    (lambda (k$4) (foo k$4))))
- (lambda (k$5) (bar k$5)))
+      (r$3 (lambda (r$2)
+             ((lambda (r$1) (%halt r$1)) (display r$2)))
+           #f))
+    (lambda (k$4 y.2) (k$4 (cons x.1 y.2)))))
+ #t)
  */
 /* 
 "---------------- after wrap-mutables:"
  */
 /* 
-((lambda (r$2)
+((lambda (x.1)
    ((lambda (r$3)
-      ((lambda (foo bar)
-         (foo (lambda (r$1) (%halt r$1))))
-       r$2
-       r$3))
-    (lambda (k$4) (foo k$4))))
- (lambda (k$5) (bar k$5)))
+      (r$3 (lambda (r$2)
+             ((lambda (r$1) (%halt r$1)) (display r$2)))
+           #f))
+    (lambda (k$4 y.2) (k$4 (cons x.1 y.2)))))
+ #t)
  */
 /* 
 "---------------- after closure-convert:"
  */
 /* 
-((lambda (r$2)
+((lambda (x.1)
    ((lambda (r$3)
-      ((lambda (foo bar)
-         ((%closure-ref foo 0)
-          foo
-          (%closure (lambda (self$8 r$1) (%halt r$1)))))
-       r$2
-       r$3))
+      ((%closure-ref r$3 0)
+       r$3
+       (%closure
+         (lambda (self$6 r$2)
+           ((lambda (r$1) (%halt r$1)) (display r$2))))
+       #f))
     (%closure
-      (lambda (self$7 k$4)
-        ((%closure-ref (%closure-ref self$7 1) 0)
-         (%closure-ref self$7 1)
-         k$4))
-      foo)))
- (%closure
-   (lambda (self$6 k$5)
-     ((%closure-ref (%closure-ref self$6 1) 0)
-      (%closure-ref self$6 1)
-      k$5))
-   bar))
+      (lambda (self$5 k$4 y.2)
+        ((%closure-ref k$4 0)
+         k$4
+         (cons (%closure-ref self$5 1) y.2)))
+      x.1)))
+ #t)
  */
 /* 
 "---------------- C code:"
  */
 /* 
-DEBUG: (c-compile-app: ((lambda (r$2) ((lambda (r$3) ((lambda (foo bar) ((%closure-ref foo 0) foo (%closure (lambda (self$8 r$1) (%halt r$1))))) r$2 r$3)) (%closure (lambda (self$7 k$4) ((%closure-ref (%closure-ref self$7 1) 0) (%closure-ref self$7 1) k$4)) foo))) (%closure (lambda (self$6 k$5) ((%closure-ref (%closure-ref self$6 1) 0) (%closure-ref self$6 1) k$5)) bar))) */
+DEBUG: (c-compile-app: ((lambda (x.1) ((lambda (r$3) ((%closure-ref r$3 0) r$3 (%closure (lambda (self$6 r$2) ((lambda (r$1) (%halt r$1)) (display r$2)))) #f)) (%closure (lambda (self$5 k$4 y.2) ((%closure-ref k$4 0) k$4 (cons (%closure-ref self$5 1) y.2))) x.1))) #t)) */
 /* 
-DEBUG: (c-compile-app: ((lambda (r$3) ((lambda (foo bar) ((%closure-ref foo 0) foo (%closure (lambda (self$8 r$1) (%halt r$1))))) r$2 r$3)) (%closure (lambda (self$7 k$4) ((%closure-ref (%closure-ref self$7 1) 0) (%closure-ref self$7 1) k$4)) foo))) */
+DEBUG: (c-compile-app: ((lambda (r$3) ((%closure-ref r$3 0) r$3 (%closure (lambda (self$6 r$2) ((lambda (r$1) (%halt r$1)) (display r$2)))) #f)) (%closure (lambda (self$5 k$4 y.2) ((%closure-ref k$4 0) k$4 (cons (%closure-ref self$5 1) y.2))) x.1))) */
 /* 
-DEBUG: (c-compile-app: ((lambda (foo bar) ((%closure-ref foo 0) foo (%closure (lambda (self$8 r$1) (%halt r$1))))) r$2 r$3)) */
+DEBUG: (c-compile-app: ((%closure-ref r$3 0) r$3 (%closure (lambda (self$6 r$2) ((lambda (r$1) (%halt r$1)) (display r$2)))) #f)) */
 /* 
-DEBUG: (c-compile-app: ((%closure-ref foo 0) foo (%closure (lambda (self$8 r$1) (%halt r$1))))) */
+DEBUG: (c-compile-app: ((lambda (r$1) (%halt r$1)) (display r$2))) */
 /* 
 DEBUG: (c-compile-app: (%halt r$1)) */
 /* 
-DEBUG: ((%closure (lambda (self$8 r$1) (%halt r$1))) fv: ("foo" "bar")) */
+DEBUG: (c-compile-app: (display r$2)) */
 /* 
-DEBUG: (c-compile-app: ((%closure-ref (%closure-ref self$7 1) 0) (%closure-ref self$7 1) k$4)) */
+DEBUG: ((%closure (lambda (self$6 r$2) ((lambda (r$1) (%halt r$1)) (display r$2)))) fv: ("r_733")) */
 /* 
-DEBUG: (c-compile-app: (%closure-ref self$7 1)) */
+DEBUG: (c-compile-app: ((%closure-ref k$4 0) k$4 (cons (%closure-ref self$5 1) y.2))) */
 /* 
-DEBUG: ((%closure (lambda (self$7 k$4) ((%closure-ref (%closure-ref self$7 1) 0) (%closure-ref self$7 1) k$4)) foo) fv: ("r_732")) */
+DEBUG: (c-compile-app: (cons (%closure-ref self$5 1) y.2)) */
 /* 
-DEBUG: (c-compile-app: ((%closure-ref (%closure-ref self$6 1) 0) (%closure-ref self$6 1) k$5)) */
+DEBUG: (c-compile-app: (%closure-ref self$5 1)) */
 /* 
-DEBUG: (c-compile-app: (%closure-ref self$6 1)) */
-/* 
-DEBUG: ((%closure (lambda (self$6 k$5) ((%closure-ref (%closure-ref self$6 1) 0) (%closure-ref self$6 1) k$5)) bar) fv: ()) */
-/*
-static void __lambda_5() ;
-static void __lambda_4() ;
-static void __lambda_3() ;
-static void __lambda_2() ;
-static void __lambda_1() ;
-static void __lambda_0() ;
-
-static void __lambda_5(object self_736, object k_735) {
-  return_funcall1(((closure1)self_736)->elt1, k_735);; 
-}
-
-static void __lambda_4(object r_732) {
-  mclosure1(c_7315, __lambda_3,r_732);
-  return_check(__lambda_2(&c_7315));; 
-}
-
-static void __lambda_3(object self_737, object k_734) {
-  return_funcall1(((closure1)self_737)->elt1, k_734);; 
-}
-
-static void __lambda_2(object r_733) {
-  mclosure0(r_732, __lambda_5);
-  return_check(__lambda_1(&r_732, r_733));; 
-}
-
-static void __lambda_1(object foo, object bar) {
-  mclosure2(c_7313, __lambda_0,foo, bar);
-return_funcall1(foo, &c_7313);; 
-}
-
-static void __lambda_0(object self_738, object r_731) {
-  __halt(r_731); 
-}
-*/
+DEBUG: ((%closure (lambda (self$5 k$4 y.2) ((%closure-ref k$4 0) k$4 (cons (%closure-ref self$5 1) y.2))) x.1) fv: ("x_931")) */
 
 static void test(env,cont) closure env,cont; { 
   mclosure0(c_7318, test);
-  return_check(test(&c_7318, &c_7318));
+  return_check1(test, &c_7318);
 }
 
 
@@ -541,16 +508,22 @@ if (check_overflow(low_limit,temp) && \
     check_overflow(temp,high_limit)) \
    (p) = (object) transport(temp);
 
-static void GC(cont,ans) closure cont; object ans;
+static void GC(cont,ans,num_ans) closure cont; object *ans; int num_ans;
 {char foo;
+ int i;
  register char *scanp = allocp; /* Cheney scan pointer. */
  register object temp;
  register object low_limit = &foo; /* Move live data above us. */
  register object high_limit = stack_begin;
  no_gcs++;                      /* Count the number of minor GC's. */
  /* Transport GC's continuation and its argument. */
- transp(cont); transp(ans);
- gc_cont = cont; gc_ans = ans;
+ transp(cont);
+ gc_cont = cont;
+ gc_num_ans = num_ans;
+ for (i = 0; i < num_ans; i++){ 
+     transp(ans[i]);
+     gc_ans[i] = ans[i];
+ }
  /* Transport global variable. */
  transp(unify_subst);
  while (scanp<allocp)       /* Scan the newspace. */
@@ -590,7 +563,8 @@ static void main_main (stack_size,heap_size,stack_base)
      long stack_size,heap_size; char *stack_base;
 {char in_my_frame;
  mclosure0(clos_exit,&my_exit);  /* Create a closure for exit function. */
- gc_ans = &clos_exit;            /* It becomes the argument to test. */
+ gc_ans[0] = &clos_exit;            /* It becomes the argument to test. */
+ gc_num_ans = 1;
  /* Allocate stack buffer. */
  stack_begin = stack_base;
 #if STACK_GROWS_DOWNWARD
@@ -631,7 +605,15 @@ static void main_main (stack_size,heap_size,stack_base)
   printf("Starting...\n");
   start = clock(); /* Start the timing clock. */
   /* These two statements form the most obscure loop in the history of C! */
-  setjmp(jmp_main); funcall1((closure) gc_cont,gc_ans);
+  setjmp(jmp_main);
+//  printf("after setjmp no_gcs = %ld\n", no_gcs);
+  if (gc_num_ans == 1) {
+      funcall1((closure) gc_cont,gc_ans[0]);
+  } else if (gc_num_ans == 2) {
+      funcall2((closure) gc_cont,gc_ans[0],gc_ans[1]);
+  } else {
+      printf("Unsupported number of args from GC %d\n", gc_num_ans);
+  }
   /*                                                                      */
   printf("main: your setjmp and/or longjmp are broken.\n"); exit(0);}}
 
