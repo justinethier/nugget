@@ -12,6 +12,9 @@
 /* HEAP_SIZE should be at LEAST 225000*sizeof(cons_type). */
 #define HEAP_SIZE 6000000
 
+long global_stack_size;
+long global_heap_size;
+
 /* Define size of Lisp tags.  Options are "short" or "long". */
 typedef long tag_type;
 
@@ -502,20 +505,39 @@ static char *transport(x) char *x;
  return x;}
 
 /* Use overflow macro which already knows which way the stack goes. */
+// TODO: experimental
+/* Major collection, transport objects on stack or old heap */
 #define transp(p) \
 temp = (p); \
-if (check_overflow(low_limit,temp) && \
-    check_overflow(temp,high_limit)) \
+if ((check_overflow(low_limit,temp) && \
+     check_overflow(temp,high_limit)) || \
+    (check_overflow(old_heap_low_limit, temp) && \
+     check_overflow(temp,old_heap_high_limit))) \
    (p) = (object) transport(temp);
 
-static void GC(cont,ans,num_ans) closure cont; object *ans; int num_ans;
+static void GC_loop(int major, closure cont, object *ans, int num_ans)
 {char foo;
  int i;
- register char *scanp = allocp; /* Cheney scan pointer. */
  register object temp;
  register object low_limit = &foo; /* Move live data above us. */
  register object high_limit = stack_begin;
- no_gcs++;                      /* Count the number of minor GC's. */
+ register char *scanp = allocp; /* Cheney scan pointer. */
+ register object old_heap_low_limit = low_limit; // Minor-GC default
+ register object old_heap_high_limit = high_limit; // Minor-GC default
+
+ char *tmp_bottom = bottom;    /* Bottom of tospace. */
+ char *tmp_allocp = allocp;    /* Cheney allocate pointer. */
+ char *tmp_alloc_end = alloc_end;
+ if (major) {
+    // Initialize new heap (TODO: make a function for this)
+    bottom = calloc(1,global_heap_size);
+    allocp = (char *) ((((long) bottom)+7) & -8);
+    alloc_end = allocp + global_heap_size - 8;
+    scanp = allocp;
+    old_heap_low_limit = tmp_bottom;
+    old_heap_high_limit = tmp_alloc_end;
+ }
+
  /* Transport GC's continuation and its argument. */
  transp(cont);
  gc_cont = cont;
@@ -550,8 +572,34 @@ static void GC(cont,ans,num_ans) closure cont; object *ans; int num_ans;
       case symbol_tag: default:
         printf("GC: bad tag scanp=%p scanp.tag=%ld\n",(void *)scanp,type_of(scanp));
         exit(0);}
+
+ if (major) {
+     free(tmp_bottom);
+ }
+}
+
+static void GC(cont,ans,num_ans) closure cont; object *ans; int num_ans;
+{
+ // JAE - Only room for one more minor-GC, so do a major one
+ // not sure this is the best strategy, it may be better to do major
+ // ones sooner, perhaps after every x minor GC's.
+ //
+ // also may need to consider dynamically increasing heap size, but
+ // by how much (1.3x, 1.5x, etc) and when? I suppose when heap usage
+ // after a collection is above a certain percentage, then it would be 
+ // necessary to increase heap size the next time.
+ //
+ if (allocp >= (bottom + (global_heap_size - global_stack_size))) {
+     //printf("Possibly only room for one more minor GC. no_gcs = %ld\n", no_gcs);
+     GC_loop(1, cont, ans, num_ans);
+ } else {
+     no_gcs++; /* Count the number of minor GC's. */
+     GC_loop(0, cont, ans, num_ans);
+ }
+ // /JAE
  longjmp(jmp_main,1); /* Return globals gc_cont, gc_ans. */
 }
+
 
 /* This heap cons is used only for initialization. */
 static list mcons(a,d) object a,d;
@@ -628,5 +676,7 @@ static long long_arg(argc,argv,name,dval)
 main(int argc,char **argv)
 {long stack_size = long_arg(argc,argv,"-s",STACK_SIZE);
  long heap_size = long_arg(argc,argv,"-h",HEAP_SIZE);
+ global_stack_size = stack_size;
+ global_heap_size = heap_size;
  main_main(stack_size,heap_size,(char *) &stack_size);
  return 0;}
