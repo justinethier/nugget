@@ -63,16 +63,22 @@ if (check_overflow(low_limit,temp) && \
     check_overflow(temp,high_limit)) \
    (p) = (object) transport(temp);
 
-static void GC(cont,ans) closure cont; object ans;
+static void GC(cont,ans,num_ans) closure cont; object *ans; int num_ans;
 {char foo;
+ int i;
  register char *scanp = allocp; /* Cheney scan pointer. */
  register object temp;
  register object low_limit = &foo; /* Move live data above us. */
  register object high_limit = stack_begin;
  no_gcs++;                      /* Count the number of minor GC's. */
  /* Transport GC's continuation and its argument. */
- transp(cont); transp(ans);
- gc_cont = cont; gc_ans = ans;
+ transp(cont);
+ gc_cont = cont;
+ gc_num_ans = num_ans;
+ for (i = 0; i < num_ans; i++){ 
+     transp(ans[i]);
+     gc_ans[i] = ans[i];
+ }
  /* Transport global variable. */
  transp(unify_subst);
  while (scanp<allocp)       /* Scan the newspace. */
@@ -112,7 +118,8 @@ static void main_main (stack_size,heap_size,stack_base)
      long stack_size,heap_size; char *stack_base;
 {char in_my_frame;
  mclosure0(clos_exit,&my_exit);  /* Create a closure for exit function. */
- gc_ans = &clos_exit;            /* It becomes the argument to test. */
+ gc_ans[0] = &clos_exit;            /* It becomes the argument to test. */
+ gc_num_ans = 1;
  /* Allocate stack buffer. */
  stack_begin = stack_base;
 #if STACK_GROWS_DOWNWARD
@@ -153,7 +160,14 @@ static void main_main (stack_size,heap_size,stack_base)
   printf("Starting...\n");
   start = clock(); /* Start the timing clock. */
   /* These two statements form the most obscure loop in the history of C! */
-  setjmp(jmp_main); funcall1((closure) gc_cont,gc_ans);
+  setjmp(jmp_main);
+  if (gc_num_ans == 1) {
+      funcall1((closure) gc_cont,gc_ans[0]);
+  } else if (gc_num_ans == 2) {
+      funcall2((closure) gc_cont,gc_ans[0],gc_ans[1]);
+  } else {
+      printf("Unsupported number of args from GC %d\n", gc_num_ans);
+  }
   /*                                                                      */
   printf("main: your setjmp and/or longjmp are broken.\n"); exit(0);}}
 

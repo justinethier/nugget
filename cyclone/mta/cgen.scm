@@ -171,16 +171,16 @@
                              cvar-name)))
                 (string-append
                   cvar "\n  "
-                  "return_check(__lambda_" (number->string lid)
-                  "(" ; TODO: how to propagate continuation - cont " "
+                  "return_check1(__lambda_" (number->string lid)
+                  "," ; TODO: how to propagate continuation - cont " "
                   ;", "
-                  "&" cvar-name "));")))
+                  "&" cvar-name ");")))
            (else
             (string-append
-              "return_check(__lambda_" (number->string lid)
-              "(" ; TODO: how to propagate continuation - cont " "
+              "return_check1(__lambda_" (number->string lid)
+              "," ; TODO: how to propagate continuation - cont " "
                (c-compile-args args append-preamble "" cont free-var-lst) ;", " cont free-var-lst)
-              "));" )))))
+              ");" )))))
 
         ((prim? fun)
          (string-append
@@ -381,6 +381,10 @@
          (append-preamble (lambda (s)
                             (set! preamble (string-append preamble "  " s "\n")))))
     (let* ((formals (c-compile-formals (lambda->formals exp)))
+           (has-closure? 
+             (equal? 
+                "self" 
+                (substring (mangle (car (lambda->formals exp))) 0 4)))
            (env-closure (lambda->env exp))
            (body    (c-compile-exp     
                         (car (lambda->exp exp)) ;; car ==> assume single expr in lambda body after CPS
@@ -390,7 +394,11 @@
                         ""
                         )))
       (lambda (name)
-        (string-append "static void " name "(" formals ") {\n"
+        (string-append "static void " name 
+                       "(" 
+                       (if has-closure? "" "closure _,")
+                        formals 
+                       ") {\n"
                        preamble
                        "  " body "; \n"
                        "}\n")))))

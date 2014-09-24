@@ -19,6 +19,7 @@ typedef long tag_type;
 #include <stdio.h>
 #include <time.h>
 #include <setjmp.h>
+// #include <stdarg.h>
 #include <string.h>
 
 #ifndef CLOCKS_PER_SEC
@@ -50,18 +51,30 @@ typedef long tag_type;
 /* Return to continuation after checking for stack overflow. */
 #define return_funcall1(cfn,a1) \
 {char stack; \
- if (check_overflow(&stack,stack_limit1)) {GC(cfn,a1); return;} \
-    else {funcall1((closure) (cfn),a1); return;}}
+ if (check_overflow(&stack,stack_limit1)) { \
+     object buf[1]; buf[0] = a1; \
+     GC(cfn,buf,1); return; \
+ } else {funcall1((closure) (cfn),a1); return;}}
 
 /* TODO: need to check the stack, and figure out how to deal with
          second arg with GC */
 #define return_funcall2(cfn,a1,a2) \
-    {funcall2((closure) (cfn),a1,a2); return;}
+{char stack; \
+ if (check_overflow(&stack,stack_limit1)) { \
+     object buf[2]; buf[0] = a1; buf[1] = a2; \
+     GC(cfn,buf,2); return; \
+ } else {funcall2((closure) (cfn),a1,a2); return;}}
 
 
 /* Evaluate an expression after checking for stack overflow. */
-/* (Overflow checking has been "optimized" away for this version). */
-#define return_check(exp) {exp; return;}
+#define return_check1(_fn, a1) { \
+ char stack; \
+ if (check_overflow(&stack,stack_limit1)) { \
+     object buf[1]; buf[0] = a1; \
+     mclosure0(c1, _fn); \
+     GC(&c1, buf, 1); return; \
+ } else { (_fn)((closure)_fn, a1); }}
+//GC_after(&c1, count, args); return; 
 
 /* Define tag values.  (I don't trust compilers to optimize enums.) */
 #define cons_tag 0
@@ -169,7 +182,7 @@ static object get(object,object);
 static object equalp(object,object);
 static object memberp(object,list);
 static char *transport(char *);
-static void GC(closure,object) never_returns;
+static void GC(closure,object*,int) never_returns;
 
 static void main_main(long stack_size,long heap_size,char *stack_base) never_returns;
 static long long_arg(int argc,char **argv,char *name,long dval);
@@ -189,7 +202,8 @@ static char *alloc_end;
 static long no_gcs = 0; /* Count the number of GC's. */
 
 static volatile object gc_cont;   /* GC continuation closure. */
-static volatile object gc_ans;    /* argument for GC continuation closure. */
+static volatile object gc_ans[10];    /* argument for GC continuation closure. */
+static volatile int gc_num_ans;
 static jmp_buf jmp_main; /* Where to jump to. */
 
 static object test_exp1, test_exp2; /* Expressions used within test. */
