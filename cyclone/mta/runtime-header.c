@@ -12,6 +12,9 @@
 /* HEAP_SIZE should be at LEAST 225000*sizeof(cons_type). */
 #define HEAP_SIZE 6000000
 
+long global_stack_size;
+long global_heap_size;
+
 /* Define size of Lisp tags.  Options are "short" or "long". */
 typedef long tag_type;
 
