@@ -1,4 +1,3 @@
-- Migrate gc-loop changes back into runtime, and experiment with them
 - This is a bug, r_733 should not have been added to this closure:
 
     static void __lambda_2(object r_733) {
