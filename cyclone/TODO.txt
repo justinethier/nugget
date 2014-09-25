@@ -1,8 +1,9 @@
+- Look into set! support, and mutable variables.
+  fix compiler to actually generate code for set!, then look into assignment conversion for using cons cells instead of globals to hold variables.
 - This is a bug, r_733 should not have been added to this closure:
 
     static void __lambda_2(object r_733) {
         mclosure1(c_7310, __lambda_1,r_733);
-- Look into set! support, and mutable variables
 - What other examples do not work yet? go through the list
 
 - TBD: Can there be a lambda reference that is not a closure or a direct call?
