@@ -883,7 +883,7 @@
 (define (closure-convert exp)
  (define (convert exp self-var free-var-lst)
   (define (cc exp)
-;(write `(DEBUG cc ,exp))
+(write `(DEBUG cc ,exp fv: ,free-var-lst))
    (cond
     ((const? exp)        exp)
     ((ref? exp)
@@ -918,20 +918,27 @@
 ;    
 ;    ((cell? exp)         `(cell ,(closure-convert (cell->value exp))))
 ;    ((cell-get? exp)     `(cell-get ,(closure-convert (cell-get->cell exp))))
-    ((cell? exp)       `(cell ,(cc (cell->value exp))))
     ;((cell? exp)       `(cell ,@(map cc (cell->value exp))))
-    ((cell-get? exp)   `(cell-get ,(cc (cell-get->cell exp))))
     ;((cell-get? exp)   `(cell-get ,@(map cc (cell-get->cell exp))))
-    ((set-cell!? exp)  `(set-cell! ,(set-cell!->cell exp)
-                                   ,(cc (set-cell!->value exp))))
                                    ;,@(map cc (set-cell!->value exp))))
+    ((cell? exp)       `(cell ,(cc (cell->value exp))))
+    ((cell-get? exp)   `(cell-get ,(cc (cell-get->cell exp))))
+    ((set-cell!? exp)  `(set-cell! ,(cc (set-cell!->cell exp))
+                                   ,(cc (set-cell!->value exp))))
     ((app? exp)
      (let ((fn (car exp))
            (args (map cc (cdr exp))))
        (if (lambda? fn)
-           `((lambda ,(lambda->formals fn)
-                ,@(map cc (lambda->exp fn)))
-             ,@args)
+           (let* ((body  (lambda->exp fn))
+                  (new-free-vars (difference (free-vars body) (lambda->formals fn))))
+(write `(DEBUG lambda application ,fn fv: ,new-free-vars))
+               `(
+                 ;(%closure ??? - maybe only if there are new free-vars?
+                 ; if there are free vars in the lambda body we will need
+                 ; to be able to reference them somehow in the compiled code
+                 (lambda ,(lambda->formals fn)
+                    ,@(map cc body))
+                 ,@args))
            (let ((f (cc fn)))
             `((%closure-ref ,f 0)
               ,f
