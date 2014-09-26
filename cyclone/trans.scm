@@ -769,7 +769,7 @@
              (cps (car asts)
                   `(lambda
                      (,r)
-                    ,(list (cps-seq (cdr asts) cont-ast))))))))
+                    ,(cps-seq (cdr asts) cont-ast)))))))
 
   (let ((ast-cps
          (cps ast

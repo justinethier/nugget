@@ -1,21 +1,6 @@
 - Look into set! support, and mutable variables.
   fix compiler to actually generate code for set!, then look into assignment conversion for using cons cells instead of globals to hold variables.
 
-CPS phase is broken, there is an extra set of parens inserted on third line:
-; desugar: ((lambda (x) (set! x #t) (display x)) #f)
-; CPS:
-((lambda (x)
-   ((lambda (r$2)
-      (((lambda (r$1) (%halt r$1)) (display x))))
-    (set! x #t)))
- #f)
-; 90-min-scc CPS:
-((lambda (x.1) 
-    ((lambda (r.3) 
-        ((lambda (r.2) (%halt r.2)) (%display x.1))) 
-    (set! x #t))) 
- #f)
-;----------------
 
 - This is a bug, r_733 should not have been added to this closure:
 
