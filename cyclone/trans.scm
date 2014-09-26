@@ -883,7 +883,7 @@
 (define (closure-convert exp)
  (define (convert exp self-var free-var-lst)
   (define (cc exp)
-(write `(DEBUG cc ,exp fv: ,free-var-lst))
+;(write `(DEBUG cc ,exp fv: ,free-var-lst))
    (cond
     ((const? exp)        exp)
     ((ref? exp)
@@ -930,15 +930,25 @@
            (args (map cc (cdr exp))))
        (if (lambda? fn)
            (let* ((body  (lambda->exp fn))
-                  (new-free-vars (difference (free-vars body) (lambda->formals fn))))
-(write `(DEBUG lambda application ,fn fv: ,new-free-vars))
-               `(
-                 ;(%closure ??? - maybe only if there are new free-vars?
-                 ; if there are free vars in the lambda body we will need
-                 ; to be able to reference them somehow in the compiled code
-                 (lambda ,(lambda->formals fn)
-                    ,@(map cc body))
-                 ,@args))
+                  (new-free-vars (difference (free-vars body) (lambda->formals fn)))
+                  (new-free-vars? (> (length new-free-vars) 0)))
+;(write `(DEBUG lambda application ,fn fv: ,new-free-vars))
+               (if new-free-vars?
+; TODO: this is experimental! -------------------
+                 ; Free vars, attempt to create a closure for them
+                 (let* ((new-self-var (gensym 'self)))
+                   `((%closure 
+                        (lambda
+                          ,(cons new-self-var (lambda->formals fn))
+                          ,(convert (car body) new-self-var new-free-vars))
+                        ,@(map (lambda (v) (cc v))
+                               new-free-vars))
+                     ,@args))
+; END TODO --------------------------------------
+                 ; No free vars, just create simple lambda, at least for now
+                 `((lambda ,(lambda->formals fn)
+                           ,@(map cc body))
+                   ,@args)))
            (let ((f (cc fn)))
             `((%closure-ref ,f 0)
               ,f
