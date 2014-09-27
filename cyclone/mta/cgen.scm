@@ -225,7 +225,28 @@
           comp-args
           ");")))
         ((tagged-list? '%closure fun)
-         (write `(TODO app %closure ,fun)))
+         (let* ((cvar-name (mangle (gensym 'c)))
+                (cvar (c-compile-closure fun append-preamble cont free-var-lst cvar-name))
+                (comp-pairs
+                  (c-compile-args/cvars 
+                     args append-preamble cont free-var-lst))
+                (comp-args-lst (map car comp-pairs))
+                (comp-args (string-join comp-args-lst ", "))
+                (comp-cvars
+                  (string-join
+                    (filter 
+                      (lambda (s) 
+                         (and (string? s) (not (equal? s ""))))
+                      (map cadr comp-pairs))
+                    "\n")))
+            (string-append
+                comp-cvars "\n"
+                cvar "\n"
+          "return_funcall" (number->string (- (length comp-args-lst) 1))
+          "("
+          cvar-name ","
+          comp-args
+            ");")))
         (else
          (string-append
           (c-compile-exp fun append-preamble cont free-var-lst cv-name)
