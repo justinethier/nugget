@@ -1,51 +1,9 @@
-; JAE notes:
-;
-; - a primitive can be executed inline, EG:
-;   static void apply_subst(cont,alist,term) closure cont; list alist,term;
-;   {if (atom(term))
-;      {list temp_temp = assq(term,alist);
-;       if (!nullp(temp_temp)) return_funcall1(cont,cdr(temp_temp));
-;       return_funcall1(cont,term);}
-; - a function can return a value to its continuation, eg:
-;   return_funcall1(cont, cdr(temp_temp))
-; - or if you have a new continuation to call into (EG: function to call),
-;   use return_check to do it 
-; - but how is closure allocated (is it for another continuation?) and what func
-;   is called into using return_check?
-
+;;
+;; Compile scheme code to a Cheney-on-the-MTA C runtime
+;;
 (define (emit line)
   (display line)
   (newline))
-
-;;; Echo file to stdout
-;(define (emit-fp fp)
-;    (let ((l (read-line fp)))
-;        (if (eof-object? l)
-;            (close-port fp)
-;            (begin 
-;                (display l) 
-;                (newline)
-;                (emit-fp fp)))))
-;
-;(define (read-runtime fp)
-;  (letrec* 
-;    ((break "/** SCHEME CODE ENTRY POINT **/")
-;     (read-fp (lambda (header footer on-header?)
-;       (let ((l (read-line fp)))
-;         (cond
-;           ((eof-object? l)
-;             (close-port fp)
-;             (cons (reverse header) (reverse footer)))
-;           (else 
-;             (cond
-;               ((equal? l break)
-;                 (read-fp header footer #f))
-;               (else
-;                 (if on-header?
-;                   (read-fp (cons l header) footer on-header?)
-;                   (read-fp header (cons l footer) on-header?))))))))))
-;
-;   (read-fp (list) (list) #t)))
 
 (define (string-join lst delim)
   (cond
@@ -411,3 +369,33 @@ static void test(env,cont) closure env,cont; { ")
   (emit compiled-program)
   (emit "}")))
 
+; Unused -
+;;; Echo file to stdout
+;(define (emit-fp fp)
+;    (let ((l (read-line fp)))
+;        (if (eof-object? l)
+;            (close-port fp)
+;            (begin 
+;                (display l) 
+;                (newline)
+;                (emit-fp fp)))))
+;
+;(define (read-runtime fp)
+;  (letrec* 
+;    ((break "/** SCHEME CODE ENTRY POINT **/")
+;     (read-fp (lambda (header footer on-header?)
+;       (let ((l (read-line fp)))
+;         (cond
+;           ((eof-object? l)
+;             (close-port fp)
+;             (cons (reverse header) (reverse footer)))
+;           (else 
+;             (cond
+;               ((equal? l break)
+;                 (read-fp header footer #f))
+;               (else
+;                 (if on-header?
+;                   (read-fp (cons l header) footer on-header?)
+;                   (read-fp header (cons l footer) on-header?))))))))))
+;
+;   (read-fp (list) (list) #t)))
