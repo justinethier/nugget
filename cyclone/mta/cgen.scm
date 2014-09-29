@@ -111,10 +111,9 @@
 (define (c-compile-const exp)
   (cond
     ((integer? exp) (string-append 
-                     "MakeInt(" (number->string exp) ")"))
+                     "make_int(" (number->string exp) ")"))
     ((boolean? exp) (string-append
                      (if exp "quote_t" "quote_f")))
-                     ;"MakeBoolean(" (if exp "1" "0") ")"))
     (else           (error "unknown constant: " exp))))
 
 ;; c-compile-prim : prim-exp -> string
@@ -246,7 +245,7 @@
                 cvar "\n"
           "return_funcall" (number->string (- (length comp-args-lst) 0))
           "("
-          "&" cvar-name ","
+          "(closure)&" cvar-name ","
           comp-args
             ");")))
         (else

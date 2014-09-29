@@ -88,6 +88,8 @@ typedef long tag_type;
 #define closure2_tag 5
 #define closure3_tag 6
 #define closure4_tag 7
+#define integer_tag 8
+#define double_tag 9
 
 #define nil NULL
 #define eq(x,y) (x == y)
@@ -116,6 +118,12 @@ typedef symbol_type *symbol;
 #define defsymbol(name) \
 static symbol_type name##_symbol = {symbol_tag, #name, nil}; \
 static const object quote_##name = &name##_symbol
+
+/* Define numeric types (experimental) */
+typedef struct {tag_type tag; int value;} integer_type;
+#define make_int(n,v) integer_type n; n.tag = integer_tag; n.value = v;
+typedef struct {tag_type tag; double value;} double_type;
+#define make_double(n,v) double_type n; n.tag = double_tag; n.value = v;
 
 /* Define cons type. */
 
@@ -218,57 +226,15 @@ static volatile object gc_ans[10];    /* argument for GC continuation closure. *
 static volatile int gc_num_ans;
 static jmp_buf jmp_main; /* Where to jump to. */
 
-static object test_exp1, test_exp2; /* Expressions used within test. */
+//static object test_exp1, test_exp2; /* Expressions used within test. */
 
 /* Define the Lisp atoms that we need. */
 
 defsymbol(f);
 defsymbol(t);
-/* JAE TODO: computed by compiler(?)
-defsymbol(add1);
-defsymbol(and);
-defsymbol(append);
-defsymbol(cons);
-defsymbol(delete);
-defsymbol(difference);
-defsymbol(equal);
-defsymbol(fix);
-defsymbol(flatten);
-defsymbol(foo);
-defsymbol(greatest_factor);
-defsymbol(if);
-defsymbol(implies);
-defsymbol(intersect);
-defsymbol(lemmas);
-defsymbol(length);
-defsymbol(lessp);
-defsymbol(member);
-defsymbol(nlistp);
-defsymbol(not);
-defsymbol(numberp);
-defsymbol(one);
-defsymbol(or);
-defsymbol(plus);
-defsymbol(quotient);
-defsymbol(remainder);
-defsymbol(reverse);
-defsymbol(six);
-defsymbol(sub1);
-defsymbol(times);
-defsymbol(two);
-defsymbol(x1);
-defsymbol(x2);
-defsymbol(x3);
-defsymbol(x4);
-defsymbol(x5);
-defsymbol(x6);
-defsymbol(x7);
-defsymbol(zero);
-defsymbol(zerop);
-*/
 
-static object quote_list_f;  /* Initialized by main to '(f) */
-static object quote_list_t;  /* Initialized by main to '(t) */
+//static object quote_list_f;  /* Initialized by main to '(f) */
+//static object quote_list_t;  /* Initialized by main to '(t) */
 
 static volatile object unify_subst = nil; /* This is a global Lisp variable. */
 
@@ -287,6 +253,12 @@ static object prin1(x) object x;
       break;
     case symbol_tag:
       printf("%s ",((symbol_type *) x)->pname);
+      break;
+    case integer_tag:
+      printf("%d ", ((integer_type *) x)->value);
+      break;
+    case double_tag:
+      printf("%lf ", ((double_type *) x)->value);
       break;
     case cons_tag:
       printf("("); prin1(car(x)); printf("."); prin1(cdr(x)); printf(")");
@@ -323,30 +295,8 @@ static list assq(x,l) object x; list l;
    {register list la = car(l); if (eq(x,car(la))) return la;}
  return nil;}
 
-/* Examples:
-static list add_lemma(term) list term;
-{object plist = symbol_plist(car(cadr(term)));
- if (nullp(plist))
-   {plist = mlist2(quote_lemmas,nil);
-    symbol_plist(car(cadr(term))) = plist;}
- {object cell = cdr(plist);
-  car(cell) = mcons(term,car(cell));}
- return term;}
-
-static void apply_subst_cont1(closure2,list) never_returns;
-
-static void apply_subst(cont,alist,term) closure cont; list alist,term;
-{if (atom(term))
-   {list temp_temp = assq(term,alist);
-    if (!nullp(temp_temp)) return_funcall1(cont,cdr(temp_temp));
-    return_funcall1(cont,term);}
- {mclosure2(c,apply_subst_cont1,cont,car(term));
-  return_check(apply_subst_lst((closure) &c,alist,cdr(term)));}}
-
-static void apply_subst_cont1(env,dterm) closure2 env; list dterm;
-{make_cons(c,env->elt2,dterm);
- return_funcall1(env->elt1,&c);}
-*/
+static object sum(object x, object y) {
+}
 
 static void my_exit(closure) never_returns;
 

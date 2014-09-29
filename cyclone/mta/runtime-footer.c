@@ -179,8 +179,8 @@ static void main_main (stack_size,heap_size,stack_base)
  printf("main: stack_size=%ld  stack_base=%p  stack_limit1=%p\n",
         stack_size,(void *)stack_base,(void *)stack_limit1);
  printf("main: Try different stack sizes from 4 K to 1 Meg.\n");
- /* Do initializations of Lisp objects and rewrite rules. */
- quote_list_f = mlist1(quote_f); quote_list_t = mlist1(quote_t);
+ /* Do initializations of Lisp objects and rewrite rules.
+ quote_list_f = mlist1(quote_f); quote_list_t = mlist1(quote_t); */
  /* Make temporary short names for certain atoms. */
  {
 
