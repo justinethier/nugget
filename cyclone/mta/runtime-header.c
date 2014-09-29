@@ -175,6 +175,15 @@ typedef closure0_type *closure;
 
 #define rule(lhs,rhs) (mlist3(quote_equal,lhs,rhs))
 
+#define make_cell(n,a) make_cons(n,a,nil);
+static object cell_get(object cell){
+    return car(cell);
+}
+static object cell_set(object cell, object value){
+    ((list) cell)->cons_car = value;
+    return cell;
+}
+
 /* Prototypes for Lisp built-in functions. */
 
 static list mcons(object,object);

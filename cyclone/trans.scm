@@ -243,6 +243,9 @@
       (eq? exp '=)
       (eq? exp '%halt)
       (eq? exp 'cons)
+      (eq? exp 'cell-get)
+      (eq? exp 'set-cell!)
+      (eq? exp 'cell)
       (eq? exp 'display)))
 
 (define (prim-call? exp)

@@ -120,14 +120,16 @@
 ;; c-compile-prim : prim-exp -> string
 (define (c-compile-prim p)
   (cond
-;    ((eq? '+ p)       "__sum")
-;    ((eq? '- p)       "__difference")
-;    ((eq? '* p)       "__product")
-;    ((eq? '= p)       "__numEqual")
-    ((eq? '%halt p)   "__halt")
-;    ((eq? 'display p) "__display")
-    ((eq? 'display p) "prin1")
-    ((eq? 'cons p) "make_cons") ;; TODO: when to use mcons vs make_cons ?
+;    ((eq? p '+)       "__sum")
+;    ((eq? p '-)       "__difference")
+;    ((eq? p '*)       "__product")
+;    ((eq? p '=)       "__numEqual")
+    ((eq? p '%halt)   "__halt")
+    ((eq? p 'display) "prin1")
+    ((eq? p 'cons) "make_cons") ;; TODO: when to use mcons vs make_cons ?
+    ((eq? p 'cell-get)  "cell_get")
+    ((eq? p 'set-cell!) "cell_set")
+    ((eq? p 'cell)      "make_cell")
     (else             (error "unhandled primitive: " p))))
 
 ; c-compile-ref : ref-exp -> string
@@ -242,9 +244,9 @@
             (string-append
                 comp-cvars "\n"
                 cvar "\n"
-          "return_funcall" (number->string (- (length comp-args-lst) 1))
+          "return_funcall" (number->string (- (length comp-args-lst) 0))
           "("
-          cvar-name ","
+          "&" cvar-name ","
           comp-args
             ");")))
         (else
@@ -275,7 +277,7 @@
 ; Does primitive create a c variable?
 (define (prim/cvar? exp)
     (and (prim? exp)
-         (member exp '(cons))))
+         (member exp '(cons cell))))
 
 ; Does compiling exp create a c variable?
 (define (exp/cvar? exp)
