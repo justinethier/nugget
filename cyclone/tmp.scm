@@ -5,10 +5,10 @@
 ;(display ((lambda (x) x) (cons #t (cons #t #f))))
 ; (display #t)
 ; (display #f)
-(if #t (display #t) (display #f))
+;(if #t (display #t) (display #f))
 ; 1
 ; 'done
-; (display 1)
+(display 1)
 ; (display '(1 2 3)
 ; (display '(a b c)
 ; TODO: actual closure demonstration
