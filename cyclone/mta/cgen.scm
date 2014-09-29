@@ -92,18 +92,12 @@
     ((prim?  exp)       (c-compile-prim exp))
     ((ref?   exp)       (c-compile-ref exp))
     ((if? exp)          (c-compile-if exp append-preamble cont free-var-lst))
-;
-;    ; IR (1):
-;    ((cell? exp)        (c-compile-cell exp append-preamble))
-;    ((cell-get? exp)    (c-compile-cell-get exp append-preamble))
-;    ((set-cell!? exp)   (c-compile-set-cell! exp append-preamble))
-;    
-;    ; IR (2):
+
+    ; IR (2):
     ((tagged-list? '%closure exp)
      (c-compile-closure exp append-preamble cont free-var-lst cv-name))
-;    ((env-get? exp)     (c-compile-env-get exp append-preamble))
-;    
-;    ; Application:      
+    
+    ; Application:      
     ((app? exp)         (c-compile-app exp append-preamble cont free-var-lst cv-name))
     (else               (error "unknown exp in c-compile-exp: " exp))))
 
@@ -295,37 +289,6 @@
    "" (c-compile-exp 
          (if->else exp) append-preamble cont free-var-lst "")
    "}\n"))
-
-; c-compile-set-cell! : set-cell!-exp (string -> void) -> string 
-;(define (c-compile-set-cell! exp append-preamble)
-;  (string-append
-;   "(*"
-;   "(" (c-compile-exp (set-cell!->cell exp) append-preamble) ".cell.addr)" " = "
-;   (c-compile-exp (set-cell!->value exp) append-preamble)
-;   ")"))
-
-;; c-compile-cell-get : cell-get-exp (string -> void) -> string 
-;(define (c-compile-cell-get exp append-preamble)
-;  (string-append
-;   "(*("
-;   (c-compile-exp (cell-get->cell exp) append-preamble)
-;   ".cell.addr"
-;   "))"))
-;
-;; c-compile-cell : cell-exp (string -> void) -> string
-;(define (c-compile-cell exp append-preamble)
-;  (string-append
-;   "NewCell(" (c-compile-exp (cell->value exp) append-preamble) ")"))
-
-;; c-compile-env-get : env-get (string -> void) -> string
-;(define (c-compile-env-get exp append-preamble)
-;  (string-append
-;   "((struct __env_"
-;   (number->string (env-get->id exp)) "*)" 
-;   (c-compile-exp (env-get->env exp) append-preamble) ".env.env)->" 
-;   (mangle (env-get->field exp))))
-;
-
 
 
 ;; Lambda compilation.
