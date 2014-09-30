@@ -25,7 +25,15 @@ that way, when we compile something like (display 1), it can compile down to som
         delim 
         (string-join (cdr lst) delim)))))
 
-;; Compilation routines.
+;;; Compilation routines.
+
+;; Return generated code that also requests allocation of C variables on stack
+(define (c-code/vars str cvars)
+  (list str
+        cvars))
+
+;; Return generated code with no C variables allocated on the stack
+(define (c-code str) (c-code/vars str (list)))
 
 ;; c-compile-program : exp -> string
 (define (c-compile-program exp)
@@ -70,10 +78,16 @@ that way, when we compile something like (display 1), it can compile down to som
 ;; c-compile-const : const-exp -> string
 (define (c-compile-const exp)
   (cond
-    ((integer? exp) (string-append 
-                     "make_int(" (number->string exp) ")"))
-    ((boolean? exp) (string-append
-                     (if exp "quote_t" "quote_f")))
+    ((integer? exp) 
+      (let ((cvar-name (mangle (gensym 'c))))
+        (c-code/vars
+            cvar-name ; Code is just the variable name
+            (list     ; Allocate integer on the C stack
+              (string-append 
+                "make_int(" cvar-name ", " (number->string exp) ");")))))
+    ((boolean? exp) 
+      (c-code (string-append
+                (if exp "quote_t" "quote_f"))))
     (else           (error "unknown constant: " exp))))
 
 ;; c-compile-prim : prim-exp -> string
