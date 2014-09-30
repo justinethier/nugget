@@ -1,3 +1,11 @@
+TODO: cv-name is a hack, should be replaced with a scheme that collects newly-introduced C variables and returns them
+along with the compiled code. Maybe they would be returned as a tuple (list, vector, whatever) - since C code is compiled as a string.
+
+
+that way, when we compile something like (display 1), it can compile down to something like "prin1(c1)" with "c1" marked as a var assigned to "make_int"
+
+
+
 ;;
 ;; Compile scheme code to a Cheney-on-the-MTA C runtime
 ;;
