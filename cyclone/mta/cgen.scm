@@ -1,8 +1,8 @@
-TODO: cv-name is a hack, should be replaced with a scheme that collects newly-introduced C variables and returns them
-along with the compiled code. Maybe they would be returned as a tuple (list, vector, whatever) - since C code is compiled as a string.
-
-
-that way, when we compile something like (display 1), it can compile down to something like "prin1(c1)" with "c1" marked as a var assigned to "make_int"
+;TODO: cv-name is a hack, should be replaced with a scheme that collects newly-introduced C variables and returns them
+;along with the compiled code. Maybe they would be returned as a tuple (list, vector, whatever) - since C code is compiled as a string.
+;
+;
+;that way, when we compile something like (display 1), it can compile down to something like "prin1(c1)" with "c1" marked as a var assigned to "make_int"
 
 
 
@@ -35,12 +35,32 @@ that way, when we compile something like (display 1), it can compile down to som
 ;; Return generated code with no C variables allocated on the stack
 (define (c-code str) (c-code/vars str (list)))
 
+(define (c:code c-pair) (car c-pair))
+(define (c:allocs c-pair) (cadr c-pair))
+(define (c:allocs->str c-allocs)
+  (apply
+    string-append
+    (map
+        (lambda (c)
+           (string-append c "\n"))
+        c-allocs)))
+
+(define (c:append cp1 cp2)
+  (c-code/vars 
+    (string-append (c:code cp1) (c:code cp2))
+    (append (c:allocs cp1) (c:allocs cp2))))
+
+(define (c:append/prefix prefix cp1 cp2)
+  (c-code/vars 
+    (string-append prefix (c:code cp1) (c:code cp2))
+    (append (c:allocs cp1) (c:allocs cp2))))
+
 ;; c-compile-program : exp -> string
 (define (c-compile-program exp)
   (let* ((preamble "")
          (append-preamble (lambda (s)
                             (set! preamble (string-append preamble "  " s "\n"))))
-         (body (c-compile-exp exp append-preamble "cont" '() "")))
+         (body (c-compile-exp exp append-preamble "cont" '())))
     (string-append 
      preamble 
 ;     "int main (int argc, char* argv[]) {\n"
@@ -57,9 +77,7 @@ that way, when we compile something like (display 1), it can compile down to som
 ;;        this is experimental and probably needs refinement
 ;; free-var-lst - list of free variables, for creating closures
 ;;                 this is experimental but based off of closure-convert
-;; cv-name - String name of a C variable that is being created by this
-;;           expression. Blank if not applicable.
-(define (c-compile-exp exp append-preamble cont free-var-lst cv-name)
+(define (c-compile-exp exp append-preamble cont free-var-lst)
   (cond
     ; Core forms:
     ((const? exp)       (c-compile-const exp))
@@ -69,10 +87,10 @@ that way, when we compile something like (display 1), it can compile down to som
 
     ; IR (2):
     ((tagged-list? '%closure exp)
-     (c-compile-closure exp append-preamble cont free-var-lst cv-name))
+     (c-compile-closure exp append-preamble cont free-var-lst))
     
     ; Application:      
-    ((app? exp)         (c-compile-app exp append-preamble cont free-var-lst cv-name))
+    ((app? exp)         (c-compile-app exp append-preamble cont free-var-lst))
     (else               (error "unknown exp in c-compile-exp: " exp))))
 
 ;; c-compile-const : const-exp -> string
@@ -92,6 +110,7 @@ that way, when we compile something like (display 1), it can compile down to som
 
 ;; c-compile-prim : prim-exp -> string
 (define (c-compile-prim p)
+ (c-code
   (cond
 ;    ((eq? p '+)       "__sum")
 ;    ((eq? p '-)       "__difference")
@@ -103,63 +122,53 @@ that way, when we compile something like (display 1), it can compile down to som
     ((eq? p 'cell-get)  "cell_get")
     ((eq? p 'set-cell!) "cell_set")
     ((eq? p 'cell)      "make_cell")
-    (else             (error "unhandled primitive: " p))))
+    (else             (error "unhandled primitive: " p)))))
 
 ; c-compile-ref : ref-exp -> string
 (define (c-compile-ref exp)
-  (mangle exp))
+  (c-code (mangle exp)))
   
 ; c-compile-args : list[exp] (string -> void) -> string
 (define (c-compile-args args append-preamble prefix cont free-var-lst)
   (if (not (pair? args))
-      ""
-      (string-append
+      (c-code "")
+      (c:append/prefix
        prefix 
-       (c-compile-exp (car args) append-preamble cont free-var-lst "")
+       (c-compile-exp (car args) append-preamble cont free-var-lst)
        (if (pair? (cdr args))
-           (string-append (c-compile-args (cdr args) append-preamble ", " cont free-var-lst))
-           ""))))
+           (c-compile-args (cdr args) append-preamble ", " cont free-var-lst)
+           (c-code "")))))
 
 ;; c-compile-app : app-exp (string -> void) -> string
-(define (c-compile-app exp append-preamble cont free-var-lst cv-name)
+(define (c-compile-app exp append-preamble cont free-var-lst)
   (trace:debug `(c-compile-app: ,exp))
   (let (($tmp (mangle (gensym 'tmp))))
-    
-;    (append-preamble (string-append
-;                      "Value " $tmp " ; "))
-    
     (let* ((args     (app->args exp))
            (fun      (app->fun exp)))
-;TODO: may be special cases depending upon what we are calling (prim, lambda, etc)
       (cond
         ((lambda? fun)
-         (let* ((lid (allocate-lambda (c-compile-lambda fun)))) ;; TODO: pass in free vars? may be needed to track closures
-                                                                ;; properly, wait until this comes up in an example
-          (cond
-           ((exp/cvar? (car args))
-            (let* ((cvar-name (mangle (gensym 'c)))
-                   (cvar (c-compile-exp 
-                             (car args) 
-                             append-preamble 
-                             cont 
-                             free-var-lst
-                             cvar-name)))
+         (let* ((lid (allocate-lambda (c-compile-lambda fun))) ;; TODO: pass in free vars? may be needed to track closures
+                                                               ;; properly, wait until this comes up in an example
+                ((cgen 
+                  (c-compile-args
+                     args 
+                     append-preamble 
+                     ""
+                     cont 
+                     free-var-lst))))
+              (c-code
                 (string-append
-                  cvar "\n  "
+                  (c:allocs->str (c:allocs cgen))
                   "return_check1(__lambda_" (number->string lid)
                   "," ; TODO: how to propagate continuation - cont " "
-                  ;", "
-                  "&" cvar-name ");")))
-           (else
-            (string-append
-              "return_check1(__lambda_" (number->string lid)
-              "," ; TODO: how to propagate continuation - cont " "
-               (c-compile-args args append-preamble "" cont free-var-lst) ;", " cont free-var-lst)
-              ");" )))))
+                  (c:code cgen) ");"))))
 
+TODO: this needs more work for cvar changes
+   collect pairs from c-compile-args in a let, and work them
+   in below:
         ((prim? fun)
          (string-append
-          (c-compile-exp fun append-preamble cont free-var-lst cv-name)
+          (c-compile-exp fun append-preamble cont free-var-lst)
           "("
           (if (prim/cvar? fun) ; prim creates local c var
             (string-append cv-name ", ")
@@ -169,13 +178,13 @@ that way, when we compile something like (display 1), it can compile down to som
           (if (prim/cvar? fun) ";" "")))
 
         ((equal? '%closure-ref fun)
-         (string-append
+         (c:code (apply string-append (list
             "("
             ;; TODO: probably not the ideal solution, but works for now
             "(closure" (number->string (cadr args)) ")"
             (mangle (car args))
             ")->elt"
-            (number->string (cadr args))))
+            (number->string (cadr args))))))
 
         ;; TODO: may not be good enough, closure app could be from an elt
         ((tagged-list? '%closure-ref fun)
@@ -304,11 +313,12 @@ that way, when we compile something like (display 1), it can compile down to som
         (car formals)))
 
 ; c-compile-closure : closure-exp (string -> void) -> string
-(define (c-compile-closure exp append-preamble cont free-var-lst cv-name)
+(define (c-compile-closure exp append-preamble cont free-var-lst)
   (let* ((lam (closure->lam exp))
          ;(env (closure->env exp))
          ;(num-fv (- (length env) 2))
          (num-args (length (lambda->formals lam)))
+         (cv-name (mangle (gensym 'c)))
          (lid (allocate-lambda (c-compile-lambda lam))))
 ;; JAE TODO: looks like we need to make a closure before calling
 ;;           a function in the MTA runtime. but is that done here??
@@ -319,15 +329,15 @@ that way, when we compile something like (display 1), it can compile down to som
 ; to the function, since it is the function's closure:
 ;     (c-compile-exp env append-preamble)
 
-(trace:debug `(,exp fv: ,free-var-lst))
-
-    (string-append
+;(trace:debug `(,exp fv: ,free-var-lst))
+  (c-code/vars
+    (string-append "&" cv-name)
+    (list (string-append
      "mclosure" (number->string (length free-var-lst)) "(" cv-name ", "
      "__lambda_" (number->string lid)
      (if (> (length free-var-lst) 0) "," "")
      (string-join free-var-lst ", ")
-     ");" ;(if (> num-fv 0) "," "")
-)))
+     ");")))))
 
 ; c-compile-formals : list[symbol] -> string
 (define (c-compile-formals formals)
