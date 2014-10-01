@@ -110,19 +110,26 @@
 
 ;; c-compile-prim : prim-exp -> string
 (define (c-compile-prim p)
- (c-code
-  (cond
-;    ((eq? p '+)       "__sum")
-;    ((eq? p '-)       "__difference")
-;    ((eq? p '*)       "__product")
-;    ((eq? p '=)       "__numEqual")
-    ((eq? p '%halt)   "__halt")
-    ((eq? p 'display) "prin1")
-    ((eq? p 'cons) "make_cons") ;; TODO: when to use mcons vs make_cons ?
-    ((eq? p 'cell-get)  "cell_get")
-    ((eq? p 'set-cell!) "cell_set")
-    ((eq? p 'cell)      "make_cell")
-    (else             (error "unhandled primitive: " p)))))
+  (let ((c-func
+          (cond
+        ;    ((eq? p '+)       "__sum")
+        ;    ((eq? p '-)       "__difference")
+        ;    ((eq? p '*)       "__product")
+        ;    ((eq? p '=)       "__numEqual")
+            ((eq? p '%halt)     "__halt")
+            ((eq? p 'display)   "prin1")
+            ((eq? p 'cons)      "make_cons") ;; mcons? maybe n/a since malloc
+            ((eq? p 'cell)      "make_cell")
+            ((eq? p 'cell-get)  "cell_get")
+            ((eq? p 'set-cell!) "cell_set")
+            (else             (error "unhandled primitive: " p)))))
+    TODO: don't think this is good enough, will need to process cvars above, right? because otherwise how to build the variable? also, what about code like (cons (cons - only want to insert one var, and use the other one in the second make_cons, right?
+    (if (prim/cvar? p)
+        (let ((cv-name (mangle (gensym 'c))))
+           (c-code/vars 
+            (string-append c-func "(" cv-name
+        )
+        (c-code (string-append c-func "(")))))
 
 ; c-compile-ref : ref-exp -> string
 (define (c-compile-ref exp)
