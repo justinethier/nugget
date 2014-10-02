@@ -37,12 +37,17 @@
 
 (define (c:code c-pair) (car c-pair))
 (define (c:allocs c-pair) (cadr c-pair))
-(define (c:allocs->str c-allocs)
+(define (c:allocs->str c-allocs . prefix)
   (apply
     string-append
     (map
         (lambda (c)
-           (string-append c "\n"))
+           (string-append 
+            (if (null? prefix)
+                ""
+                (car prefix))
+            c 
+            "\n"))
         c-allocs)))
 
 (define (c:append cp1 cp2)
@@ -55,17 +60,22 @@
     (string-append prefix (c:code cp1) (c:code cp2))
     (append (c:allocs cp1) (c:allocs cp2))))
 
+(define (c:serialize cp prefix)
+    (string-append
+        (c:allocs->str (c:allocs cp) prefix)
+        prefix
+        (c:code cp)))
+
 ;; c-compile-program : exp -> string
 (define (c-compile-program exp)
   (let* ((preamble "")
          (append-preamble (lambda (s)
                             (set! preamble (string-append preamble "  " s "\n"))))
          (body (c-compile-exp exp append-preamble "cont" '())))
-(write `(DEBUG c-compile-program body ,body))
     (string-append 
      preamble 
+     (c:serialize body "  ") ;" ;\n"
 ;     "int main (int argc, char* argv[]) {\n"
-     "  " body ;" ;\n"
 ;     "  return 0;\n"
 ;     " }\n"
 )))
@@ -100,14 +110,15 @@
     ((integer? exp) 
       (let ((cvar-name (mangle (gensym 'c))))
         (c-code/vars
-            cvar-name ; Code is just the variable name
+            (string-append "&" cvar-name) ; Code is just the variable name
             (list     ; Allocate integer on the C stack
               (string-append 
                 "make_int(" cvar-name ", " (number->string exp) ");")))))
     ((boolean? exp) 
       (c-code (string-append
                 (if exp "quote_t" "quote_f"))))
-    (else           (error "unknown constant: " exp))))
+    (else
+      (error "unknown constant: " exp))))
 
 ;; c-compile-prim : prim-exp -> string
 (define (c-compile-prim p)
@@ -123,7 +134,8 @@
             ((eq? p 'cell)      "make_cell")
             ((eq? p 'cell-get)  "cell_get")
             ((eq? p 'set-cell!) "cell_set")
-            (else             (error "unhandled primitive: " p)))))
+            (else
+              (error "unhandled primitive: " p)))))
 ;;    Note: what about code like (cons (cons - only want to insert one var, and use the other one in the second make_cons, right?
     (if (prim/cvar? p)
         (let ((cv-name (mangle (gensym 'c))))
@@ -139,7 +151,7 @@
 
 ; c-compile-args : list[exp] (string -> void) -> string
 (define (c-compile-args args append-preamble prefix cont free-var-lst)
-  (write `(c-compile-args ,args))
+  (trace:debug `(c-compile-args ,args))
   (if (not (pair? args))
       (c-code "")
       (c:append/prefix
@@ -167,7 +179,6 @@
                      cont 
                      free-var-lst))
                )
-(write `(DEBUG app lambda))
               (c-code
                 (string-append
                   (c:allocs->str (c:allocs cgen))
@@ -180,18 +191,9 @@
                 (c-compile-exp fun append-preamble cont free-var-lst))
                (c-args
                 (c-compile-args args append-preamble "" cont free-var-lst)))
-            ; TODO: not good enough, need stuff below. but
-            ; it can wait until we generate c code, to debug
-            (c:append c-fun c-args)))
-;         (string-append
-;          (c-compile-exp fun append-preamble cont free-var-lst)
-;          "("
-;          (if (prim/cvar? fun) ; prim creates local c var
-;            (string-append cv-name ", ")
-;            "")
-;          (c-compile-args args append-preamble "" cont free-var-lst)
-;          ")"
-;          (if (prim/cvar? fun) ";" "")))
+            (c:append
+              (c:append c-fun c-args)
+              (c-code ")"))))
 
         ((equal? '%closure-ref fun)
          (c:code (apply string-append (list
@@ -390,7 +392,8 @@
                         formals 
                        ") {\n"
                        preamble
-                       "  " body "; \n"
+                       ;"  " body "; \n"
+                       (c:serialize body "  ") "; \n"
                        "}\n")))))
   
 (define (mta:code-gen input-program)
