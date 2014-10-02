@@ -8,7 +8,8 @@
 ;(if #t (display #t) (display #f))
 ; 1
 ; 'done
-(display 1)
+;(display 1)
+(display (cons (cons 1 2) 3))
 ; (display '(1 2 3)
 ; (display '(a b c)
 ; TODO: actual closure demonstration
