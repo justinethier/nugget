@@ -252,16 +252,16 @@ static object prin1(x) object x;
       printf("<%p>",(void *)((closure) x)->fn);
       break;
     case symbol_tag:
-      printf("%s ",((symbol_type *) x)->pname);
+      printf("%s",((symbol_type *) x)->pname);
       break;
     case integer_tag:
-      printf("%d ", ((integer_type *) x)->value);
+      printf("%d", ((integer_type *) x)->value);
       break;
     case double_tag:
-      printf("%lf ", ((double_type *) x)->value);
+      printf("%lf", ((double_type *) x)->value);
       break;
     case cons_tag:
-      printf("("); prin1(car(x)); printf("."); prin1(cdr(x)); printf(")");
+      printf("("); prin1(car(x)); printf(" . "); prin1(cdr(x)); printf(")");
       break;
     default:
       printf("prin1: bad tag x=%ld\n", ((closure)x)->tag); getchar(); exit(0);}
