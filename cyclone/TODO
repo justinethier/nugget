@@ -1,3 +1,11 @@
+- Add an automated test suite with the following programs (or integrate them into it):
+  mta/examples/*.scm
+  tests/set.scm
+
+  don't care how long it takes to run, just need to make sure it includes everything 'known' to work
+
+- As an aside to the above, clean up directory, remove cruft, etc.
+
 - Add numeric support - integers or doubles (or both), and numeric operations
 - WRT set! support, and mutable variables:
   - set aggressive GC, and see if there are any problems with data being lost
