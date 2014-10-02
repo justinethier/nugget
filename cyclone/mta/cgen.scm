@@ -166,20 +166,17 @@
   (letrec ((num-args 0)
          (_c-compile-args 
           (lambda (args append-preamble prefix cont free-var-lst)
-            (trace:debug `(c-compile-args ,args))
             (if (not (pair? args))
                 (c-code "")
                 (begin
+                  (trace:debug `(c-compile-args ,(car args)))
                   (set! num-args (+ 1 num-args))
                   (c:append/prefix
-                   prefix 
-                   (c-compile-exp (car args) 
-                     append-preamble cont free-var-lst)
-                   ;(if (pair? (cdr args))
-                   (_c-compile-args (cdr args) 
-                     append-preamble ", " cont free-var-lst)
-                   ;  (c-code ""))
-                   ))))))
+                    prefix 
+                    (c-compile-exp (car args) 
+                      append-preamble cont free-var-lst)
+                    (_c-compile-args (cdr args) 
+                      append-preamble ", " cont free-var-lst)))))))
   (c:tuple/args
     (_c-compile-args args 
       append-preamble prefix cont free-var-lst)
@@ -215,9 +212,18 @@
                 (c-compile-exp fun append-preamble cont free-var-lst))
                (c-args
                 (c-compile-args args append-preamble "" cont free-var-lst)))
-            (c:append
-              (c:append c-fun c-args)
-              (c-code ")"))))
+            (if (prim/cvar? fun)
+              ;; Args need to go with alloc function
+              (c-code/vars
+                (c:body c-fun)
+                (append
+                  (list (string-append 
+                    (car (c:allocs c-fun)) "," (c:body c-args) ");"))
+                  (c:allocs c-args)))
+              ;; Args stay with body
+              (c:append
+                (c:append c-fun c-args)
+                (c-code ")")))))
 
         ((equal? '%closure-ref fun)
          (c-code (apply string-append (list
@@ -232,50 +238,28 @@
         ((tagged-list? '%closure-ref fun)
          (let* ((comp (c-compile-args 
                          args append-preamble "  " cont free-var-lst)))
-                ;(comp-pairs
-                ;  (c-compile-args
-                ;     args append-preamble cont free-var-lst))
-                ;(comp-args-lst (map car comp-pairs))
-                ;(comp-args (string-join comp-args-lst ", "))
-                ;(comp-cvars
-                ;  (string-join
-                ;    (filter 
-                ;      (lambda (s) 
-                ;         (and (string? s) (not (equal? s ""))))
-                ;      (map cadr comp-pairs))
-                ;    "\n")))
-;(trace:debug `(JAE pairs ,comp-pairs scheme ,fun ,args))
-;(write `(DEBUG comp ,comp))
-         (c-code (string-append
-          (c:allocs->str (c:allocs comp) "\n")
-          "return_funcall" (number->string (- (c:num-args comp) 1))
-          "("
-          (c:body comp)
-          ");"))))
+           (c-code 
+             (string-append
+               (c:allocs->str (c:allocs comp) "\n")
+               "return_funcall" (number->string (- (c:num-args comp) 1))
+               "("
+               (c:body comp)
+               ");"))))
 
         ((tagged-list? '%closure fun)
-         (let* ((cvar-name (mangle (gensym 'c)))
-                (cvar (c-compile-closure fun append-preamble cont free-var-lst cvar-name))
-                (comp-pairs
-                  (c-compile-args/cvars 
-                     args append-preamble cont free-var-lst))
-                (comp-args-lst (map car comp-pairs))
-                (comp-args (string-join comp-args-lst ", "))
-                (comp-cvars
-                  (string-join
-                    (filter 
-                      (lambda (s) 
-                         (and (string? s) (not (equal? s ""))))
-                      (map cadr comp-pairs))
-                    "\n")))
-            (string-append
-                comp-cvars "\n"
-                cvar "\n"
-          "return_funcall" (number->string (- (length comp-args-lst) 0))
-          "("
-          "(closure)&" cvar-name ","
-          comp-args
-            ");")))
+         (let* ((cfun (c-compile-closure 
+                        fun append-preamble cont free-var-lst))
+                (cargs (c-compile-args
+                         args append-preamble "  " cont free-var-lst)))
+           (c-code
+             (string-append
+                (c:allocs->str (c:allocs cfun) "\n")
+                (c:allocs->str (c:allocs cargs) "\n")
+                "return_funcall" (number->string (- (c:num-args cargs) 0))
+                "("
+                "(closure)" (c:body cfun) ","
+                (c:body cargs)
+                ");"))))
 
         (else
          (error `(Unsupported function application ,exp))
@@ -284,26 +268,6 @@
          ; (c-compile-args args append-preamble ", " cont free-var-lst)
          ; "));" )
          )))))
-
-; OBSOLETE:
-;; Compile args to a function a return a list of pairs:
-;;
-;; - Code to pass as the arg
-;; - Code to insert before the function call to introduce a C variable,
-;;   for example to create a closure to pass as an arg
-;(define (c-compile-args/cvars args append-preamble cont free-var-lst)
-;    (map
-;        (lambda (a)
-;          (if (exp/cvar? a)
-;              ;; exp introduces a C variable
-;              (let ((cvar (gensym 'c)))
-;                (list
-;                    (string-append "&" (mangle cvar)) ; pass by ref
-;                    (c-compile-exp a append-preamble cont free-var-lst (mangle cvar))))
-;              (list
-;                (c-compile-exp a append-preamble cont free-var-lst "")
-;                ""))) ; Not assigning a C variable
-;        args))
 
 ; Does primitive create a c variable?
 (define (prim/cvar? exp)
