@@ -35,11 +35,17 @@
 ;; Return generated code with no C variables allocated on the stack
 (define (c-code str) (c-code/vars str (list)))
 
-; Append arg count to a C code pair
+;; Append arg count to a C code pair
 (define (c:tuple/args cp num-args)
-  (append cp num-args))
+  (append cp (list num-args)))
 
-(define (c:code c-pair) (car c-pair))
+;; Functions to work with data structures that contain C code:
+;;
+;; body - The actual body of C code
+;; allocs - Allocations made by C code, eg "int c"
+;; num-args - Number of function arguments combined in the tuple (optional)
+;;
+(define (c:body c-pair) (car c-pair))
 (define (c:allocs c-pair) (cadr c-pair))
 (define (c:num-args c-tuple) (caddr c-tuple))
 
@@ -58,19 +64,19 @@
 
 (define (c:append cp1 cp2)
   (c-code/vars 
-    (string-append (c:code cp1) (c:code cp2))
+    (string-append (c:body cp1) (c:body cp2))
     (append (c:allocs cp1) (c:allocs cp2))))
 
 (define (c:append/prefix prefix cp1 cp2)
   (c-code/vars 
-    (string-append prefix (c:code cp1) (c:code cp2))
+    (string-append prefix (c:body cp1) (c:body cp2))
     (append (c:allocs cp1) (c:allocs cp2))))
 
 (define (c:serialize cp prefix)
     (string-append
         (c:allocs->str (c:allocs cp) prefix)
         prefix
-        (c:code cp)))
+        (c:body cp)))
 
 ;; c-compile-program : exp -> string
 (define (c-compile-program exp)
@@ -202,7 +208,7 @@
                   (c:allocs->str (c:allocs cgen))
                   "return_check1(__lambda_" (number->string lid)
                   "," ; TODO: how to propagate continuation - cont " "
-                  (c:code cgen) ");"))))
+                  (c:body cgen) ");"))))
 
         ((prim? fun)
          (let ((c-fun 
@@ -214,7 +220,7 @@
               (c-code ")"))))
 
         ((equal? '%closure-ref fun)
-         (c:code (apply string-append (list
+         (c-code (apply string-append (list
             "("
             ;; TODO: probably not the ideal solution, but works for now
             "(closure" (number->string (cadr args)) ")"
@@ -224,26 +230,28 @@
 
         ;; TODO: may not be good enough, closure app could be from an elt
         ((tagged-list? '%closure-ref fun)
-         (let* ((comp-pairs
-                  (c-compile-args
-                     args append-preamble cont free-var-lst))
-                (comp-args-lst (map car comp-pairs))
-                (comp-args (string-join comp-args-lst ", "))
-                (comp-cvars
-                  (string-join
-                    (filter 
-                      (lambda (s) 
-                         (and (string? s) (not (equal? s ""))))
-                      (map cadr comp-pairs))
-                    "\n")))
+         (let* ((comp (c-compile-args 
+                         args append-preamble "  " cont free-var-lst)))
+                ;(comp-pairs
+                ;  (c-compile-args
+                ;     args append-preamble cont free-var-lst))
+                ;(comp-args-lst (map car comp-pairs))
+                ;(comp-args (string-join comp-args-lst ", "))
+                ;(comp-cvars
+                ;  (string-join
+                ;    (filter 
+                ;      (lambda (s) 
+                ;         (and (string? s) (not (equal? s ""))))
+                ;      (map cadr comp-pairs))
+                ;    "\n")))
 ;(trace:debug `(JAE pairs ,comp-pairs scheme ,fun ,args))
-         (string-append
-          comp-cvars
-          (if (> (string-length comp-cvars) 0) "\n" "")
-          "return_funcall" (number->string (- (length comp-args-lst) 1))
+;(write `(DEBUG comp ,comp))
+         (c-code (string-append
+          (c:allocs->str (c:allocs comp) "\n")
+          "return_funcall" (number->string (- (c:num-args comp) 1))
           "("
-          comp-args
-          ");")))
+          (c:body comp)
+          ");"))))
 
         ((tagged-list? '%closure fun)
          (let* ((cvar-name (mangle (gensym 'c)))
@@ -315,7 +323,7 @@
          (test (compile (if->condition exp)))
          (then (compile (if->then exp)))
          (els (compile (if->else exp))))
-  (string-append
+  (c-code (string-append
    "if("
    (c:serialize test "  ")
     "){ \n"
@@ -324,7 +332,7 @@
    "\n} else { \n"
    "" 
    (c:serialize els "  ")
-   "}\n")))
+   "}\n"))))
 
 
 ;; Lambda compilation.
