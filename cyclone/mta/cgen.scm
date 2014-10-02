@@ -217,9 +217,9 @@
               (c-code/vars
                 (c:body c-fun)
                 (append
+                  (c:allocs c-args) ;; fun alloc depends upon arg allocs
                   (list (string-append 
-                    (car (c:allocs c-fun)) "," (c:body c-args) ");"))
-                  (c:allocs c-args)))
+                    (car (c:allocs c-fun)) "," (c:body c-args) ");"))))
               ;; Args stay with body
               (c:append
                 (c:append c-fun c-args)
