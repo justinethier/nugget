@@ -287,15 +287,22 @@
 
 ; c-compile-if : if-exp -> string
 (define (c-compile-if exp append-preamble cont free-var-lst)
+  (let ((test (c-compile-exp 
+               (if->condition exp) append-preamble cont free-var-lst))
+        (then (c-compile-exp 
+               (if->then exp) append-preamble cont free-var-lst))
+        (els (c-compile-exp 
+               (if->else exp) append-preamble cont free-var-lst)))
   (string-append
-   "if(" (c-compile-exp 
-           (if->condition exp) append-preamble cont free-var-lst "") "){ \n"
-   "" (c-compile-exp 
-         (if->then exp) append-preamble cont free-var-lst "")
+   "if("
+   (c:serialize test "  ")
+    "){ \n"
+   "" 
+   (c:serialize then "  ")
    "\n} else { \n"
-   "" (c-compile-exp 
-         (if->else exp) append-preamble cont free-var-lst "")
-   "}\n"))
+   "" 
+   (c:serialize els "  ")
+   "}\n")))
 
 
 ;; Lambda compilation.
