@@ -35,8 +35,14 @@
 ;; Return generated code with no C variables allocated on the stack
 (define (c-code str) (c-code/vars str (list)))
 
+; Append arg count to a C code pair
+(define (c:tuple/args cp num-args)
+  (append cp num-args))
+
 (define (c:code c-pair) (car c-pair))
 (define (c:allocs c-pair) (cadr c-pair))
+(define (c:num-args c-tuple) (caddr c-tuple))
+
 (define (c:allocs->str c-allocs . prefix)
   (apply
     string-append
@@ -151,15 +157,27 @@
 
 ; c-compile-args : list[exp] (string -> void) -> string
 (define (c-compile-args args append-preamble prefix cont free-var-lst)
-  (trace:debug `(c-compile-args ,args))
-  (if (not (pair? args))
-      (c-code "")
-      (c:append/prefix
-       prefix 
-       (c-compile-exp (car args) append-preamble cont free-var-lst)
-       (if (pair? (cdr args))
-           (c-compile-args (cdr args) append-preamble ", " cont free-var-lst)
-           (c-code "")))))
+  (letrec ((num-args 0)
+         (_c-compile-args 
+          (lambda (args append-preamble prefix cont free-var-lst)
+            (trace:debug `(c-compile-args ,args))
+            (if (not (pair? args))
+                (c-code "")
+                (begin
+                  (set! num-args (+ 1 num-args))
+                  (c:append/prefix
+                   prefix 
+                   (c-compile-exp (car args) 
+                     append-preamble cont free-var-lst)
+                   ;(if (pair? (cdr args))
+                   (_c-compile-args (cdr args) 
+                     append-preamble ", " cont free-var-lst)
+                   ;  (c-code ""))
+                   ))))))
+  (c:tuple/args
+    (_c-compile-args args 
+      append-preamble prefix cont free-var-lst)
+    num-args)))
 
 ;; c-compile-app : app-exp (string -> void) -> string
 (define (c-compile-app exp append-preamble cont free-var-lst)
@@ -207,7 +225,7 @@
         ;; TODO: may not be good enough, closure app could be from an elt
         ((tagged-list? '%closure-ref fun)
          (let* ((comp-pairs
-                  (c-compile-args/cvars 
+                  (c-compile-args
                      args append-preamble cont free-var-lst))
                 (comp-args-lst (map car comp-pairs))
                 (comp-args (string-join comp-args-lst ", "))
@@ -226,6 +244,7 @@
           "("
           comp-args
           ");")))
+
         ((tagged-list? '%closure fun)
          (let* ((cvar-name (mangle (gensym 'c)))
                 (cvar (c-compile-closure fun append-preamble cont free-var-lst cvar-name))
@@ -249,30 +268,34 @@
           "(closure)&" cvar-name ","
           comp-args
             ");")))
-        (else
-         (string-append
-          (c-compile-exp fun append-preamble cont free-var-lst cv-name)
-          (c-compile-args args append-preamble ", " cont free-var-lst)
-          "));" ))))))
 
+        (else
+         (error `(Unsupported function application ,exp))
+         ;(string-append
+         ; (c-compile-exp fun append-preamble cont free-var-lst cv-name)
+         ; (c-compile-args args append-preamble ", " cont free-var-lst)
+         ; "));" )
+         )))))
+
+; OBSOLETE:
 ;; Compile args to a function a return a list of pairs:
 ;;
 ;; - Code to pass as the arg
 ;; - Code to insert before the function call to introduce a C variable,
 ;;   for example to create a closure to pass as an arg
-(define (c-compile-args/cvars args append-preamble cont free-var-lst)
-    (map
-        (lambda (a)
-          (if (exp/cvar? a)
-              ;; exp introduces a C variable
-              (let ((cvar (gensym 'c)))
-                (list
-                    (string-append "&" (mangle cvar)) ; pass by ref
-                    (c-compile-exp a append-preamble cont free-var-lst (mangle cvar))))
-              (list
-                (c-compile-exp a append-preamble cont free-var-lst "")
-                ""))) ; Not assigning a C variable
-        args))
+;(define (c-compile-args/cvars args append-preamble cont free-var-lst)
+;    (map
+;        (lambda (a)
+;          (if (exp/cvar? a)
+;              ;; exp introduces a C variable
+;              (let ((cvar (gensym 'c)))
+;                (list
+;                    (string-append "&" (mangle cvar)) ; pass by ref
+;                    (c-compile-exp a append-preamble cont free-var-lst (mangle cvar))))
+;              (list
+;                (c-compile-exp a append-preamble cont free-var-lst "")
+;                ""))) ; Not assigning a C variable
+;        args))
 
 ; Does primitive create a c variable?
 (define (prim/cvar? exp)
