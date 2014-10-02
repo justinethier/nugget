@@ -287,12 +287,11 @@
 
 ; c-compile-if : if-exp -> string
 (define (c-compile-if exp append-preamble cont free-var-lst)
-  (let ((test (c-compile-exp 
-               (if->condition exp) append-preamble cont free-var-lst))
-        (then (c-compile-exp 
-               (if->then exp) append-preamble cont free-var-lst))
-        (els (c-compile-exp 
-               (if->else exp) append-preamble cont free-var-lst)))
+  (let* ((compile (lambda (exp)
+                    (c-compile-exp exp append-preamble cont free-var-lst)))
+         (test (compile (if->condition exp)))
+         (then (compile (if->then exp)))
+         (els (compile (if->else exp))))
   (string-append
    "if("
    (c:serialize test "  ")
