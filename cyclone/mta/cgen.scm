@@ -61,6 +61,7 @@
          (append-preamble (lambda (s)
                             (set! preamble (string-append preamble "  " s "\n"))))
          (body (c-compile-exp exp append-preamble "cont" '())))
+(write `(DEBUG c-compile-program body ,body))
     (string-append 
      preamble 
 ;     "int main (int argc, char* argv[]) {\n"
@@ -123,20 +124,22 @@
             ((eq? p 'cell-get)  "cell_get")
             ((eq? p 'set-cell!) "cell_set")
             (else             (error "unhandled primitive: " p)))))
-    TODO: don't think this is good enough, will need to process cvars above, right? because otherwise how to build the variable? also, what about code like (cons (cons - only want to insert one var, and use the other one in the second make_cons, right?
+;;    Note: what about code like (cons (cons - only want to insert one var, and use the other one in the second make_cons, right?
     (if (prim/cvar? p)
         (let ((cv-name (mangle (gensym 'c))))
            (c-code/vars 
-            (string-append c-func "(" cv-name
-        )
+            (string-append "&" cv-name)
+            (list
+                (string-append c-func "(" cv-name))))
         (c-code (string-append c-func "(")))))
-
+  
 ; c-compile-ref : ref-exp -> string
 (define (c-compile-ref exp)
   (c-code (mangle exp)))
-  
+
 ; c-compile-args : list[exp] (string -> void) -> string
 (define (c-compile-args args append-preamble prefix cont free-var-lst)
+  (write `(c-compile-args ,args))
   (if (not (pair? args))
       (c-code "")
       (c:append/prefix
@@ -156,13 +159,15 @@
         ((lambda? fun)
          (let* ((lid (allocate-lambda (c-compile-lambda fun))) ;; TODO: pass in free vars? may be needed to track closures
                                                                ;; properly, wait until this comes up in an example
-                ((cgen 
+                (cgen 
                   (c-compile-args
                      args 
                      append-preamble 
                      ""
                      cont 
-                     free-var-lst))))
+                     free-var-lst))
+               )
+(write `(DEBUG app lambda))
               (c-code
                 (string-append
                   (c:allocs->str (c:allocs cgen))
@@ -170,19 +175,23 @@
                   "," ; TODO: how to propagate continuation - cont " "
                   (c:code cgen) ");"))))
 
-TODO: this needs more work for cvar changes
-   collect pairs from c-compile-args in a let, and work them
-   in below:
         ((prim? fun)
-         (string-append
-          (c-compile-exp fun append-preamble cont free-var-lst)
-          "("
-          (if (prim/cvar? fun) ; prim creates local c var
-            (string-append cv-name ", ")
-            "")
-          (c-compile-args args append-preamble "" cont free-var-lst)
-          ")"
-          (if (prim/cvar? fun) ";" "")))
+         (let ((c-fun 
+                (c-compile-exp fun append-preamble cont free-var-lst))
+               (c-args
+                (c-compile-args args append-preamble "" cont free-var-lst)))
+            ; TODO: not good enough, need stuff below. but
+            ; it can wait until we generate c code, to debug
+            (c:append c-fun c-args)))
+;         (string-append
+;          (c-compile-exp fun append-preamble cont free-var-lst)
+;          "("
+;          (if (prim/cvar? fun) ; prim creates local c var
+;            (string-append cv-name ", ")
+;            "")
+;          (c-compile-args args append-preamble "" cont free-var-lst)
+;          ")"
+;          (if (prim/cvar? fun) ";" "")))
 
         ((equal? '%closure-ref fun)
          (c:code (apply string-append (list
@@ -373,7 +382,6 @@ TODO: this needs more work for cvar changes
                         append-preamble
                         (mangle env-closure)
                         (map mangle (lambda->formals exp))
-                        ""
                         )))
       (lambda (name)
         (string-append "static void " name 
