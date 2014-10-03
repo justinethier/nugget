@@ -1,9 +1,9 @@
-TESTSCM = closure-1 one-liners set simple-if #app begin call-cc if lambda prim recursion square
+TESTSCM = app begin closure-1 display if lambda one-liners prim set simple-if 
+# TODO: call-cc if recursion square tail-call-optimization
 TESTFILES = $(addprefix tests/, $(addsuffix .scm, $(TESTSCM)))
 
 test: $(TESTFILES)
 	$(foreach f,$(TESTSCM), echo tests/$(f) ; ./run.sh tests/$(f).scm && rm -rf $(f);)
-#	$(foreach f,$(TESTSCM), echo tests/$(f) ; huski compiler.scm < tests/$(f).scm > $(f).c && gcc $(f).c -o $(f) && ./$(f);)
 
 .PHONY: repl
 repl:
