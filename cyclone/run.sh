@@ -6,8 +6,11 @@ if [[ $# -eq 0 ]] ; then
     exit 0
 fi
 
-huski compiler.scm < $1 > tmp.out \
-  && cat mta/runtime-header.c > tmp.c \
-  && cat tmp.out >> tmp.c \
-  && cat mta/runtime-footer.c >> tmp.c \
-  && gcc tmp.c && ./a.out && rm -f tmp.out
+filename=$(basename "$1")
+filename="${filename%.*}"
+
+huski compiler.scm < $1 > $filename.out \
+  && cat mta/runtime-header.c > $filename.c \
+  && cat $filename.out >> $filename.c \
+  && cat mta/runtime-footer.c >> $filename.c \
+  && gcc $filename.c -o $filename && ./$filename && rm -f $filename.out
