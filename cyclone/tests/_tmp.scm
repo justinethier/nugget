@@ -10,7 +10,7 @@
 ; 'done
 ;(display 1)
 ;(display (cons (cons 1 2) 3))
-(display (+ 1 2))
+(display (+ 1 (* 2 (- 3 4))))
 ;(display (+ 1 2 3))
 ; (display '(1 2 3)
 ; (display '(a b c)

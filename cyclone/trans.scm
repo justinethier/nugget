@@ -240,6 +240,7 @@
   (or (eq? exp '+)
       (eq? exp '-)
       (eq? exp '*)
+      (eq? exp '/)
       (eq? exp '=)
       (eq? exp '%halt)
       (eq? exp 'cons)

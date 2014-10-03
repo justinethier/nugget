@@ -129,9 +129,10 @@
   (let ((c-func
           (cond
             ((eq? p '+)       "__sum")
-        ;    ((eq? p '-)       "__difference")
-        ;    ((eq? p '*)       "__product")
-        ;    ((eq? p '=)       "__numEqual")
+            ((eq? p '-)       "__sub")
+            ((eq? p '*)       "__mul")
+            ((eq? p '/)       "__div")
+            ;((eq? p '=)       "__numEqual")
             ((eq? p '%halt)     "__halt")
             ((eq? p 'display)   "prin1")
             ((eq? p 'cons)      "make_cons") ;; mcons? maybe n/a since malloc
@@ -152,7 +153,7 @@
 ; Does primitive create a c variable?
 (define (prim/cvar? exp)
     (and (prim? exp)
-         (member exp '(+ cons cell))))
+         (member exp '(+ - * / cons cell))))
 
 ; Does compiling exp create a c variable?
 (define (exp/cvar? exp)

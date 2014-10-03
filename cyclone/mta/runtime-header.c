@@ -313,4 +313,8 @@ static void __halt(object obj) {
     my_exit(obj);
 }
 
+#define __sum(c,x,y) integer_type c; c.tag = integer_tag; c.value = (((integer_type *)(x))->value + ((integer_type *)(y))->value);
+#define __mul(c,x,y) integer_type c; c.tag = integer_tag; c.value = (((integer_type *)(x))->value * ((integer_type *)(y))->value);
+#define __sub(c,x,y) integer_type c; c.tag = integer_tag; c.value = (((integer_type *)(x))->value - ((integer_type *)(y))->value);
+#define __div(c,x,y) integer_type c; c.tag = integer_tag; c.value = (((integer_type *)(x))->value / ((integer_type *)(y))->value);
 
