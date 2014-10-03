@@ -1,4 +1,5 @@
 - Add numeric support - integers or doubles (or both), and numeric operations
+- Get other programs under 'tests' working
 - WRT set! support, and mutable variables:
   - set aggressive GC, and see if there are any problems with data being lost
     need to do this with a more complicated example, though
