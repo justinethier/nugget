@@ -40,7 +40,7 @@
       (trace:error "DEBUG, existing program")
       (exit)))
 
-  (load "mta/cgen.scm")
+  (load "cgen.scm")
   (trace:info "---------------- C code:")
   (mta:code-gen input-program))
 
