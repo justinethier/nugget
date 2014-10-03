@@ -172,13 +172,17 @@ static void main_main (stack_size,heap_size,stack_base)
  stack_limit1 = stack_begin + stack_size;
  stack_limit2 = stack_limit1 + 2000;
 #endif
+#if DEBUG_SHOW_DIAG
  printf("main: sizeof(cons_type)=%ld\n",(long) sizeof(cons_type));
+#endif
  if (check_overflow(stack_base,&in_my_frame))
    {printf("main: Recompile with STACK_GROWS_DOWNWARD set to %ld\n",
            (long) (1-STACK_GROWS_DOWNWARD)); exit(0);}
+#if DEBUG_SHOW_DIAG
  printf("main: stack_size=%ld  stack_base=%p  stack_limit1=%p\n",
         stack_size,(void *)stack_base,(void *)stack_limit1);
  printf("main: Try different stack sizes from 4 K to 1 Meg.\n");
+#endif
  /* Do initializations of Lisp objects and rewrite rules.
  quote_list_f = mlist1(quote_f); quote_list_t = mlist1(quote_t); */
  /* Make temporary short names for certain atoms. */
@@ -193,14 +197,18 @@ static void main_main (stack_size,heap_size,stack_base)
 
   /* Allocate heap area for second generation. */
   /* Use calloc instead of malloc to assure pages are in main memory. */
+#if DEBUG_SHOW_DIAG
   printf("main: Allocating and initializing heap...\n");
+#endif
   bottom = calloc(1,heap_size);
   allocp = (char *) ((((long) bottom)+7) & -8);
   alloc_end = allocp + heap_size - 8;
+#if DEBUG_SHOW_DIAG
   printf("main: heap_size=%ld  allocp=%p  alloc_end=%p\n",
          (long) heap_size,(void *)allocp,(void *)alloc_end);
   printf("main: Try a larger heap_size if program bombs.\n");
   printf("Starting...\n");
+#endif
   start = clock(); /* Start the timing clock. */
   /* These two statements form the most obscure loop in the history of C! */
   setjmp(jmp_main);

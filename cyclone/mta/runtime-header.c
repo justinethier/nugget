@@ -1,3 +1,4 @@
+#define DEBUG_SHOW_DIAG 0
 
 /* STACK_GROWS_DOWNWARD is a machine-specific preprocessor switch. */
 /* It is true for the Macintosh 680X0 and the Intel 80860. */
@@ -300,16 +301,20 @@ static object sum(object x, object y) {
 
 static void my_exit(closure) never_returns;
 
-static void my_exit(env) closure env;
-{printf("my_exit: heap bytes allocated=%d  time=%ld ticks  no_gcs=%ld\n",
+static void my_exit(env) closure env; {
+#if DEBUG_SHOW_DIAG
+    printf("my_exit: heap bytes allocated=%d  time=%ld ticks  no_gcs=%ld\n",
         allocp-bottom,clock()-start,no_gcs);
  printf("my_exit: ticks/second=%ld\n",(long) CLOCKS_PER_SEC);
+#endif
  exit(0);}
 
 static void __halt(object obj) {
-    printf("halt: ");
-    //prin1(obj);
-    //exit(0);
+#if DEBUG_SHOW_DIAG
+    printf("\nhalt: ");
+    prin1(obj);
+    printf("\n");
+#endif
     my_exit(obj);
 }
 
