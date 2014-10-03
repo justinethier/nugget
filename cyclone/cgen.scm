@@ -1,11 +1,3 @@
-;TODO: cv-name is a hack, should be replaced with a scheme that collects newly-introduced C variables and returns them
-;along with the compiled code. Maybe they would be returned as a tuple (list, vector, whatever) - since C code is compiled as a string.
-;
-;
-;that way, when we compile something like (display 1), it can compile down to something like "prin1(c1)" with "c1" marked as a var assigned to "make_int"
-
-
-
 ;;
 ;; Compile scheme code to a Cheney-on-the-MTA C runtime
 ;;
@@ -136,7 +128,7 @@
 (define (c-compile-prim p)
   (let ((c-func
           (cond
-        ;    ((eq? p '+)       "__sum")
+            ((eq? p '+)       "__sum")
         ;    ((eq? p '-)       "__difference")
         ;    ((eq? p '*)       "__product")
         ;    ((eq? p '=)       "__numEqual")
@@ -156,7 +148,18 @@
             (list
                 (string-append c-func "(" cv-name))))
         (c-code (string-append c-func "(")))))
-  
+
+; Does primitive create a c variable?
+(define (prim/cvar? exp)
+    (and (prim? exp)
+         (member exp '(+ cons cell))))
+
+; Does compiling exp create a c variable?
+(define (exp/cvar? exp)
+  (and (list? exp)
+       (or (prim/cvar? (car exp))
+           (tagged-list? '%closure exp))))
+
 ; c-compile-ref : ref-exp -> string
 (define (c-compile-ref exp)
   (c-code (mangle exp)))
@@ -268,17 +271,6 @@
          ; (c-compile-args args append-preamble ", " cont free-var-lst)
          ; "));" )
          )))))
-
-; Does primitive create a c variable?
-(define (prim/cvar? exp)
-    (and (prim? exp)
-         (member exp '(cons cell))))
-
-; Does compiling exp create a c variable?
-(define (exp/cvar? exp)
-  (and (list? exp)
-       (or (prim/cvar? (car exp))
-           (tagged-list? '%closure exp))))
 
 ; c-compile-if : if-exp -> string
 (define (c-compile-if exp append-preamble cont free-var-lst)
