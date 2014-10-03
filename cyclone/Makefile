@@ -15,5 +15,5 @@ tags:
 
 .PHONY: clean
 clean:
-	rm -rf a.out *.o out.c tmp.c tags
+	rm -rf a.out *.o *.c tags
 	$(foreach f,$(TESTSCM), rm -rf $(f) $(f).c;)
