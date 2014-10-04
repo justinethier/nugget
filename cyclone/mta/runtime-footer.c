@@ -68,8 +68,8 @@ static char *transport(x) char *x;
 temp = (p); \
 if ((check_overflow(low_limit,temp) && \
      check_overflow(temp,high_limit)) || \
-    (check_overflow(old_heap_low_limit, temp) && \
-     check_overflow(temp,old_heap_high_limit))) \
+    (check_overflow(old_heap_low_limit - 1, temp) && \
+     check_overflow(temp,old_heap_high_limit + 1))) \
    (p) = (object) transport(temp);
 
 static void GC_loop(int major, closure cont, object *ans, int num_ans)
