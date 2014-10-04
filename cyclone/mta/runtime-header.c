@@ -1,4 +1,4 @@
-#define DEBUG_SHOW_DIAG 0
+#define DEBUG_SHOW_DIAG 1
 
 /* STACK_GROWS_DOWNWARD is a machine-specific preprocessor switch. */
 /* It is true for the Macintosh 680X0 and the Intel 80860. */
@@ -55,7 +55,7 @@ typedef long tag_type;
 /* Return to continuation after checking for stack overflow. */
 #define return_funcall1(cfn,a1) \
 {char stack; \
- if (check_overflow(&stack,stack_limit1)) { \
+ if (1 || check_overflow(&stack,stack_limit1)) { \
      object buf[1]; buf[0] = a1; \
      GC(cfn,buf,1); return; \
  } else {funcall1((closure) (cfn),a1); return;}}
@@ -64,7 +64,7 @@ typedef long tag_type;
          second arg with GC */
 #define return_funcall2(cfn,a1,a2) \
 {char stack; \
- if (check_overflow(&stack,stack_limit1)) { \
+ if (1 || check_overflow(&stack,stack_limit1)) { \
      object buf[2]; buf[0] = a1; buf[1] = a2; \
      GC(cfn,buf,2); return; \
  } else {funcall2((closure) (cfn),a1,a2); return;}}
@@ -73,7 +73,7 @@ typedef long tag_type;
 /* Evaluate an expression after checking for stack overflow. */
 #define return_check1(_fn, a1) { \
  char stack; \
- if (check_overflow(&stack,stack_limit1)) { \
+ if (1 || check_overflow(&stack,stack_limit1)) { \
      object buf[1]; buf[0] = a1; \
      mclosure0(c1, _fn); \
      GC(&c1, buf, 1); return; \
