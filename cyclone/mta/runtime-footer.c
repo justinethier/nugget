@@ -49,6 +49,12 @@ static char *transport(x) char *x;
        forward(x) = nx; type_of(x) = forward_tag;
        x = (char *) nx; allocp = ((char *) nx)+sizeof(closure4_type);
        return (char *) nx;}
+    case integer_tag:
+      {register integer_type *nx = (integer_type *) allocp;
+       type_of(nx) = integer_tag; nx->value = ((integer_type *) x)->value;
+       forward(x) = nx; type_of(x) = forward_tag;
+       x = (char *) nx; allocp = ((char *) nx)+sizeof(integer_type);
+       return (char *) nx;}
     case forward_tag:
        return (char *) forward(x);
     case symbol_tag:
@@ -120,6 +126,8 @@ static void GC_loop(int major, closure cont, object *ans, int num_ans)
         transp(((closure4) scanp)->elt1); transp(((closure4) scanp)->elt2);
         transp(((closure4) scanp)->elt3); transp(((closure4) scanp)->elt4);
         scanp += sizeof(closure4_type); break;
+      case integer_tag:
+        scanp += sizeof(integer_type); break;
       case symbol_tag: default:
         printf("GC: bad tag scanp=%p scanp.tag=%ld\n",(void *)scanp,type_of(scanp));
         exit(0);}
