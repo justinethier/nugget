@@ -155,12 +155,6 @@
     (and (prim? exp)
          (member exp '(+ - * / cons cell))))
 
-; Does compiling exp create a c variable?
-(define (exp/cvar? exp)
-  (and (list? exp)
-       (or (prim/cvar? (car exp))
-           (tagged-list? '%closure exp))))
-
 ; c-compile-ref : ref-exp -> string
 (define (c-compile-ref exp)
   (c-code (mangle exp)))
@@ -327,28 +321,46 @@
 ; c-compile-closure : closure-exp (string -> void) -> string
 (define (c-compile-closure exp append-preamble cont free-var-lst)
   (let* ((lam (closure->lam exp))
-         ;(env (closure->env exp))
-         ;(num-fv (- (length env) 2))
+         (env (if (> (length exp) 2)
+                  (closure->env exp) ; arg to closure
+                  #f))
+         (env-var (if (and env
+                           (tagged-list? '%closure-ref env))
+                      (cadr env)
+                      #f))
+         (env-seq (if (and env
+                           (tagged-list? '%closure-ref env))
+                      (caddr env)
+                      #f))
+         (free-var-lst* 
+           (map 
+             (lambda (free-var) 
+              ;; We may want to reference a closure variable, in which
+              ;; case we need to reference it instead of the whole closure
+              (if (and env-var env-seq (> env-seq 0)
+                       (equal? free-var (mangle env-var)))
+                (let ((clo-len (number->string env-seq)))
+                  (string-append 
+                    "((closure" clo-len ")" free-var ")->elt" clo-len))
+                free-var))
+             free-var-lst))
          (num-args (length (lambda->formals lam)))
          (cv-name (mangle (gensym 'c)))
          (lid (allocate-lambda (c-compile-lambda lam))))
-;; JAE TODO: looks like we need to make a closure before calling
-;;           a function in the MTA runtime. but is that done here??
-;; IE: which closure is built here, in reference to the lambda?
-;; see app and display examples
-;
-; TODO: if there is an env, pack it up and pass it along as an arg
+
+; OBSOLETE? not sure what to make of this old comment: 
+; if there is an env, pack it up and pass it along as an arg
 ; to the function, since it is the function's closure:
 ;     (c-compile-exp env append-preamble)
 
-;(trace:debug `(,exp fv: ,free-var-lst))
+(trace:debug `(,exp fv: ,free-var-lst*))
   (c-code/vars
     (string-append "&" cv-name)
     (list (string-append
-     "mclosure" (number->string (length free-var-lst)) "(" cv-name ", "
+     "mclosure" (number->string (length free-var-lst*)) "(" cv-name ", "
      "__lambda_" (number->string lid)
-     (if (> (length free-var-lst) 0) "," "")
-     (string-join free-var-lst ", ")
+     (if (> (length free-var-lst*) 0) "," "")
+     (string-join free-var-lst* ", ")
      ");")))))
 
 ; c-compile-formals : list[symbol] -> string
