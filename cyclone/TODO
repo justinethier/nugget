@@ -1,3 +1,14 @@
+- "if" program is not working, stuck in an infinite loop
+  __lambda_4 receives halt closure (lambda_5) as parameter k_733
+  __lambda3 passes the following closure: mclosure2(c_7337, __lambda_2,self_739, x);
+     this packages up k_733 as c_7337->elt1->elt1
+  Unfortunately lambda_2 references (effectively) c_7337->elt1 which points to lambda_3 instead of lambda_5!
+
+  so a fix is to modify __lambda_2:
+  return_funcall1(  ((closure1)((closure1)self_7310)->elt1)->elt1, &c_7341);
+
+  but how to generate that in the first place?
+
 - Add numeric support - integers or doubles (or both), and numeric operations
 - Get other programs under 'tests' working
 - WRT set! support, and mutable variables:
