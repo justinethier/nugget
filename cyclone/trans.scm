@@ -764,7 +764,7 @@
             (list
                 'lambda
                 (list 'call/cc)
-                (list ast-cps))
+                ast-cps)
            '(lambda (k f)
                 (f k (lambda (_ result) (k result)))))
         ast-cps)
