@@ -642,27 +642,6 @@
     ; Application:
     ((app? exp)      (map wrap-mutables exp))
     (else            (error "unknown expression type: " exp))))
-                        
-
-
-;; Name-mangling.
-
-;; We have to "mangle" Scheme identifiers into
-;; C-compatible identifiers, because names like
-;; foo-bar/baz are not identifiers in C.
-
-; mangle : symbol -> string
-(define (mangle symbol)
-  (define (m chars)
-    (if (null? chars)
-        '()
-        (if (or (and (char-alphabetic? (car chars)) (not (char=? (car chars) #\_)))
-                (char-numeric? (car chars)))
-            (cons (car chars) (m (cdr chars)))
-            (cons #\_ (append (integer->char-list (char->natural (car chars)))
-                              (m (cdr chars)))))))
-  (list->string (m (string->list (symbol->string symbol)))))
-
 
 
 ;; CPS conversion 
