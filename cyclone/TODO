@@ -1,18 +1,11 @@
 - call/cc example is not working
 
- generates the function incorrectly. try stripped down program:
+ Seems there are many cases where extra args should not be added to a closure. see call-cc-debug.c
 
-    (call/cc
-      (lambda (k)
-          (k 2)))
+ however, actual bug is an extra arg in lambda_5:
 
-    static void __lambda_3(closure _,object call_95cc) {
-      return_funcall0(  
-    mclosure1(c_7312, __lambda_1,call_95cc);
-    
-    mclosure1(c_7317, __lambda_2,call_95cc);
-    return_funcall1((closure)&c_7312,  &c_7317););; 
-    }
+ should be: mclosure2(c_7321, __lambda_4, k, f); // bug to include all args??
+ not: mclosure3(c_7321, __lambda_4,self_734, k, f); // bug to include all args??
 
 - Get other programs under 'tests' working
 - Add numeric support - integers or doubles (or both), and numeric operations
