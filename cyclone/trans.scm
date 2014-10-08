@@ -888,6 +888,10 @@
      (let* ((new-self-var (gensym 'self))
             (body  (lambda->exp exp))
 ; TODO: work in progress for adjusting free vars
+
+; another thought: we could calculate fv here and pass to the next phase using
+; notation such as (lambda (fv: ...) (args) body)
+
             ; Previous version, delete if/when bottom one works:
             ;(new-free-vars (difference (free-vars body) (lambda->formals exp))))
             ; Original from 90-scm is keep all (fv ast) except globals
