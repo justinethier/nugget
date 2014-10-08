@@ -887,7 +887,17 @@
     ((lambda? exp)
      (let* ((new-self-var (gensym 'self))
             (body  (lambda->exp exp))
-            (new-free-vars (difference (free-vars body) (lambda->formals exp))))
+; TODO: work in progress for adjusting free vars
+            ; Previous version, delete if/when bottom one works:
+            ;(new-free-vars (difference (free-vars body) (lambda->formals exp))))
+            ; Original from 90-scm is keep all (fv ast) except globals
+            ; this does not work for call/cc example though because of the 
+            ; silliness in cgen with passing current closure (??). anyway, need to
+            ; put similar logic in cgen too so everything matches up. this change
+            ; alone is not good enough!
+            (new-free-vars (free-vars body)))
+; END TODO
+(write `(DEBUG_FV ,new-free-vars))
        `(%closure
           (lambda
             ,(cons new-self-var (lambda->formals exp))
