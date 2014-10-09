@@ -12,7 +12,13 @@
  function must have) and closure (which can be empty if no fv)? right now the MTA runtime combines the two by
  having an fn argument to each closure.
 
+IMPLEMENTATION NOTES:
 
+ - cgen is keeping track of free vars in the wrong way, they are not equivalent to function arguments, but rather are uncovered during closure conversion by scanning for them. NEED TO FIGURE OUT HOW TO READ THESE PROPERLY IN CGEN - once that is done, everything else should fall into place
+ - if there are no free variables, a function call call into its continuation using return_check.
+ - if there are free variables, a closure must be used to pass them to the continuation. mclosure must be used to create it, and a return_funcall would be used to call into the next continuation
+
+-------------------------------------------------------------------------------------------
 Previous notes:
 Bottom line is that cgen is not computing them correctly
 
