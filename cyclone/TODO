@@ -1,5 +1,19 @@
 - closures are not being compiled correctly
 
+ need to figure out how exactly to compute closures (IE, mclosure statements) in compiled C code.
+ It seems each function should receive a closure, the code that inserts (closure _) just seems wrong.
+ There is a clue in that the fix in the if example is to load (self->elt1) into the closure, sort of like
+ how trans.scm loads (map cc new-free-vars) into the %closure code.
+
+ Still a bit fuzzy on where/how exactly to generate each closure, though. maybe take a look at 90-min-scc
+ to see if it is of any help at all.
+
+ Presumably every function will recieve a closure. Do we have to differentiate between continuation (which every
+ function must have) and closure (which can be empty if no fv)? right now the MTA runtime combines the two by
+ having an fn argument to each closure.
+
+
+Previous notes:
 Bottom line is that cgen is not computing them correctly
 
 Also, with call/cc changes, the if example has a bad closure:
@@ -14,6 +28,7 @@ mclosure1(c_7337, __lambda_2,((closure1)self_739)->elt1);
 
  should be: mclosure2(c_7321, __lambda_4, k, f); // bug to include all args??
  not: mclosure3(c_7321, __lambda_4,self_734, k, f); // bug to include all args??
+
 
 - Get other programs under 'tests' working
 - Add numeric support - integers or doubles (or both), and numeric operations
