@@ -1,4 +1,4 @@
-TESTSCM = app begin closure-1 display if lambda one-liners prim set simple-if 
+TESTSCM = app begin call-cc-simple closure-1 display if lambda one-liners prim set simple-if 
 # TODO: call-cc if recursion square tail-call-optimization
 TESTFILES = $(addprefix tests/, $(addsuffix .scm, $(TESTSCM)))
 

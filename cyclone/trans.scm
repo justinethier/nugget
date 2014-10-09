@@ -893,21 +893,21 @@
 ; notation such as (lambda (fv: ...) (args) body)
 
             ; Previous version, delete if/when bottom one works:
-            ;(new-free-vars (difference (free-vars body) (lambda->formals exp))))
+            (new-free-vars (difference (free-vars body) (lambda->formals exp))))
             ; Original from 90-scm is keep all (fv ast) except globals
             ; this does not work for call/cc example though because of the 
             ; silliness in cgen with passing current closure (??). anyway, need to
             ; put similar logic in cgen too so everything matches up. this change
             ; alone is not good enough!
-            (new-free-vars (free-vars body)))
+            ;(new-free-vars (free-vars body)))
+;(write `(DEBUG_FV ,new-free-vars))
 ; END TODO
-(write `(DEBUG_FV ,new-free-vars))
        `(%closure
           (lambda
             ,(cons new-self-var (lambda->formals exp))
-            ,(cons 'free-vars: new-free-vars)  ;; appending free vars for use
-                                               ;; in code-gen phase, need to 
-                                               ;; account for them over there
+;            ,(cons 'free-vars: new-free-vars)  ;; appending free vars for use
+;                                               ;; in code-gen phase, need to 
+;                                               ;; account for them over there
             ,(convert (car body) new-self-var new-free-vars)) ;; TODO: should this be a map??? was a list in 90-min-scc.
           ,@(map (lambda (v) ;; TODO: splice here?
                     (cc v))
@@ -930,16 +930,18 @@
            (args (map cc (cdr exp))))
        (if (lambda? fn)
            (let* ((body  (lambda->exp fn))
+                  ; Corresponding change in (lambda?) above
+                  ;(new-free-vars (free-vars body))
                   (new-free-vars (difference (free-vars body) (lambda->formals fn)))
                   (new-free-vars? (> (length new-free-vars) 0)))
 ;(write `(DEBUG lambda application ,fn fv: ,new-free-vars))
                (if new-free-vars?
 ; TODO: this is experimental! -------------------
-WTF: why attempting to pass new-free-vars like this?
-let's try passing them to the lambda per other change (free-vars:)
-and removing the below new-free-vars hack.
-also, 90 min scc does not create a closure here, are you sure
-it is necessary? guess it will not hurt anything if never used???
+;WTF: why attempting to pass new-free-vars like this?
+;let's try passing them to the lambda per other change (free-vars:)
+;and removing the below new-free-vars hack.
+;also, 90 min scc does not create a closure here, are you sure
+;it is necessary? guess it will not hurt anything if never used???
                  ; Free vars, attempt to create a closure for them
                  (let* ((new-self-var (gensym 'self)))
                    `((%closure 

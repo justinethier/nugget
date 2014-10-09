@@ -362,11 +362,11 @@
               ;; We may want to reference a closure variable, in which
               ;; case we need to reference it instead of the whole closure
               (if (and env-var env-seq (> env-seq 0)
-                       (equal? free-var (mangle env-var)))
+                       (equal? free-var env-var))
                 (let ((clo-len (number->string env-seq)))
                   (string-append 
-                    "((closure" clo-len ")" free-var ")->elt" clo-len))
-                free-var))
+                    "((closure" clo-len ")" (mangle free-var) ")->elt" clo-len))
+                (mangle free-var)))
              free-var-lst))
          (num-args (length (lambda->formals lam)))
          (cv-name (mangle (gensym 'c)))
@@ -413,12 +413,15 @@
                         (car (lambda->exp exp)) ;; car ==> assume single expr in lambda body after CPS
                         append-preamble
                         (mangle env-closure)
-                        (map mangle (lambda->formals exp))
+                        ;; Add free variables
+                        (if has-closure?
+                            (cdr (lambda->formals exp)) ;; Closures are not fv
+                            (lambda->formals exp))
                         )))
       (lambda (name)
         (string-append "static void " name 
                        "(" 
-                       (if has-closure? "" "closure _,")
+                       (if has-closure? "" "closure _,") ;; TODO: seems wrong, will GC be too aggressive due to missing refs?
                         formals 
                        ") {\n"
                        preamble
