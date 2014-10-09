@@ -947,6 +947,7 @@
                    `((%closure 
                         (lambda
                           ,(cons new-self-var (lambda->formals fn))
+;                          ,(cons 'free-vars: new-free-vars)
                           ,(convert (car body) new-self-var new-free-vars))
                         ,@(map (lambda (v) (cc v))
                                new-free-vars))
