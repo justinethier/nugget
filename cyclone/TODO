@@ -1,4 +1,12 @@
-- call/cc example is not working
+- closures are not being compiled correctly
+
+Bottom line is that cgen is not computing them correctly
+
+Also, with call/cc changes, the if example has a bad closure:
+static void __lambda_3(object self_739, object x) {
+  
+mclosure1(c_7337, __lambda_2,((closure1)self_739)->elt1);
+//mclosure1(c_7337, __lambda_2,x);
 
  Seems there are many cases where extra args should not be added to a closure. see call-cc-debug.c
 
