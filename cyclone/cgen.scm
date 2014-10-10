@@ -221,12 +221,13 @@
                      ""
                      cont 
                      free-var-lst))
-               )
+                (num-cargs (c:num-args cgen)))
               (c-code
                 (string-append
                   (c:allocs->str (c:allocs cgen))
-                  "return_check1(__lambda_" (number->string lid)
-                  "," ; TODO: how to propagate continuation - cont " "
+                  "return_check" (number->string num-cargs) 
+                  "(__lambda_" (number->string lid)
+                  (if (> num-cargs 0) "," "") ; TODO: how to propagate continuation - cont " "
                   (c:body cgen) ");"))))
 
         ((prim? fun)
@@ -272,14 +273,16 @@
          (let* ((cfun (c-compile-closure 
                         fun append-preamble cont free-var-lst))
                 (cargs (c-compile-args
-                         args append-preamble "  " cont free-var-lst)))
+                         args append-preamble "  " cont free-var-lst))
+                (num-cargs (c:num-args cargs)))
            (c-code
              (string-append
                 (c:allocs->str (c:allocs cfun) "\n")
                 (c:allocs->str (c:allocs cargs) "\n")
-                "return_funcall" (number->string (- (c:num-args cargs) 0))
+                "return_funcall" (number->string num-cargs)
                 "("
-                "(closure)" (c:body cfun) ","
+                "(closure)" (c:body cfun) 
+                (if (> num-cargs 0) "," "")
                 (c:body cargs)
                 ");"))))
 
@@ -349,23 +352,13 @@
          (free-var-lst*
            (map
              (lambda (free-var)
-             ; TODO: not good enough, if it is a closure-ref, need to convert to elt syntax
-             ;       per below commented-out code
-                (mangle free-var))
+                (if (tagged-list? '%closure-ref free-var)
+                    (let ((var (cadr free-var))
+                          (idx (number->string (caddr free-var))))
+                        (string-append 
+                            "((closure" idx ")" (mangle free-var) ")->elt" idx))
+                    (mangle free-var)))
              free-vars))
-;         (free-var-lst* 
-;           (map 
-;             (lambda (free-var) 
-;              ;; We may want to reference a closure variable, in which
-;              ;; case we need to reference it instead of the whole closure
-;              (if (and env-var env-seq (> env-seq 0)
-;                       (equal? free-var env-var))
-;                (let ((clo-len (number->string env-seq)))
-;                  (string-append 
-;                    "((closure" clo-len ")" (mangle free-var) ")->elt" clo-len))
-;                (mangle free-var)))
-;             free-var-lst))
-;         (num-args (length (lambda->formals lam)))
          (cv-name (mangle (gensym 'c)))
          (lid (allocate-lambda (c-compile-lambda lam))))
 
