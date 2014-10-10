@@ -343,39 +343,31 @@
         (car formals)))
 
 ; c-compile-closure : closure-exp (string -> void) -> string
-(define (c-compile-closure exp append-preamble cont free-var-lst)
+(define (c-compile-closure exp append-preamble cont free-var-lst) ; fv-lst is crap, get rid of it?
   (let* ((lam (closure->lam exp))
-         (env (if (> (length exp) 2)
-                  (closure->env exp) ; arg to closure
-                  #f))
-         (env-var (if (and env
-                           (tagged-list? '%closure-ref env))
-                      (cadr env)
-                      #f))
-         (env-seq (if (and env
-                           (tagged-list? '%closure-ref env))
-                      (caddr env)
-                      #f))
-         (free-var-lst* 
-           (map 
-             (lambda (free-var) 
-              ;; We may want to reference a closure variable, in which
-              ;; case we need to reference it instead of the whole closure
-              (if (and env-var env-seq (> env-seq 0)
-                       (equal? free-var env-var))
-                (let ((clo-len (number->string env-seq)))
-                  (string-append 
-                    "((closure" clo-len ")" (mangle free-var) ")->elt" clo-len))
-                (mangle free-var)))
-             free-var-lst))
-         (num-args (length (lambda->formals lam)))
+         (free-vars (closure->fv exp)) ; Note these are not necessarily symbols, but in cc form
+         (free-var-lst*
+           (map
+             (lambda (free-var)
+             ; TODO: not good enough, if it is a closure-ref, need to convert to elt syntax
+             ;       per below commented-out code
+                (mangle free-var))
+             free-vars))
+;         (free-var-lst* 
+;           (map 
+;             (lambda (free-var) 
+;              ;; We may want to reference a closure variable, in which
+;              ;; case we need to reference it instead of the whole closure
+;              (if (and env-var env-seq (> env-seq 0)
+;                       (equal? free-var env-var))
+;                (let ((clo-len (number->string env-seq)))
+;                  (string-append 
+;                    "((closure" clo-len ")" (mangle free-var) ")->elt" clo-len))
+;                (mangle free-var)))
+;             free-var-lst))
+;         (num-args (length (lambda->formals lam)))
          (cv-name (mangle (gensym 'c)))
          (lid (allocate-lambda (c-compile-lambda lam))))
-
-; OBSOLETE? not sure what to make of this old comment: 
-; if there is an env, pack it up and pass it along as an arg
-; to the function, since it is the function's closure:
-;     (c-compile-exp env append-preamble)
 
 (trace:debug `(,exp fv: ,free-var-lst*))
   (c-code/vars
