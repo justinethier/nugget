@@ -356,7 +356,7 @@
                     (let ((var (cadr free-var))
                           (idx (number->string (caddr free-var))))
                         (string-append 
-                            "((closure" idx ")" (mangle free-var) ")->elt" idx))
+                            "((closure" idx ")" (mangle var) ")->elt" idx))
                     (mangle free-var)))
              free-vars))
          (cv-name (mangle (gensym 'c)))
