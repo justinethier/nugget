@@ -345,7 +345,20 @@
     (let ((formals (lambda->formals exp)))
         (car formals)))
 
-; c-compile-closure : closure-exp (string -> void) -> string
+;; c-compile-closure : closure-exp (string -> void) -> string
+;;
+;; This function compiles closures generated earlier in the
+;; compilation process.  Each closure is of the form:
+;;
+;;   (%closure lambda arg ...)
+;;
+;; Where:
+;;  - `%closure` is the identifying tag
+;;  - `lambda` is the function to execute
+;;  - Each `arg` is a free variable that must be stored within
+;;    the closure. The closure conversion phase tags each access
+;;    to one with the corresponding index so `lambda` can use them.
+;;
 (define (c-compile-closure exp append-preamble cont free-var-lst) ; fv-lst is crap, get rid of it?
   (let* ((lam (closure->lam exp))
          (free-vars (closure->fv exp)) ; Note these are not necessarily symbols, but in cc form
