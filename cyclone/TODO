@@ -1,40 +1,4 @@
-- closures are not being compiled correctly
-
- need to figure out how exactly to compute closures (IE, mclosure statements) in compiled C code.
- It seems each function should receive a closure, the code that inserts (closure _) just seems wrong.
- There is a clue in that the fix in the if example is to load (self->elt1) into the closure, sort of like
- how trans.scm loads (map cc new-free-vars) into the %closure code.
-
- Still a bit fuzzy on where/how exactly to generate each closure, though. maybe take a look at 90-min-scc
- to see if it is of any help at all.
-
- Presumably every function will recieve a closure. Do we have to differentiate between continuation (which every
- function must have) and closure (which can be empty if no fv)? right now the MTA runtime combines the two by
- having an fn argument to each closure.
-
-IMPLEMENTATION NOTES:
-
- - cgen is keeping track of free vars in the wrong way, they are not equivalent to function arguments, but rather are uncovered during closure conversion by scanning for them. NEED TO FIGURE OUT HOW TO READ THESE PROPERLY IN CGEN - once that is done, everything else should fall into place
- - if there are no free variables, a function call call into its continuation using return_check.
- - if there are free variables, a closure must be used to pass them to the continuation. mclosure must be used to create it, and a return_funcall would be used to call into the next continuation
-
--------------------------------------------------------------------------------------------
-Previous notes:
-Bottom line is that cgen is not computing them correctly
-
-Also, with call/cc changes, the if example has a bad closure:
-static void __lambda_3(object self_739, object x) {
-  
-mclosure1(c_7337, __lambda_2,((closure1)self_739)->elt1);
-//mclosure1(c_7337, __lambda_2,x);
-
- Seems there are many cases where extra args should not be added to a closure. see call-cc-debug.c
-
- however, actual bug is an extra arg in lambda_5:
-
- should be: mclosure2(c_7321, __lambda_4, k, f); // bug to include all args??
- not: mclosure3(c_7321, __lambda_4,self_734, k, f); // bug to include all args??
-
+- Get rid of free-var-lst argument since it is not used in cgen
 - Add code to generate return_funcall, funcall, and return_check macros. Ideally also generate funcall code at end of GC (maybe call into a macro or something, and can then generate that code along with the others).
 - Get other programs under 'tests' working
 - Add numeric support - integers or doubles (or both), and numeric operations
@@ -60,5 +24,11 @@ mclosure1(c_7337, __lambda_2,((closure1)self_739)->elt1);
  ((lambda (x) (set! x (+ 2 (* 3 4)))) #f)
 
  was the begin optimized away?
+
+- Question about closures and continuations:
+
+ Presumably every function will recieve a closure. Do we have to differentiate between continuation (which every
+ function must have) and closure (which can be empty if no fv)? right now the MTA runtime combines the two by
+ having an fn argument to each closure. Is that OK?
 
 - Just a thought: if this ever became self-hosting, could distribute compiled C files
