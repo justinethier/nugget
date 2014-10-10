@@ -284,6 +284,9 @@
 (define (closure->env exp) 
   (caddr exp))
 
+(define (closure->fv exp) 
+  (cddr exp))
+
 ; env-make? : exp -> boolean
 (define (env-make? exp) 
   (tagged-list? 'env-make exp))
