@@ -53,6 +53,13 @@ typedef long tag_type;
 #endif
 
 /* Return to continuation after checking for stack overflow. */
+#define return_funcall0(cfn) \
+{char stack; \
+ if (1 || check_overflow(&stack,stack_limit1)) { \
+     object buf[1]; \
+     GC(cfn,buf,0); return; \
+ } else {funcall0((closure) (cfn)); return;}}
+
 #define return_funcall1(cfn,a1) \
 {char stack; \
  if (1 || check_overflow(&stack,stack_limit1)) { \
@@ -79,6 +86,14 @@ typedef long tag_type;
      GC(&c1, buf, 1); return; \
  } else { (_fn)((closure)_fn, a1); }}
 //GC_after(&c1, count, args); return; 
+
+#define return_check2(_fn, a1, a2) { \
+ char stack; \
+ if (1 || check_overflow(&stack,stack_limit1)) { \
+     object buf[2]; buf[0] = a1; buf[1] = a2; \
+     mclosure0(c1, _fn); \
+     GC(&c1, buf, 2); return; \
+ } else { (_fn)((closure)_fn, a1, a2); }}
 
 /* Define tag values.  (I don't trust compilers to optimize enums.) */
 #define cons_tag 0
