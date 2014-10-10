@@ -35,7 +35,7 @@ mclosure1(c_7337, __lambda_2,((closure1)self_739)->elt1);
  should be: mclosure2(c_7321, __lambda_4, k, f); // bug to include all args??
  not: mclosure3(c_7321, __lambda_4,self_734, k, f); // bug to include all args??
 
-
+- Add code to generate return_funcall, funcall, and return_check macros. Ideally also generate funcall code at end of GC (maybe call into a macro or something, and can then generate that code along with the others).
 - Get other programs under 'tests' working
 - Add numeric support - integers or doubles (or both), and numeric operations
 - Integrate C keywords and name mangling, to prevent generating C identifiers that are
