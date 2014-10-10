@@ -7,28 +7,15 @@
 - WRT set! support, and mutable variables:
   - set aggressive GC, and see if there are any problems with data being lost
     need to do this with a more complicated example, though
-
-- This seems like a bug, r_733 should not have been added to this closure:
-  in closure-1.scm:
-
-    static void __lambda_2(object r_733) {
-        mclosure1(c_7310, __lambda_1,r_733);
-- What other examples do not work yet? go through the list
-
-- define - can this with with mutable variable elimination, or does it require C globals (per cboyer)? Are there special cases for top-level? If cells can be uased for vars, do we need to keep track of the roots to prevent invalid GC? lots of questions here
-
+- define - can this with with mutable variable elimination, or does it require C globals (per cboyer)? Are there special cases for top-level? If cells can be used for vars, do we need to keep track of the roots to prevent invalid GC? lots of questions here
 - TBD: Can there be a lambda reference that is not a closure or a direct call?
 - interesting (but probably not a big deal):
  (begin (let ((x #f)) (set! x (+ 2 (* 3 4))) (display x)))
  after desugar:
  ((lambda (x) (set! x (+ 2 (* 3 4)))) #f)
-
  was the begin optimized away?
-
 - Question about closures and continuations:
-
  Presumably every function will recieve a closure. Do we have to differentiate between continuation (which every
  function must have) and closure (which can be empty if no fv)? right now the MTA runtime combines the two by
  having an fn argument to each closure. Is that OK?
-
 - Just a thought: if this ever became self-hosting, could distribute compiled C files
