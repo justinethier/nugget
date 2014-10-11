@@ -41,6 +41,34 @@
    return short signed sizeof static struct switch typedef union unsigned
    void volatile while))
 
+
+;;; Auto-generation of C macros
+
+(define (c-macro-return-funcall num-args)
+  (string-append
+    "/* Return to continuation after checking for stack overflow. */\n"
+    "#define return_funcall" (number->string num-args) "(cfn" (c-macro-n-prefix num-args ",a") ") \\\n"
+    "{char stack; \\\n"
+    " if (1 || check_overflow(&stack,stack_limit1)) { \\\n"
+    "     object buf[" (number->string (+ num-args 1)) "]; " (c-macro-array-assign num-args "buf" "a") "\\\n"
+    "     GC(cfn,buf," (number->string num-args) "); return; \\\n"
+    " } else {funcall" (number->string num-args) "((closure) (cfn)" (c-macro-n-prefix num-args ",a") "); return;}}\n"))
+
+(define (c-macro-n-prefix n prefix)
+  (if (> n 0)
+    (string-append
+      (c-macro-n-prefix (- n 1) prefix)
+      (string-append prefix (number->string n)))
+    ""))
+
+(define (c-macro-array-assign n prefix assign)
+  (if (> n 0)
+    (string-append
+      (c-macro-array-assign (- n 1) prefix assign)
+      prefix "[" (number->string (- n 1)) "] = " 
+      assign (number->string n) ";")
+    ""))
+
 ;;; Compilation routines.
 
 ;; Return generated code that also requests allocation of C variables on stack
