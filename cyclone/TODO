@@ -1,4 +1,3 @@
-- Get rid of free-var-lst argument since it is not used in cgen
 - Add code to generate return_funcall, funcall, and return_check macros. Ideally also generate funcall code at end of GC (maybe call into a macro or something, and can then generate that code along with the others).
 - Get other programs under 'tests' working
 - Add numeric support - integers or doubles (or both), and numeric operations

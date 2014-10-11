@@ -99,7 +99,7 @@
   (let* ((preamble "")
          (append-preamble (lambda (s)
                             (set! preamble (string-append preamble "  " s "\n"))))
-         (body (c-compile-exp exp append-preamble "cont" '())))
+         (body (c-compile-exp exp append-preamble "cont")))
     (string-append 
      preamble 
      (c:serialize body "  ") ;" ;\n"
@@ -114,22 +114,20 @@
 ;; append-preamble - ??
 ;; cont - name of the next continuation
 ;;        this is experimental and probably needs refinement
-;; free-var-lst - list of free variables, for creating closures
-;;                 this is experimental but based off of closure-convert
-(define (c-compile-exp exp append-preamble cont free-var-lst)
+(define (c-compile-exp exp append-preamble cont)
   (cond
     ; Core forms:
     ((const? exp)       (c-compile-const exp))
     ((prim?  exp)       (c-compile-prim exp))
     ((ref?   exp)       (c-compile-ref exp))
-    ((if? exp)          (c-compile-if exp append-preamble cont free-var-lst))
+    ((if? exp)          (c-compile-if exp append-preamble cont))
 
     ; IR (2):
     ((tagged-list? '%closure exp)
-     (c-compile-closure exp append-preamble cont free-var-lst))
+     (c-compile-closure exp append-preamble cont))
     
     ; Application:      
-    ((app? exp)         (c-compile-app exp append-preamble cont free-var-lst))
+    ((app? exp)         (c-compile-app exp append-preamble cont))
     (else               (error "unknown exp in c-compile-exp: " exp))))
 
 ;; c-compile-const : const-exp -> string
@@ -184,10 +182,10 @@
   (c-code (mangle exp)))
 
 ; c-compile-args : list[exp] (string -> void) -> string
-(define (c-compile-args args append-preamble prefix cont free-var-lst)
+(define (c-compile-args args append-preamble prefix cont)
   (letrec ((num-args 0)
          (_c-compile-args 
-          (lambda (args append-preamble prefix cont free-var-lst)
+          (lambda (args append-preamble prefix cont)
             (if (not (pair? args))
                 (c-code "")
                 (begin
@@ -196,16 +194,16 @@
                   (c:append/prefix
                     prefix 
                     (c-compile-exp (car args) 
-                      append-preamble cont free-var-lst)
+                      append-preamble cont)
                     (_c-compile-args (cdr args) 
-                      append-preamble ", " cont free-var-lst)))))))
+                      append-preamble ", " cont)))))))
   (c:tuple/args
     (_c-compile-args args 
-      append-preamble prefix cont free-var-lst)
+      append-preamble prefix cont)
     num-args)))
 
 ;; c-compile-app : app-exp (string -> void) -> string
-(define (c-compile-app exp append-preamble cont free-var-lst)
+(define (c-compile-app exp append-preamble cont)
   (trace:debug `(c-compile-app: ,exp))
   (let (($tmp (mangle (gensym 'tmp))))
     (let* ((args     (app->args exp))
@@ -219,8 +217,7 @@
                      args 
                      append-preamble 
                      ""
-                     cont 
-                     free-var-lst))
+                     cont))
                 (num-cargs (c:num-args cgen)))
               (c-code
                 (string-append
@@ -232,9 +229,9 @@
 
         ((prim? fun)
          (let ((c-fun 
-                (c-compile-exp fun append-preamble cont free-var-lst))
+                (c-compile-exp fun append-preamble cont))
                (c-args
-                (c-compile-args args append-preamble "" cont free-var-lst)))
+                (c-compile-args args append-preamble "" cont)))
             (if (prim/cvar? fun)
               ;; Args need to go with alloc function
               (c-code/vars
@@ -260,7 +257,7 @@
         ;; TODO: may not be good enough, closure app could be from an elt
         ((tagged-list? '%closure-ref fun)
          (let* ((comp (c-compile-args 
-                         args append-preamble "  " cont free-var-lst)))
+                         args append-preamble "  " cont)))
            (c-code 
              (string-append
                (c:allocs->str (c:allocs comp) "\n")
@@ -271,9 +268,9 @@
 
         ((tagged-list? '%closure fun)
          (let* ((cfun (c-compile-closure 
-                        fun append-preamble cont free-var-lst))
+                        fun append-preamble cont))
                 (cargs (c-compile-args
-                         args append-preamble "  " cont free-var-lst))
+                         args append-preamble "  " cont))
                 (num-cargs (c:num-args cargs)))
            (c-code
              (string-append
@@ -287,17 +284,12 @@
                 ");"))))
 
         (else
-         (error `(Unsupported function application ,exp))
-         ;(string-append
-         ; (c-compile-exp fun append-preamble cont free-var-lst cv-name)
-         ; (c-compile-args args append-preamble ", " cont free-var-lst)
-         ; "));" )
-         )))))
+         (error `(Unsupported function application ,exp)))))))
 
 ; c-compile-if : if-exp -> string
-(define (c-compile-if exp append-preamble cont free-var-lst)
+(define (c-compile-if exp append-preamble cont)
   (let* ((compile (lambda (exp)
-                    (c-compile-exp exp append-preamble cont free-var-lst)))
+                    (c-compile-exp exp append-preamble cont)))
          (test (compile (if->condition exp)))
          (then (compile (if->then exp)))
          (els (compile (if->else exp))))
@@ -359,10 +351,9 @@
 ;;    the closure. The closure conversion phase tags each access
 ;;    to one with the corresponding index so `lambda` can use them.
 ;;
-(define (c-compile-closure exp append-preamble cont free-var-lst) ; fv-lst is crap, get rid of it?
+(define (c-compile-closure exp append-preamble cont) ; fv-lst is crap, get rid of it?
   (let* ((lam (closure->lam exp))
-         (free-vars (closure->fv exp)) ; Note these are not necessarily symbols, but in cc form
-         (free-var-lst*
+         (free-vars
            (map
              (lambda (free-var)
                 (if (tagged-list? '%closure-ref free-var)
@@ -371,18 +362,16 @@
                         (string-append 
                             "((closure" idx ")" (mangle var) ")->elt" idx))
                     (mangle free-var)))
-             free-vars))
+             (closure->fv exp))) ; Note these are not necessarily symbols, but in cc form
          (cv-name (mangle (gensym 'c)))
          (lid (allocate-lambda (c-compile-lambda lam))))
-
-(trace:debug `(,exp fv: ,free-var-lst*))
   (c-code/vars
     (string-append "&" cv-name)
     (list (string-append
-     "mclosure" (number->string (length free-var-lst*)) "(" cv-name ", "
+     "mclosure" (number->string (length free-vars)) "(" cv-name ", "
      "__lambda_" (number->string lid)
-     (if (> (length free-var-lst*) 0) "," "")
-     (string-join free-var-lst* ", ")
+     (if (> (length free-vars) 0) "," "")
+     (string-join free-vars ", ")
      ");")))))
 
 ; c-compile-formals : list[symbol] -> string
@@ -410,12 +399,7 @@
            (body    (c-compile-exp     
                         (car (lambda->exp exp)) ;; car ==> assume single expr in lambda body after CPS
                         append-preamble
-                        (mangle env-closure)
-                        ;; Add free variables
-                        (if has-closure?
-                            (cdr (lambda->formals exp)) ;; Closures are not fv
-                            (lambda->formals exp))
-                        )))
+                        (mangle env-closure))))
       (lambda (name)
         (string-append "static void " name 
                        "(" 
