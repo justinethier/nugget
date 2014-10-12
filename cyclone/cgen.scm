@@ -44,15 +44,42 @@
 
 ;;; Auto-generation of C macros
 
+; TODO: use this to track how many args are used for C function calls,
+;       and then generate macros below based on it
+(define *c-call-arity* (make-vector 256 #f))
+
 (define (c-macro-return-funcall num-args)
-  (string-append
-    "/* Return to continuation after checking for stack overflow. */\n"
-    "#define return_funcall" (number->string num-args) "(cfn" (c-macro-n-prefix num-args ",a") ") \\\n"
-    "{char stack; \\\n"
-    " if (1 || check_overflow(&stack,stack_limit1)) { \\\n"
-    "     object buf[" (number->string (+ num-args 1)) "]; " (c-macro-array-assign num-args "buf" "a") "\\\n"
-    "     GC(cfn,buf," (number->string num-args) "); return; \\\n"
-    " } else {funcall" (number->string num-args) "((closure) (cfn)" (c-macro-n-prefix num-args ",a") "); return;}}\n"))
+  (let ((args (c-macro-n-prefix num-args ",a"))
+        (n (number->string num-args))
+        (arry-assign (c-macro-array-assign num-args "buf" "a")))
+    (string-append
+      "/* Return to continuation after checking for stack overflow. */\n"
+      "#define return_funcall" n "(cfn" args ") \\\n"
+      "{char stack; \\\n"
+      " if (1 || check_overflow(&stack,stack_limit1)) { \\\n"
+      "     object buf[" n "]; " arry-assign "\\\n"
+      "     GC(cfn,buf," n "); return; \\\n"
+      " } else {funcall" n "((closure) (cfn)" args "); return;}}\n")))
+
+(define (c-macro-return-check num-args)
+  (let ((args (c-macro-n-prefix num-args ",a"))
+        (n (number->string num-args))
+        (arry-assign (c-macro-array-assign num-args "buf" "a")))
+    (string-append
+      "/* Evaluate an expression after checking for stack overflow. */\n"
+      "#define return_check" n "(_fn" args ") { \\\n"
+      " char stack; \\\n"
+      " if (1 || check_overflow(&stack,stack_limit1)) { \\\n"
+      "     object buf[" n "]; " arry-assign " \\\n"
+      "     mclosure0(c1, _fn); \\\n"
+      "     GC(&c1, buf, " n "); return; \\\n"
+      " } else { (_fn)((closure)_fn" args "); }}\n")))
+
+(define (c-macro-funcall num-args)
+  (let ((args (c-macro-n-prefix num-args ",a"))
+        (n (number->string num-args)))
+    (string-append
+      "#define funcall" n "(cfn" args ") ((cfn)->fn)(cfn" args ")")))
 
 (define (c-macro-n-prefix n prefix)
   (if (> n 0)
