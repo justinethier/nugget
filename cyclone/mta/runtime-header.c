@@ -1,3 +1,4 @@
+#define DEBUG_ALWAYS_GC 1
 #define DEBUG_SHOW_DIAG 1
 
 /* STACK_GROWS_DOWNWARD is a machine-specific preprocessor switch. */
