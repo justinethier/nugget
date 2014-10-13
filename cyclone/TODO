@@ -1,9 +1,9 @@
-- Added code to generate c macros, but everything is too slow. need to profile and understand why.
-  also, maybe just use a scalar (max_args) or something, instead of a vector????
-- Get other programs under 'tests' working
-- Add numeric support - integers or doubles (or both), and numeric operations
+- Compiler runs too slow right now. need to either find performance enhancements under huski or port to chicken.
+  Might be a good exercise to port to chicken anyway, whether or not compiler is stood up there
 - Integrate C keywords and name mangling, to prevent generating C identifiers that are
   keywords
+- Get other programs under 'tests' working
+- Add numeric support - integers or doubles (or both), and numeric operations
 - WRT set! support, and mutable variables:
   - set aggressive GC, and see if there are any problems with data being lost
     need to do this with a more complicated example, though
