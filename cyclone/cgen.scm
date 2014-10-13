@@ -43,30 +43,26 @@
 
 
 ;;; Auto-generation of C macros
-(define *c-call-arity* (make-vector 6 #f))
+(define *c-call-arity* 0)
 
 (define (set-c-call-arity! arity)
   (cond
     ((not (number? arity))
      (error `(Non-numeric number of arguments received ,arity)))
-    ((> arity (vector-length *c-call-arity*))
-     (error `(Cannot accept more than ,(vector-length arity) function arguments)))
     (else
-      (vector-set! *c-call-arity* arity #t))))
+      (if (> arity *c-call-arity*)
+          (set! *c-call-arity* arity)))))
 
 (define (emit-c-macros)
-  (vector-set! *c-call-arity* 0 #t) ;; Always create funcall0
   (emit (c-macro-after-longjmp))
-  (emit-c-arity-macros (- (vector-length *c-call-arity*) 1)))
+  (emit-c-arity-macros 0))
 
 (define (emit-c-arity-macros arity)
-  (when (>= arity 0)
-    (cond
-     ((and (vector-ref *c-call-arity* arity))
-      (emit (c-macro-funcall arity))
-      (emit (c-macro-return-funcall arity))
-      (emit (c-macro-return-check arity))))
-    (emit-c-arity-macros (- arity 1))))
+  (when (<= arity *c-call-arity*)
+    (emit (c-macro-funcall arity))
+    (emit (c-macro-return-funcall arity))
+    (emit (c-macro-return-check arity))
+    (emit-c-arity-macros (+ arity 1))))
 
 (define (c-macro-after-longjmp)
   (letrec (
@@ -85,16 +81,14 @@
               "  if (gc_num_ans == 0) { \\\n"
               "    funcall0((closure) gc_cont); \\\n"
               (append-next-clause (+ i 1))))
-           ((< i (vector-length *c-call-arity*))
+           ((<= i *c-call-arity*)
             (let ((this-clause
                     (string-append
                       "  } else if (gc_num_ans == " (number->string i)") { \\\n"
                       "    funcall" (number->string i) "((closure) gc_cont" (append-args i) "); \\\n")))
-              (if (vector-ref *c-call-arity* i)
-                (string-append 
+               (string-append 
                   this-clause
-                  (append-next-clause (+ i 1)))
-                (append-next-clause (+ i 1)))))
+                  (append-next-clause (+ i 1)))))
            (else
              "  } else { \\\n"
              "      printf(\"Unsupported number of args from GC %d\\n\", gc_num_ans); \\\n"
@@ -299,7 +293,7 @@
             (if (not (pair? args))
                 (c-code "")
                 (begin
-                  (trace:debug `(c-compile-args ,(car args)))
+                  ;(trace:debug `(c-compile-args ,(car args)))
                   (set! num-args (+ 1 num-args))
                   (c:append/prefix
                     prefix 
@@ -314,7 +308,7 @@
 
 ;; c-compile-app : app-exp (string -> void) -> string
 (define (c-compile-app exp append-preamble cont)
-  (trace:debug `(c-compile-app: ,exp))
+  ;(trace:debug `(c-compile-app: ,exp))
   (let (($tmp (mangle (gensym 'tmp))))
     (let* ((args     (app->args exp))
            (fun      (app->fun exp)))
