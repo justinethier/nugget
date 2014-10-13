@@ -53,49 +53,6 @@ typedef long tag_type;
 #define check_overflow(x,y) ((x) > (y))
 #endif
 
-/* Return to continuation after checking for stack overflow. */
-#define return_funcall0(cfn) \
-{char stack; \
- if (1 || check_overflow(&stack,stack_limit1)) { \
-     object buf[1]; \
-     GC(cfn,buf,0); return; \
- } else {funcall0((closure) (cfn)); return;}}
-
-#define return_funcall1(cfn,a1) \
-{char stack; \
- if (1 || check_overflow(&stack,stack_limit1)) { \
-     object buf[1]; buf[0] = a1; \
-     GC(cfn,buf,1); return; \
- } else {funcall1((closure) (cfn),a1); return;}}
-
-/* TODO: need to check the stack, and figure out how to deal with
-         second arg with GC */
-#define return_funcall2(cfn,a1,a2) \
-{char stack; \
- if (1 || check_overflow(&stack,stack_limit1)) { \
-     object buf[2]; buf[0] = a1; buf[1] = a2; \
-     GC(cfn,buf,2); return; \
- } else {funcall2((closure) (cfn),a1,a2); return;}}
-
-
-/* Evaluate an expression after checking for stack overflow. */
-#define return_check1(_fn, a1) { \
- char stack; \
- if (1 || check_overflow(&stack,stack_limit1)) { \
-     object buf[1]; buf[0] = a1; \
-     mclosure0(c1, _fn); \
-     GC(&c1, buf, 1); return; \
- } else { (_fn)((closure)_fn, a1); }}
-//GC_after(&c1, count, args); return; 
-
-#define return_check2(_fn, a1, a2) { \
- char stack; \
- if (1 || check_overflow(&stack,stack_limit1)) { \
-     object buf[2]; buf[0] = a1; buf[1] = a2; \
-     mclosure0(c1, _fn); \
-     GC(&c1, buf, 2); return; \
- } else { (_fn)((closure)_fn, a1, a2); }}
-
 /* Define tag values.  (I don't trust compilers to optimize enums.) */
 #define cons_tag 0
 #define symbol_tag 1
@@ -185,9 +142,6 @@ typedef closure0_type *closure;
    c.fn = f; c.elt1 = a1; c.elt2 = a2; c.elt3 = a3;
 #define mclosure4(c,f,a1,a2,a3,a4) closure4_type c; c.tag = closure4_tag; \
    c.fn = f; c.elt1 = a1; c.elt2 = a2; c.elt3 = a3; c.elt4 = a4;
-#define funcall0(cfn) ((cfn)->fn)(cfn)
-#define funcall1(cfn,a1) ((cfn)->fn)(cfn,a1)
-#define funcall2(cfn,a1,a2) ((cfn)->fn)(cfn,a1,a2)
 #define setq(x,e) x = e
 
 #define mlist1(e1) (mcons(e1,nil))

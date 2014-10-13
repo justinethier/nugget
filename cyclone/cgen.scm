@@ -43,10 +43,65 @@
 
 
 ;;; Auto-generation of C macros
+(define *c-call-arity* (make-vector 6 #f))
 
-; TODO: use this to track how many args are used for C function calls,
-;       and then generate macros below based on it
-(define *c-call-arity* (make-vector 256 #f))
+(define (set-c-call-arity! arity)
+  (cond
+    ((not (number? arity))
+     (error `(Non-numeric number of arguments received ,arity)))
+    ((> arity (vector-length *c-call-arity*))
+     (error `(Cannot accept more than ,(vector-length arity) function arguments)))
+    (else
+      (vector-set! *c-call-arity* arity #t))))
+
+(define (emit-c-macros)
+  (vector-set! *c-call-arity* 0 #t) ;; Always create funcall0
+  (emit (c-macro-after-longjmp))
+  (emit-c-arity-macros (- (vector-length *c-call-arity*) 1)))
+
+(define (emit-c-arity-macros arity)
+  (when (>= arity 0)
+    (cond
+     ((and (vector-ref *c-call-arity* arity))
+      (emit (c-macro-funcall arity))
+      (emit (c-macro-return-funcall arity))
+      (emit (c-macro-return-check arity))))
+    (emit-c-arity-macros (- arity 1))))
+
+(define (c-macro-after-longjmp)
+  (letrec (
+    (append-args
+      (lambda (n)
+        (if (> n 0)
+          (string-append
+            (append-args (- n 1))
+            ",gc_ans[" (number->string (- n 1)) "]")
+          "")))
+    (append-next-clause
+      (lambda (i)
+         (cond 
+           ((= i 0)
+            (string-append
+              "  if (gc_num_ans == 0) { \\\n"
+              "    funcall0((closure) gc_cont); \\\n"
+              (append-next-clause (+ i 1))))
+           ((< i (vector-length *c-call-arity*))
+            (let ((this-clause
+                    (string-append
+                      "  } else if (gc_num_ans == " (number->string i)") { \\\n"
+                      "    funcall" (number->string i) "((closure) gc_cont" (append-args i) "); \\\n")))
+              (if (vector-ref *c-call-arity* i)
+                (string-append 
+                  this-clause
+                  (append-next-clause (+ i 1)))
+                (append-next-clause (+ i 1)))))
+           (else
+             "  } else { \\\n"
+             "      printf(\"Unsupported number of args from GC %d\\n\", gc_num_ans); \\\n"
+                    "  } \n")))))
+  (string-append
+    "#define AFTER_LONGJMP \\\n"
+    (append-next-clause 0))))
 
 (define (c-macro-return-funcall num-args)
   (let ((args (c-macro-n-prefix num-args ",a"))
@@ -274,12 +329,13 @@
                      ""
                      cont))
                 (num-cargs (c:num-args cgen)))
-              (c-code
-                (string-append
-                  (c:allocs->str (c:allocs cgen))
-                  "return_check" (number->string num-cargs) 
-                  "(__lambda_" (number->string lid)
-                  (if (> num-cargs 0) "," "") ; TODO: how to propagate continuation - cont " "
+           (set-c-call-arity! num-cargs)
+           (c-code
+             (string-append
+               (c:allocs->str (c:allocs cgen))
+               "return_check" (number->string num-cargs) 
+               "(__lambda_" (number->string lid)
+               (if (> num-cargs 0) "," "") ; TODO: how to propagate continuation - cont " "
                   (c:body cgen) ");"))))
 
         ((prim? fun)
@@ -313,6 +369,7 @@
         ((tagged-list? '%closure-ref fun)
          (let* ((comp (c-compile-args 
                          args append-preamble "  " cont)))
+           (set-c-call-arity! (c:num-args comp))
            (c-code 
              (string-append
                (c:allocs->str (c:allocs comp) "\n")
@@ -327,6 +384,7 @@
                 (cargs (c-compile-args
                          args append-preamble "  " cont))
                 (num-cargs (c:num-args cargs)))
+           (set-c-call-arity! num-cargs)
            (c-code
              (string-append
                 (c:allocs->str (c:allocs cfun) "\n")
@@ -468,26 +526,28 @@
   
 (define (mta:code-gen input-program)
   (let ((compiled-program (c-compile-program input-program)))
+    ;; Emit C macros:
+    (emit-c-macros)
+    
+    ;; Emit lambdas:
+    ; Print the prototypes:
+    (for-each
+     (lambda (l)
+       (emit (string-append "static void __lambda_" (number->string (car l)) "() ;")))
+     lambdas)
+    
+    (emit "")
+    
+    ; Print the definitions:
+    (for-each
+     (lambda (l)
+       (emit ((cadr l) (string-append "__lambda_" (number->string (car l))))))
+     lambdas)
   
-  ;; Emit lambdas:
-  ; Print the prototypes:
-  (for-each
-   (lambda (l)
-     (emit (string-append "static void __lambda_" (number->string (car l)) "() ;")))
-   lambdas)
-  
-  (emit "")
-  
-  ; Print the definitions:
-  (for-each
-   (lambda (l)
-     (emit ((cadr l) (string-append "__lambda_" (number->string (car l))))))
-   lambdas)
-
-  (emit "
-static void test(env,cont) closure env,cont; { ")
-  (emit compiled-program)
-  (emit "}")))
+    (emit "
+  static void test(env,cont) closure env,cont; { ")
+    (emit compiled-program)
+    (emit "}")))
 
 ; Unused -
 ;;; Echo file to stdout

@@ -1,4 +1,5 @@
-- Add code to generate return_funcall, funcall, and return_check macros. Ideally also generate funcall code at end of GC (maybe call into a macro or something, and can then generate that code along with the others).
+- Added code to generate c macros, but everything is too slow. need to profile and understand why.
+  also, maybe just use a scalar (max_args) or something, instead of a vector????
 - Get other programs under 'tests' working
 - Add numeric support - integers or doubles (or both), and numeric operations
 - Integrate C keywords and name mangling, to prevent generating C identifiers that are

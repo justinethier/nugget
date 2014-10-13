@@ -220,15 +220,7 @@ static void main_main (stack_size,heap_size,stack_base)
   start = clock(); /* Start the timing clock. */
   /* These two statements form the most obscure loop in the history of C! */
   setjmp(jmp_main);
-  if (gc_num_ans == 0) {
-      funcall0((closure) gc_cont);
-  } else if (gc_num_ans == 1) {
-      funcall1((closure) gc_cont,gc_ans[0]);
-  } else if (gc_num_ans == 2) {
-      funcall2((closure) gc_cont,gc_ans[0],gc_ans[1]);
-  } else {
-      printf("Unsupported number of args from GC %d\n", gc_num_ans);
-  }
+  AFTER_LONGJMP
   /*                                                                      */
   printf("main: your setjmp and/or longjmp are broken.\n"); exit(0);}}
 
