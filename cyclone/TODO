@@ -1,5 +1,3 @@
-- Integrate C keywords and name mangling, to prevent generating C identifiers that are
-  keywords
 - Get other programs under 'tests' working
 - Add numeric support - integers or doubles (or both), and numeric operations
 - WRT set! support, and mutable variables:
@@ -16,4 +14,5 @@
  Presumably every function will recieve a closure. Do we have to differentiate between continuation (which every
  function must have) and closure (which can be empty if no fv)? right now the MTA runtime combines the two by
  having an fn argument to each closure. Is that OK?
+- Add eval support. Will probably also require apply, read, etc. will probably be necessary to write interpreter in CPS style - see notes.
 - Just a thought: if this ever became self-hosting, could distribute compiled C files

@@ -25,15 +25,19 @@
 
 ; mangle : symbol -> string
 (define (mangle symbol)
-  (define (m chars)
-    (if (null? chars)
+ (letrec
+   ((m (lambda (chars)
+      (if (null? chars)
         '()
         (if (or (and (char-alphabetic? (car chars)) (not (char=? (car chars) #\_)))
                 (char-numeric? (car chars)))
             (cons (car chars) (m (cdr chars)))
             (cons #\_ (append (integer->char-list (char->natural (car chars)))
-                              (m (cdr chars)))))))
-  (list->string (m (string->list (symbol->string symbol)))))
+                              (m (cdr chars))))))))
+    (ident (list->string (m (string->list (symbol->string symbol))))))
+   (if (member (string->symbol ident) *C-keywords*)
+     (string-append "_" ident)
+     ident)))
 
 (define *C-keywords* 
  '(auto _Bool break case char _Complex const continue default do double else
