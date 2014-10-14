@@ -498,10 +498,11 @@
          (append-preamble (lambda (s)
                             (set! preamble (string-append preamble "  " s "\n")))))
     (let* ((formals (c-compile-formals (lambda->formals exp)))
+           (tmp-ident (mangle (car (lambda->formals exp))))
            (has-closure? 
-             (equal? 
-                "self" 
-                (substring (mangle (car (lambda->formals exp))) 0 4)))
+             (and
+               (> (string-length tmp-ident) 3)
+               (equal? "self" (substring tmp-ident 0 4))))
            (env-closure (lambda->env exp))
            (body    (c-compile-exp     
                         (car (lambda->exp exp)) ;; car ==> assume single expr in lambda body after CPS
