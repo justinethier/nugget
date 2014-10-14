@@ -2,7 +2,10 @@ TESTSCM = app begin call-cc-simple call-cc closure-1 display if lambda one-liner
 # TODO: recursion square tail-call-optimization
 TESTFILES = $(addprefix tests/, $(addsuffix .scm, $(TESTSCM)))
 
-test: $(TESTFILES)
+compiler: compiler.scm trans.scm cgen.scm
+	csc compiler.scm
+
+test: $(TESTFILES) compiler
 	$(foreach f,$(TESTSCM), echo tests/$(f) ; ./run.sh tests/$(f).scm && rm -rf $(f);)
 
 .PHONY: repl
@@ -15,5 +18,5 @@ tags:
 
 .PHONY: clean
 clean:
-	rm -rf a.out *.o *.c *.out tags
+	rm -rf a.out *.o *.c *.out tags compiler
 	$(foreach f,$(TESTSCM), rm -rf $(f) $(f).c;)
