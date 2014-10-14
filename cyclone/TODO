@@ -1,5 +1,3 @@
-- Compiler runs too slow right now. need to either find performance enhancements under huski or port to chicken.
-  Might be a good exercise to port to chicken anyway, whether or not compiler is stood up there
 - Integrate C keywords and name mangling, to prevent generating C identifiers that are
   keywords
 - Get other programs under 'tests' working
