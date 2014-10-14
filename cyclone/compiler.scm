@@ -1,31 +1,8 @@
 ;;
 ;; Front-end for the compiler itself
 ;;
-
-;; huski imports
-;(import (husk pretty-print)) ;; Non-standard, replace with below if necessary
-
-;; CHICKEN imports
-(require-extension extras)
-(require-extension chicken-syntax)
-;; Read all s-expressions from file, needed to bootstrap from CHICKEN
-;; remove for CHICKEN
-(define (read-all)
-  (letrec ((read-next-sexp 
-    (lambda (result)
-      (let ((obj (read)))
-        (if (eof-object? obj)
-            ;(begin
-            ;  (close-input-port fp)
-            ;  result)
-            result
-            (read-next-sexp 
-              (cons obj result)))))))
-    (reverse
-      (read-next-sexp (list)))))
-
-
-;; Imports done, begin compiler
+(load "bootstrap-chicken.scm")
+;(load "bootstrap-husk.scm")
 (load "trans.scm")
 
 ;; Code emission.
