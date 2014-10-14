@@ -2,10 +2,6 @@
 ;; Scheme-to-scheme transformations and utility functions used by the compiler
 ;;
 
-;; Pretty printing
-(import (husk pretty-print)) ;; Non-standard, replace with below if necessary
-;; (define pretty-print display)
-
 ;; Tuning
 (define *do-desugar* #t) ; Eventually replace w/a macro system
 (define *do-cps* #t)    ; Turn off to reduce code size, but no call/cc. 

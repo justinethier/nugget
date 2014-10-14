@@ -2,7 +2,26 @@
 ;; Front-end for the compiler itself
 ;;
 
+;; Pretty printing
+(import (husk pretty-print)) ;; Non-standard, replace with below if necessary
+;; (define pretty-print display)
+
 (load "trans.scm")
+
+;; Read all s-expressions from file, needed to bootstrap from CHICKEN
+;(define (read-all)
+;  (letrec ((read-next-sexp 
+;    (lambda (result)
+;      (let ((obj (read)))
+;        (if (eof-object? obj)
+;            ;(begin
+;            ;  (close-input-port fp)
+;            ;  result)
+;            result
+;            (read-next-sexp 
+;              (cons obj result)))))))
+;    (reverse
+;      (read-next-sexp (list)))))
 
 ;; Code emission.
   
