@@ -2,8 +2,7 @@
 (require-extension extras) ;; pretty-print
 (require-extension chicken-syntax) ;; when
 
-;; Read all s-expressions from file, needed to bootstrap from CHICKEN
-;; remove for CHICKEN
+;; Read all s-expressions from file
 (define (read-all)
   (letrec ((read-next-sexp 
     (lambda (result)
