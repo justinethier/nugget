@@ -6,7 +6,7 @@ compiler: compiler.scm trans.scm cgen.scm
 	csc compiler.scm
 
 test: $(TESTFILES) compiler
-	$(foreach f,$(TESTSCM), echo tests/$(f) ; ./run.sh tests/$(f).scm && rm -rf $(f);)
+	$(foreach f,$(TESTSCM), echo tests/$(f) ; ./cyc tests/$(f).scm && rm -rf $(f);)
 
 .PHONY: repl
 repl:
