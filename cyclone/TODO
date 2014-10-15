@@ -1,6 +1,7 @@
-- Add (list) or equivalent, and (length)
+- Add (quote) or equivalent, with primary goal of being able to define proper lists. then add (length) for below bullet:
 - Integrate them to tail call example - why is'nt that one overflowing memory and/or crashing?
   What does length print as that program is left to run?
+- Add (newline) and (write)
 - closure issue when setting a non-lambda variable, eg:
     (set! x #t) ; (+ 2 (* 3 4)))
     (display x);)
