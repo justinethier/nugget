@@ -1,6 +1,10 @@
 ;;
 ;; Compile scheme code to a Cheney-on-the-MTA C runtime
 ;;
+;; Copyright (c) 2014, Justin Ethier
+;; All rights reserved.
+;;
+
 (define (emit line)
   (display line)
   (newline))
@@ -35,11 +39,11 @@
             (cons #\_ (append (integer->char-list (char->natural (car chars)))
                               (m (cdr chars))))))))
     (ident (list->string (m (string->list (symbol->string symbol))))))
-   (if (member (string->symbol ident) *C-keywords*)
+   (if (member (string->symbol ident) *c-keywords*)
      (string-append "_" ident)
      ident)))
 
-(define *C-keywords* 
+(define *c-keywords* 
  '(auto _Bool break case char _Complex const continue default do double else
    enum extern float for goto if _Imaginary inline int long register restrict
    return short signed sizeof static struct switch typedef union unsigned
@@ -228,6 +232,7 @@
     ((const? exp)       (c-compile-const exp))
     ((prim?  exp)       (c-compile-prim exp))
     ((ref?   exp)       (c-compile-ref exp))
+    ((quote? exp)       (c-compile-quote exp))
     ((if? exp)          (c-compile-if exp append-preamble cont))
 
     ; IR (2):
@@ -237,6 +242,14 @@
     ; Application:      
     ((app? exp)         (c-compile-app exp append-preamble cont))
     (else               (error "unknown exp in c-compile-exp: " exp))))
+
+(define (c-compile-quote qexp)
+  (let ((exp (cadr qexp)))
+    (cond
+      ((or (boolean? exp) (integer? exp))
+       (c-compile-const exp))
+      (else
+        (error "unknown quoted expression: " exp)))))
 
 ;; c-compile-const : const-exp -> string
 (define (c-compile-const exp)

@@ -509,6 +509,7 @@
     ; Core forms:
     ((const? exp)    '())
     ((prim? exp)     '())    
+    ((quote? exp)    '())    
     ((ref? exp)      (list exp))
     ((lambda? exp)   (difference (reduce union (map free-vars (lambda->exp exp)) '())
                                  (lambda->formals exp)))
@@ -587,6 +588,7 @@
     ((const? exp)    (void))
     ((prim? exp)     (void))
     ((ref? exp)      (void))
+    ((quote? exp)    (void))
     ((lambda? exp)   (begin
                         (map analyze-mutable-variables (lambda->exp exp))
                         (void)))
@@ -635,6 +637,7 @@
                          `(cell-get ,exp)
                          exp))
     ((prim? exp)     exp)
+    ((quote? exp)    exp)
     ((lambda? exp)   `(lambda ,(lambda->formals exp)
                         ,(wrap-mutable-formals (lambda->formals exp)
                                                (wrap-mutables (car (lambda->exp exp)))))) ;; Assume single expr in lambda body, since after CPS phase
@@ -650,7 +653,7 @@
 
 ;; CPS conversion 
 ;;
-;; JAE - This is a port of the code from 90-minute Scheme->C
+;; This is a port of code from the 90-minute Scheme->C Compiler by Marc Feeley
 ;;
 ;; Convert intermediate code to continuation-passing style, to allow for
 ;; first-class continuations and call/cc
@@ -664,6 +667,9 @@
            (list cont-ast ast))
 
           ((ref? ast)
+           (list cont-ast ast))
+
+          ((quote? ast)
            (list cont-ast ast))
 
           ((set!? ast)
@@ -788,91 +794,27 @@
 
 
 ;; Closure-conversion.
-
-;; Closure conversion operates on a desugared
-;; Intermediate Language (2).  Closure conversion
-;; eliminates all of the free variables from every
+;;
+;; Closure conversion eliminates all of the free variables from every
 ;; lambda term.
+;;
+;; The code below is based on a fusion of a port of the 90-min-scc code by 
+;; Marc Feeley and the closure conversion code in Matt Might's scheme->c 
+;; compiler.
 
-;; The transform is:
-
-;;  (lambda (v1 ... vn) body)
-;;             =>
-;;  (closure (lambda ($env v1 ... vn) 
-;;                   {xi => (env-get $id xi $env)}body)
-;;           (env-make $id (x1 x1) ... (xn xn)))
-
-;;  where x1,...xn are the free variables in the lambda term.
-
-
-
-; type env-id = natural
-
-; num-environments : natural
-(define num-environments 0)
-
-; environments : alist*[env-id,symbol]
-(define environments '())
-
-; allocate-environment : list[symbol] -> env-id
-(define (allocate-environment fields)
-  (let ((id num-environments))
-    (set! num-environments (+ 1 num-environments))
-    (set! environments (cons (cons id fields) environments))
-    id))
-
-; get-environment : natural -> list[symbol]
-(define (get-environment id)
-  (cdr (assv id environments)))
-
-
-; closure-convert : exp -> exp
-;
-; JAE - Original conversion:
-;(define (closure-convert exp)
-;  (cond
-;    ((const? exp)        exp)
-;    ((prim? exp)         exp)
-;    ((ref? exp)          exp)
-;    ((lambda? exp)       (let* (($env (gensym 'env))
-;                                (body  (closure-convert (car (lambda->exp exp)))) ;; Assume single body exp in lambda, due to CPS phase
-;                                (fv    (difference (free-vars body) (lambda->formals exp)))
-;                                (id    (allocate-environment fv))
-;                                (sub  (map (lambda (v)
-;                                             (list v `(env-get ,id ,v ,$env)))
-;                                           fv)))
-;                           `(closure (lambda (,$env ,@(lambda->formals exp))
-;                                       ,(substitute sub body))
-;                                     (env-make ,id ,@(azip fv fv)))))
-;    ((if? exp)           `(if ,(closure-convert (if->condition exp))
-;                              ,(closure-convert (if->then exp))
-;                              ,(closure-convert (if->else exp))))
-;    ((set!? exp)         `(set! ,(set!->var exp)
-;                                ,(closure-convert (set!->exp exp))))
-;    
-;    ; IR (1):
-;    
-;    ((cell? exp)         `(cell ,(closure-convert (cell->value exp))))
-;    ((cell-get? exp)     `(cell-get ,(closure-convert (cell-get->cell exp))))
-;    ((set-cell!? exp)    `(set-cell! ,(closure-convert (set-cell!->cell exp))
-;                                     ,(closure-convert (set-cell!->value exp))))
-;    
-;    ; Applications:
-;    ((app? exp)          (map closure-convert exp))
-;    (else                (error "unhandled exp: " exp))))
-    
 (define (pos-in-list x lst)
   (let loop ((lst lst) (i 0))
     (cond ((not (pair? lst)) #f)
           ((eq? (car lst) x) i)
-          (else              (loop (cdr lst) (+ i 1))))))
+          (else 
+            (loop (cdr lst) (+ i 1))))))
 
 (define (closure-convert exp)
  (define (convert exp self-var free-var-lst)
   (define (cc exp)
-;(write `(DEBUG cc ,exp fv: ,free-var-lst))
    (cond
     ((const? exp)        exp)
+    ((quote? exp)        exp)
     ((ref? exp)
       (let ((i (pos-in-list exp free-var-lst)))
         (if i
@@ -891,40 +833,15 @@
     ((lambda? exp)
      (let* ((new-self-var (gensym 'self))
             (body  (lambda->exp exp))
-; TODO: work in progress for adjusting free vars
-
-; another thought: we could calculate fv here and pass to the next phase using
-; notation such as (lambda (fv: ...) (args) body)
-
-            ; Previous version, delete if/when bottom one works:
             (new-free-vars (difference (free-vars body) (lambda->formals exp))))
-            ; Original from 90-scm is keep all (fv ast) except globals
-            ; this does not work for call/cc example though because of the 
-            ; silliness in cgen with passing current closure (??). anyway, need to
-            ; put similar logic in cgen too so everything matches up. this change
-            ; alone is not good enough!
-            ;(new-free-vars (free-vars body)))
-;(write `(DEBUG_FV ,new-free-vars))
-; END TODO
        `(%closure
           (lambda
             ,(cons new-self-var (lambda->formals exp))
-;            ,(cons 'free-vars: new-free-vars)  ;; appending free vars for use
-;                                               ;; in code-gen phase, need to 
-;                                               ;; account for them over there
             ,(convert (car body) new-self-var new-free-vars)) ;; TODO: should this be a map??? was a list in 90-min-scc.
           ,@(map (lambda (v) ;; TODO: splice here?
                     (cc v))
             new-free-vars))))
     ((if? exp)  `(if ,@(map cc (cdr exp))))
-
-;    ; IR (1):
-;    
-;    ((cell? exp)         `(cell ,(closure-convert (cell->value exp))))
-;    ((cell-get? exp)     `(cell-get ,(closure-convert (cell-get->cell exp))))
-    ;((cell? exp)       `(cell ,@(map cc (cell->value exp))))
-    ;((cell-get? exp)   `(cell-get ,@(map cc (cell-get->cell exp))))
-                                   ;,@(map cc (set-cell!->value exp))))
     ((cell? exp)       `(cell ,(cc (cell->value exp))))
     ((cell-get? exp)   `(cell-get ,(cc (cell-get->cell exp))))
     ((set-cell!? exp)  `(set-cell! ,(cc (set-cell!->cell exp))
@@ -934,30 +851,19 @@
            (args (map cc (cdr exp))))
        (if (lambda? fn)
            (let* ((body  (lambda->exp fn))
-                  ; Corresponding change in (lambda?) above
-                  ;(new-free-vars (free-vars body))
                   (new-free-vars (difference (free-vars body) (lambda->formals fn)))
                   (new-free-vars? (> (length new-free-vars) 0)))
-;(write `(DEBUG lambda application ,fn fv: ,new-free-vars))
                (if new-free-vars?
-; TODO: this is experimental! -------------------
-;WTF: why attempting to pass new-free-vars like this?
-;let's try passing them to the lambda per other change (free-vars:)
-;and removing the below new-free-vars hack.
-;also, 90 min scc does not create a closure here, are you sure
-;it is necessary? guess it will not hurt anything if never used???
-                 ; Free vars, attempt to create a closure for them
+                 ; Free vars, create a closure for them
                  (let* ((new-self-var (gensym 'self)))
                    `((%closure 
                         (lambda
                           ,(cons new-self-var (lambda->formals fn))
-;                          ,(cons 'free-vars: new-free-vars)
                           ,(convert (car body) new-self-var new-free-vars))
                         ,@(map (lambda (v) (cc v))
                                new-free-vars))
                      ,@args))
-; END TODO --------------------------------------
-                 ; No free vars, just create simple lambda, at least for now
+                 ; No free vars, just create simple lambda
                  `((lambda ,(lambda->formals fn)
                            ,@(map cc body))
                    ,@args)))
@@ -971,13 +877,6 @@
 
  `(lambda ()
     ,(convert exp #f '())))
-
-;; Compile and emit:
-
-;;(define the-program
-;;    (cons 'begin (read-all))) ;; read-all is non-standard
-;;
-;;(c-compile-and-emit the-program)
 
 ; Suitable definitions for the cell functions:
 ;(define (cell value) (lambda (get? new-value) 
