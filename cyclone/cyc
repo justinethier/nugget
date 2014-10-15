@@ -4,7 +4,7 @@
 CC=./compiler
 #CC="huski compiler.scm"
 if [[ $# -eq 0 ]] ; then
-    echo 'usage: run.sh file.scm'
+    echo 'usage: cyc file.scm'
     exit 0
 fi
 
