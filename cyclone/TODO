@@ -1,3 +1,6 @@
+- Add (list) or equivalent, and (length)
+- Integrate them to tail call example - why is'nt that one overflowing memory and/or crashing?
+  What does length print as that program is left to run?
 - closure issue when setting a non-lambda variable, eg:
     (set! x #t) ; (+ 2 (* 3 4)))
     (display x);)
