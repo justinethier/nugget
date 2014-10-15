@@ -1,3 +1,7 @@
+- closure issue when setting a non-lambda variable, eg:
+    (set! x #t) ; (+ 2 (* 3 4)))
+    (display x);)
+  see also: adder.scm
 - Get other programs under 'tests' working
 - Add numeric support - integers or doubles (or both), and numeric operations
 - WRT set! support, and mutable variables:
