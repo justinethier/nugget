@@ -151,6 +151,10 @@
 (define (ref? exp)
   (symbol? exp))
 
+; quote? : exp -> boolean
+(define (quote? exp)
+  (tagged-list? 'quote exp))
+
 ; let? : exp -> boolean
 (define (let? exp)
   (tagged-list? 'let exp))
@@ -460,6 +464,7 @@
     ((const? exp)      exp)
     ((prim? exp)       exp)
     ((ref? exp)        exp)
+    ((quote? exp)      exp)
     ((lambda? exp)     `(lambda ,(lambda->formals exp)
                           ,@(map desugar (lambda->exp exp))))
     ((set!? exp)       `(set! ,(set!->var exp) ,(set!->exp exp)))
