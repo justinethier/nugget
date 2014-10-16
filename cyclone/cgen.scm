@@ -313,6 +313,7 @@
             ;((eq? p '=)       "__numEqual")
             ((eq? p '%halt)     "__halt")
             ((eq? p 'display)   "prin1")
+            ((eq? p 'length)    "CYC_length")
             ((eq? p 'cons)      "make_cons") ;; mcons? maybe n/a since malloc
             ((eq? p 'cell)      "make_cell")
             ((eq? p 'cell-get)  "cell_get")

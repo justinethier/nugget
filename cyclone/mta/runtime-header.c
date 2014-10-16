@@ -266,8 +266,12 @@ static list assq(x,l) object x; list l;
    {register list la = car(l); if (eq(x,car(la))) return la;}
  return nil;}
 
-static object sum(object x, object y) {
+static integer_type CYC_length(object l){
+    make_int(len, 0);
+    for (; !nullp(l); l = cdr(l), len.value++);
+    return len;
 }
+/*static object sum(object x, object y) {}*/
 
 static void my_exit(closure) never_returns;
 
