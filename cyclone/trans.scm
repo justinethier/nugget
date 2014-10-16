@@ -237,17 +237,19 @@
   
 ; prim? : exp -> boolean
 (define (prim? exp)
-  (or (eq? exp '+)
-      (eq? exp '-)
-      (eq? exp '*)
-      (eq? exp '/)
-      (eq? exp '=)
-      (eq? exp '%halt)
-      (eq? exp 'cons)
-      (eq? exp 'cell-get)
-      (eq? exp 'set-cell!)
-      (eq? exp 'cell)
-      (eq? exp 'display)))
+  (member exp '(
+     +
+     -
+     *
+     /
+     =
+     %halt
+     cons
+     cell-get
+     set-cell!
+     cell
+     length
+     display)))
 
 (define (prim-call? exp)
   (and (list? exp) (prim? (car exp))))

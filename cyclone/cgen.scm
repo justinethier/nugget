@@ -320,19 +320,21 @@
             ((eq? p 'set-cell!) "cell_set")
             (else
               (error "unhandled primitive: " p)))))
-;;    Note: what about code like (cons (cons - only want to insert one var, and use the other one in the second make_cons, right?
-    (if (prim/cvar? p)
+    (cond
+    ; TODO: special case for (length)?
+     ((prim/cvar? p)
         (let ((cv-name (mangle (gensym 'c))))
            (c-code/vars 
             (string-append "&" cv-name)
             (list
-                (string-append c-func "(" cv-name))))
-        (c-code (string-append c-func "(")))))
+                (string-append c-func "(" cv-name)))))
+     (else
+        (c-code (string-append c-func "("))))))
 
 ; Does primitive create a c variable?
 (define (prim/cvar? exp)
     (and (prim? exp)
-         (member exp '(+ - * / cons cell))))
+         (member exp '(+ - * / cons length cell))))
 
 ; c-compile-ref : ref-exp -> string
 (define (c-compile-ref exp)
