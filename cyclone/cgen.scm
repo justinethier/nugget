@@ -245,41 +245,37 @@
 
 (define (c-compile-quote qexp)
   (let ((exp (cadr qexp)))
-    (cond
-      ((list? exp)
-       (c-code "nil")) ;; TODO: compile list, as literals
-      ((or (boolean? exp) (integer? exp))
-       (c-compile-const exp))
-      (else
-        (error "unknown quoted expression: " exp)))))
+    (c-compile-scalars exp)))
 ;  // (1 . (2 . nil))
 ;  make_int(i2, 2);
 ;  make_cons(c2, &i2, nil);
 ;  make_int(i1, 1);
 ;  make_cons(c1, &i1, &c2);
 ;  return_check1(__lambda_1, &c1);; 
-;(define (c-compile-scalars args)
-;  (letrec ((num-args 0)
-;         (_c-compile-scalars 
-;          (lambda (args append-preamble prefix cont)
-;            (if (not (pair? args))
-;                (c-code "")
-;                (begin
-;                  ;(trace:debug `(c-compile-args ,(car args)))
-;                  (set! num-args (+ 1 num-args))
-;                  (c:append/prefix
-;                    prefix 
-;                    (c-compile-exp (car args))
-;                    (_c-compile-args (cdr args) 
-;                      append-preamble ", " cont)))))))
-;  (c:tuple/args
-;    (_c-compile-args args 
-;      append-preamble prefix cont)
-;    num-args)))
+(define (c-compile-scalars args)
+  (letrec ((num-args 0)
+         (_c-compile-scalars 
+          (lambda (args)
+            (if (not (pair? args))
+                (c-code "")
+                (begin
+                  (set! num-args (+ 1 num-args))
+                  (c:append/prefix
+                    "," ;prefix 
+                    (c-compile-const (car args)) ;; TODO: not quite what we want long-term???
+                                                 ;;  or maybe that function can handle lists, etc.
+                                                 ;;  they would typically not be dispatched there
+                                                 ;;  since they would fail (const?) predicate.
+                    (_c-compile-scalars (cdr args))))))))
+  (c:tuple/args
+    (_c-compile-scalars args) 
+    num-args)))
 
 ;; c-compile-const : const-exp -> string
 (define (c-compile-const exp)
   (cond
+    ((list? exp)
+     (c-code "nil")) ;; TODO: compile list, as literals
     ((integer? exp) 
       (let ((cvar-name (mangle (gensym 'c))))
         (c-code/vars
