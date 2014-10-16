@@ -253,29 +253,42 @@
 ;  make_cons(c1, &i1, &c2);
 ;  return_check1(__lambda_1, &c1);; 
 (define (c-compile-scalars args)
-  (letrec ((num-args 0)
-         (_c-compile-scalars 
-          (lambda (args)
-            (if (not (pair? args))
-                (c-code "")
-                (begin
-                  (set! num-args (+ 1 num-args))
-                  (c:append/prefix
-                    "," ;prefix 
-                    (c-compile-const (car args)) ;; TODO: not quite what we want long-term???
-                                                 ;;  or maybe that function can handle lists, etc.
-                                                 ;;  they would typically not be dispatched there
-                                                 ;;  since they would fail (const?) predicate.
-                    (_c-compile-scalars (cdr args))))))))
+  (letrec (
+    (num-args 0)
+    (create-cons
+      (lambda (cvar a b)
+        (c-code/vars
+          (string-append "make_cons(" cvar "," (c:body a) "," (c:body b) ");")
+          (append (c:allocs a) (c:allocs b))))
+    )
+    (_c-compile-scalars 
+     (lambda (args)
+       (if (not (pair? args))
+           (c-code "nil")
+           (let* ((cvar-name (mangle (gensym 'c)))
+                  (cell (create-cons
+                          cvar-name
+                          (c-compile-const (car args)) 
+                          (_c-compile-scalars (cdr args)))))
+             (set! num-args (+ 1 num-args))
+             (c-code/vars
+                (string-append "&" cvar-name)
+                (append
+                  (c:allocs cell)
+                  (list (c:body cell)))))))))
   (c:tuple/args
     (_c-compile-scalars args) 
     num-args)))
 
-;; c-compile-const : const-exp -> string
+;; c-compile-const : const-exp -> c-pair
+;;
+;; Typically this function is used to compile constatn values such as
+;; a single number, boolean, etc. However, it can be passed a quoted
+;; item such as a list, to compile as a literal.
 (define (c-compile-const exp)
   (cond
     ((list? exp)
-     (c-code "nil")) ;; TODO: compile list, as literals
+     (c-compile-scalars exp))
     ((integer? exp) 
       (let ((cvar-name (mangle (gensym 'c))))
         (c-code/vars
