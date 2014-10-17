@@ -1,7 +1,4 @@
-- within CYC_length, raise error if cdr is not a list or nil
-- Add (quote) or equivalent, with primary goal of being able to define proper lists. then add (length) for below bullet:
-- Integrate them to tail call example - why is'nt that one overflowing memory and/or crashing?
-  What does length print as that program is left to run?
+- Within CYC_length, raise error if cdr is not a list or nil
 - Improvements to (display) - should differentiate between lists and pairs
 - Add a lexer/parser - let's try writing it in Scheme (at least at first). it can replace the call to (read-all) once done.
   not sure how much slower it will be when written in scheme, but development should at least go faster. if it is too slow
