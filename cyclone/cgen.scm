@@ -263,8 +263,12 @@
     )
     (_c-compile-scalars 
      (lambda (args)
-       (if (not (pair? args))
-           (c-code "nil")
+       (cond
+        ((null? args)
+           (c-code "nil"))
+        ((not (pair? args))
+         (c-compile-const args))
+        (else
            (let* ((cvar-name (mangle (gensym 'c)))
                   (cell (create-cons
                           cvar-name
@@ -275,7 +279,7 @@
                 (string-append "&" cvar-name)
                 (append
                   (c:allocs cell)
-                  (list (c:body cell)))))))))
+                  (list (c:body cell))))))))))
   (c:tuple/args
     (_c-compile-scalars args) 
     num-args)))
@@ -322,6 +326,9 @@
             (else
               (error "unhandled primitive: " p)))))
     (cond
+     ;; TODO: this is crap. if there is another function that requires a
+     ;; traditional c variable assignment (IE, obj x = y) then generalize
+     ;; all of this...
      ((eq? p 'length)
         (let ((cv-name (mangle (gensym 'c))))
            (c-code/vars 

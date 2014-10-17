@@ -273,6 +273,7 @@ static list assq(x,l) object x; list l;
 
 static integer_type CYC_length(object l){
     make_int(len, 0);
+    // TODO: raise error if cdr is not a list or nil
     for (; !nullp(l); l = cdr(l), len.value++);
     return len;
 }
