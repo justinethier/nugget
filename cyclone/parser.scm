@@ -10,6 +10,10 @@
    (->tok (lambda (lst)
             (list->string ;; TODO: may just be for temp debugging
               (reverse lst))))
+   (with-tok (lambda (tok toks)
+                 (if (null? tok)
+                   toks
+                   (cons (->tok tok) toks))))
    (loop/tok (lambda (tok toks comment?)
                 (if (null? tok)
                     (loop '() toks comment?)
@@ -18,11 +22,11 @@
     (let ((c (read-char fp)))
       (cond
         ((eof-object? c) 
-         (reverse toks))
+         (reverse (with-tok tok toks)))
         (comment?
          (if (eq? c #\newline)
-             (loop '() toks #f))
-             (loop '() toks #t))
+             (loop '() toks #f)
+             (loop '() toks #t)))
         ((char-whitespace? c)
          (loop/tok tok toks #f))
         ((eq? c #\;)
@@ -32,17 +36,12 @@
 ;and to end that list upon close paren
          ;; TODO: need to error if close paren never found
          (let ((sub (lex fp))
-               (toks* (if (null? tok)
-                          toks
-                          (cons (->tok tok) toks))))
-            (loop '() (cons sub toks) #f)))
+               (toks* (with-tok tok toks)))
+            (loop '() (cons sub toks*) #f)))
         ((eq? c #\))
          ;; TODO: what if too many close parens??
          ;(loop '() (cons 'TOK-cparen toks) #f))
-         (reverse 
-           (if (null? tok)
-             toks
-             (cons (->tok tok) toks))))
+         (reverse (with-tok tok toks)))
         ; TODO: # - need to start char reader
         ;           or vector, or... ???
         ; TODO: " - need to start string reader
