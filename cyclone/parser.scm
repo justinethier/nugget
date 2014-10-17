@@ -1,15 +1,8 @@
-;; TODO: parser barfs on this, never reads second begin
-;;1
-;;(begin 1 2 (+ 1 2) (+ 3 4))
-;;;(begin 1 2 (+ 1 2) (+ 3 4))
-;;(begin 1 2 (+ 1 2) (+ 3 4))
-
 ;; TODO: line-num, char-num
 (define (lex fp)
   (letrec (
    (->tok (lambda (lst)
-            (list->string ;; TODO: may just be for temp debugging
-              (reverse lst))))
+            (parse-atom (reverse lst))))
    (with-tok (lambda (tok toks)
                  (if (null? tok)
                    toks
@@ -48,6 +41,18 @@
         (else
           (loop (cons c tok) toks #f)))))))
    (loop '() '() #f)))
+
+;; parse-atom -> [chars] -> literal
+(define (parse-atom a)
+  (cond 
+    ((char-numeric? (car a))
+     (string->number  ;; TODO: this is cheating! need to do this, too.
+                      ;; but, it could be done by a library function
+                      ;; exposed as string->number... so, ok here
+       (list->string a)))
+    (else
+     (string->symbol
+       (list->string a)))))
 
 (let ((fp (open-input-file "tests/begin.scm")))
   (write (lex fp)))
