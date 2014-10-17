@@ -249,6 +249,7 @@
      set-cell!
      cell
      length
+     write
      display)))
 
 (define (prim-call? exp)

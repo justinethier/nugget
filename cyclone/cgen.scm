@@ -313,15 +313,21 @@
             ;((eq? p '=)       "__numEqual")
             ((eq? p '%halt)     "__halt")
             ((eq? p 'display)   "prin1")
+            ((eq? p 'write)     "write")
             ((eq? p 'length)    "CYC_length")
-            ((eq? p 'cons)      "make_cons") ;; mcons? maybe n/a since malloc
+            ((eq? p 'cons)      "make_cons")
             ((eq? p 'cell)      "make_cell")
             ((eq? p 'cell-get)  "cell_get")
             ((eq? p 'set-cell!) "cell_set")
             (else
               (error "unhandled primitive: " p)))))
     (cond
-    ; TODO: special case for (length)?
+     ((eq? p 'length)
+        (let ((cv-name (mangle (gensym 'c))))
+           (c-code/vars 
+            (string-append "&" cv-name)
+            (list
+                (string-append "integer_type " cv-name " = " c-func "(")))))
      ((prim/cvar? p)
         (let ((cv-name (mangle (gensym 'c))))
            (c-code/vars 
@@ -399,7 +405,9 @@
                 (append
                   (c:allocs c-args) ;; fun alloc depends upon arg allocs
                   (list (string-append 
-                    (car (c:allocs c-fun)) "," (c:body c-args) ");"))))
+                    (car (c:allocs c-fun)) 
+                         (if (eq? fun 'length) "" "," ) ; TODO: a special case, generalize this
+                         (c:body c-args) ");"))))
               ;; Args stay with body
               (c:append
                 (c:append c-fun c-args)

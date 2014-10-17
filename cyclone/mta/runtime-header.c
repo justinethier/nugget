@@ -238,6 +238,11 @@ static object prin1(x) object x;
       printf("prin1: bad tag x=%ld\n", ((closure)x)->tag); getchar(); exit(0);}
  return x;}
 
+static object write(x) object x;
+{prin1(x);
+ printf("\n");
+ return x;}
+
 /* Some of these non-consing functions have been optimized from CPS. */
 
 static object memberp(x,l) object x; list l;
