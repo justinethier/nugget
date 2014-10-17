@@ -1,3 +1,10 @@
+;; TODO: parser barfs on this, never reads second begin
+;;1
+;;(begin 1 2 (+ 1 2) (+ 3 4))
+;;;(begin 1 2 (+ 1 2) (+ 3 4))
+;;(begin 1 2 (+ 1 2) (+ 3 4))
+
+;; TODO: line-num, char-num
 (define (lex fp)
   (letrec (
    (->tok (lambda (lst)
@@ -21,14 +28,24 @@
         ((eq? c #\;)
          (loop/tok tok toks #t))
         ((eq? c #\()
-idea is to form a new list when open paren encountered
-and to end that list upon close paren
+;idea is to form a new list when open paren encountered
+;and to end that list upon close paren
          ;; TODO: need to error if close paren never found
          (let ((sub (lex fp))
-         (loop '() (cons 'TOK-oparen toks) #f))
+               (toks* (if (null? tok)
+                          toks
+                          (cons (->tok tok) toks))))
+            (loop '() (cons sub toks) #f)))
         ((eq? c #\))
          ;; TODO: what if too many close parens??
-         (loop '() (cons 'TOK-cparen toks) #f))
+         ;(loop '() (cons 'TOK-cparen toks) #f))
+         (reverse 
+           (if (null? tok)
+             toks
+             (cons (->tok tok) toks))))
+        ; TODO: # - need to start char reader
+        ;           or vector, or... ???
+        ; TODO: " - need to start string reader
         (else
           (loop (cons c tok) toks #f)))))))
    (loop '() '() #f)))
