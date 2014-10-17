@@ -273,8 +273,14 @@ static list assq(x,l) object x; list l;
 
 static integer_type CYC_length(object l){
     make_int(len, 0);
-    // TODO: raise error if cdr is not a list or nil
-    for (; !nullp(l); l = cdr(l), len.value++);
+    while(!nullp(l)){
+        if (((list)l)->tag != cons_tag){
+            printf("length - invalid parameter, expected list\n");
+            exit(1);
+        }
+        l = cdr(l);
+        len.value++;
+    }
     return len;
 }
 /*static object sum(object x, object y) {}*/

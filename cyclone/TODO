@@ -1,4 +1,3 @@
-- Within CYC_length, raise error if cdr is not a list or nil
 - Improvements to (display) - should differentiate between lists and pairs
 - Add a lexer/parser - let's try writing it in Scheme (at least at first). it can replace the call to (read-all) once done.
   not sure how much slower it will be when written in scheme, but development should at least go faster. if it is too slow
