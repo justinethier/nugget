@@ -1,5 +1,5 @@
 ;; TODO: line-num, char-num
-(define (lex fp)
+(define (cyc-read-all fp)
   (letrec (
    (->tok (lambda (lst)
             (parse-atom (reverse lst))))
@@ -28,16 +28,25 @@
 ;idea is to form a new list when open paren encountered
 ;and to end that list upon close paren
          ;; TODO: need to error if close paren never found
-         (let ((sub (lex fp))
+         (let ((sub (cyc-read-all fp))
                (toks* (with-tok tok toks)))
             (loop '() (cons sub toks*) #f)))
         ((eq? c #\))
          ;; TODO: what if too many close parens??
-         ;(loop '() (cons 'TOK-cparen toks) #f))
          (reverse (with-tok tok toks)))
-        ; TODO: # - need to start char reader
-        ;           or vector, or... ???
-        ; TODO: " - need to start string reader
+        ((eq? c #\")
+         (error `(Unable to parse strings at this time)))
+        ((eq? c #\#)
+         (if (null? tok)
+           ;; # reader
+           (let ((next-c (read-char fp)))
+              (cond
+                ((eq? #\t next-c) (loop '() (cons #t toks) #f))
+                ((eq? #\f next-c) (loop '() (cons #f toks) #f))
+                (else
+                  (error `(Unhandled input sequence ,c ,next-c)))))
+           ;; just another char...
+           (loop (cons c tok) toks #f)))
         (else
           (loop (cons c tok) toks #f)))))))
    (loop '() '() #f)))
@@ -54,5 +63,5 @@
      (string->symbol
        (list->string a)))))
 
-(let ((fp (open-input-file "tests/begin.scm")))
-  (write (lex fp)))
+(let ((fp (open-input-file "tests/if.scm")))
+  (write (cyc-read-all fp)))
