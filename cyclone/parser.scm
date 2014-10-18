@@ -7,30 +7,38 @@
                  (if (null? tok)
                    toks
                    (cons (->tok tok) toks))))
-   (loop/tok (lambda (tok toks comment?)
+   (loop/tok (lambda (tok toks comment? quoted?)
                 (if (null? tok)
-                    (loop '() toks comment?)
-                    (loop '() (cons (->tok tok) toks) comment?))))
-   (loop (lambda (tok toks comment?)
+                    (loop '() toks comment? quoted?)
+                    (loop '() (cons (->tok tok) toks) comment? #f)))) ; read tok, no more '
+   (loop (lambda (tok toks comment? quoted?)
     (let ((c (read-char fp)))
       (cond
         ((eof-object? c) 
          (reverse (with-tok tok toks)))
         (comment?
          (if (eq? c #\newline)
-             (loop '() toks #f)
-             (loop '() toks #t)))
+             (loop '() toks #f quoted?)
+             (loop '() toks #t quoted?)))
         ((char-whitespace? c)
-         (loop/tok tok toks #f))
+         (loop/tok tok toks #f quoted?))
         ((eq? c #\;)
-         (loop/tok tok toks #t))
+         (loop/tok tok toks #t quoted?))
+        ((eq? c #\')
+         (if (null? tok)
+             (loop '() toks comment? #t)
+             (loop '() (cons (->tok tok) toks) comment? #t)))
         ((eq? c #\()
 ;idea is to form a new list when open paren encountered
 ;and to end that list upon close paren
          ;; TODO: need to error if close paren never found
          (let ((sub (cyc-read-all fp))
                (toks* (with-tok tok toks)))
-            (loop '() (cons sub toks*) #f)))
+;; TODO: if quoted, then pack up sub in quote
+idea is mark if quoted, then the next time we peel off a tok,
+quote it (and set quoted to false).
+when ' is encountered, need to quote next expression
+            (loop '() (cons sub toks*) #f #f)))
         ((eq? c #\))
          ;; TODO: what if too many close parens??
          (reverse (with-tok tok toks)))
@@ -63,9 +71,9 @@
      (string->symbol
        (list->string a)))))
 
-;(let ((fp (open-input-file "tests/if.scm")))
-;  (write (cyc-read-all fp)))
-;
+(let ((fp (open-input-file "tests/quote.scm")))
+  (write (cyc-read-all fp)))
+
 ;(define (display-file filename)
 ;  (call-with-input-file filename
 ;    (lambda (port)
