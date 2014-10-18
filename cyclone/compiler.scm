@@ -3,6 +3,7 @@
 ;;
 (load "bootstrap-chicken.scm")
 ;(load "bootstrap-husk.scm")
+(load "parser.scm")
 (load "trans.scm")
 
 ;; Code emission.
@@ -48,8 +49,17 @@
 
 ;; Compile and emit:
 
-(define the-program
-    (cons 'begin (read-all))) ;; read-all is non-standard
+(let ((args (command-line-arguments)))
+  (if (< (length args) 1)
+      (error "usage: cyc file.scm"))
 
-(c-compile-and-emit the-program)
+  (call-with-input-file (car (command-line-arguments))
+    (lambda (port)
+      (c-compile-and-emit 
+        (cyc-read-all port)))))
 
+;(define the-program
+;    (cons 'begin (read-all))) ;; read-all is non-standard
+;
+;(c-compile-and-emit the-program)
+;
