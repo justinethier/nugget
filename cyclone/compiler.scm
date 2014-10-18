@@ -56,7 +56,7 @@
   (call-with-input-file (car (command-line-arguments))
     (lambda (port)
       (c-compile-and-emit 
-        (cyc-read-all port)))))
+        (cons 'begin (cyc-read-all port))))))
 
 ;(define the-program
 ;    (cons 'begin (read-all))) ;; read-all is non-standard
