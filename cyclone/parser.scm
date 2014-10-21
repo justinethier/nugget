@@ -1,19 +1,38 @@
+;; Helper functions
+(define (add-tok tok toks quoted?)
+  (if quoted?
+     (cons (cons 'quote (cons tok '())) toks)
+     (cons tok toks)))
+
+;; Add a token to the list, quoting it if necessary
+(define (->tok lst)
+  (parse-atom (reverse lst)))
+
+;; Get completed list of tokens
+;; TODO: better name for this function?
+(define (with-tok tok toks quoted?)
+  (if (null? tok)
+    toks
+    (add-tok (->tok tok) toks quoted?)))
+
+;; Did we read a dotted list
+(define (dotted? lst) 
+  (and (> (length lst) 2)
+       (equal? (cadr (reverse lst)) (string->symbol "."))))
+
+;; Convert a list read by the reader into an improper list
+(define (->dotted-list lst)
+  (cond
+    ((null? lst) '())
+    ((equal? (car lst) (string->symbol "."))
+     (cadr lst))
+    (else
+      (cons (car lst) (->dotted-list (cdr lst))))))
+
+;; Main lexer/parser
 ;; TODO: line-num, char-num
 (define (cyc-read-all fp)
   (letrec (
-   ;; Add a token to the list, quoting it if necessary
-   (add-tok (lambda (tok toks quoted?)
-     (if quoted?
-        (cons (cons 'quote (cons tok '())) toks)
-        (cons tok toks))))
-   (->tok (lambda (lst)
-            (parse-atom (reverse lst))))
-   ;; Get completed list of tokens
-   ;; TODO: better name for this function?
-   (with-tok (lambda (tok toks quoted?)
-                 (if (null? tok)
-                   toks
-                   (add-tok (->tok tok) toks quoted?))))
    ;; Keep looping, adding finished token if there is one
    (loop/tok (lambda (tok toks comment? quoted?)
                 (if (null? tok)
@@ -43,7 +62,15 @@
          ;; TODO: need to error if close paren never found
          (let ((sub (cyc-read-all fp))
                (toks* (with-tok tok toks quoted?)))
-            (loop '() (add-tok sub toks* quoted?) #f #f)))
+            (loop 
+              '() 
+              (add-tok 
+                (if (dotted? sub)
+                    (->dotted-list sub)
+                    sub)
+                toks* 
+                quoted?) 
+              #f #f)))
         ((eq? c #\))
          ;; TODO: what if too many close parens??
          (reverse (with-tok tok toks quoted?)))
