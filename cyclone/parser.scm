@@ -29,9 +29,23 @@
     (else
       (cons (car lst) (->dotted-list (cdr lst))))))
 
+(define (parse-error msg lnum cnum)
+    (display "Error (line ")
+    (display (number->string lnum))
+    (display ", char ")
+    (display (number->string cnum))
+    (display "): ")
+    (display msg)
+    (exit))
+
+;; TODO: would be best if these did not have to be global
+(define *line-num* #f)
+(define *char-num* #f)
+
 ;; Main lexer/parser
-;; TODO: line-num, char-num
 (define (cyc-read-all fp)
+  (set! *line-num* 1)
+  (set! *char-num* 0)
   (_cyc-read-all fp 0))
 
 (define (_cyc-read-all fp parens)
@@ -43,17 +57,23 @@
                     (loop '() (add-tok (->tok tok) toks quoted?) comment? #f parens)))) ; read tok, no more '
    ;; Loop over input
    (loop (lambda (tok toks comment? quoted? parens)
+    (set! *char-num* (+ 1 *char-num*))
     (let ((c (read-char fp)))
       (cond
         ((eof-object? c) 
          (if (> parens 0)
-             (error "missing closing parenthesis"))
+             (parse-error "missing closing parenthesis" *line-num* *char-num*))
          (reverse (with-tok tok toks quoted?)))
         (comment?
          (if (eq? c #\newline)
-             (loop '() toks #f quoted? parens)
+             (begin
+                (set! *line-num* (+ 1 *line-num*))
+                (set! *char-num* 0)
+                (loop '() toks #f quoted? parens))
              (loop '() toks #t quoted? parens)))
         ((char-whitespace? c)
+         (if (equal? c #\newline) (set! *line-num* (+ 1 *line-num*)))
+         (if (equal? c #\newline) (set! *char-num* 0))
          (loop/tok tok toks #f quoted? parens))
         ((eq? c #\;)
          (loop/tok tok toks #t quoted? parens))
@@ -62,9 +82,6 @@
              (loop '() toks comment? #t parens)
              (loop '() (add-tok (->tok tok) toks quoted?) comment? #t parens)))
         ((eq? c #\()
-;idea is to form a new list when open paren encountered
-;and to end that list upon close paren
-         ;; TODO: need to error if close paren never found
          (let ((sub (_cyc-read-all fp (+ parens 1)))
                (toks* (with-tok tok toks quoted?)))
             (loop 
@@ -78,20 +95,21 @@
               #f #f parens)))
         ((eq? c #\))
          (if (= parens 0)
-             (error "unexpected closing parenthesis"))
+             (parse-error "unexpected closing parenthesis" *line-num* *char-num*))
          (reverse (with-tok tok toks quoted?)))
         ((eq? c #\")
-         (error `(Unable to parse strings at this time)))
+         (parse-error "Unable to parse strings at this time" *line-num* *char-num*))
         ((eq? c #\#)
          (if (null? tok)
            ;; # reader
            (let ((next-c (read-char fp)))
+              (set! *char-num* (+ 1 *char-num*))
               (cond
                 ;; Do not use add-tok below, no need to quote a bool
                 ((eq? #\t next-c) (loop '() (cons #t toks) #f #f parens))
                 ((eq? #\f next-c) (loop '() (cons #f toks) #f #f parens))
                 (else
-                  (error `(Unhandled input sequence ,c ,next-c)))))
+                  (parse-error "Unhandled input sequence" *line-num* *char-num*))))
            ;; just another char...
            (loop (cons c tok) toks #f quoted? parens)))
         (else
@@ -110,9 +128,9 @@
      (string->symbol
        (list->string a)))))
 
-(let ((fp (open-input-file "tests/begin.scm")))
+;(let ((fp (open-input-file "tests/begin.scm")))
 ;(let ((fp (open-input-file "tests/quote.scm")))
-  (write (cyc-read-all fp)))
+;  (write (cyc-read-all fp)))
 
 ;(define (display-file filename)
 ;  (call-with-input-file filename
