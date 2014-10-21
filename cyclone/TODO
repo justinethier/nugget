@@ -1,7 +1,13 @@
+- Enhance parser before merging back into master:
+  - print line/char numbers when an error is found
+  - detect mismatched parens (IE, a close paren is found when there is no open paren, or EOF is found before a matching close paren)
+  - what else?
+
+  can use a custom error function to print information and then bail via (error)
+  do not want to gold plate this too much, but want a nice solid foundation before moving on.
+  a parser that cannot identify basic syntax errors will be difficult to work with later...
+
 - Improvements to (display) - should differentiate between lists and pairs
-- Add a lexer/parser - let's try writing it in Scheme (at least at first). it can replace the call to (read-all) once done.
-  not sure how much slower it will be when written in scheme, but development should at least go faster. if it is too slow
-  can always port to C later on.
 - closure issue when setting a non-lambda variable, eg:
     (set! x #t) ; (+ 2 (* 3 4)))
     (display x);)
