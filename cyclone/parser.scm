@@ -30,13 +30,14 @@
       (cons (car lst) (->dotted-list (cdr lst))))))
 
 (define (parse-error msg lnum cnum)
-    (display "Error (line ")
-    (display (number->string lnum))
-    (display ", char ")
-    (display (number->string cnum))
-    (display "): ")
-    (display msg)
-    (exit))
+  (error
+    (string-append
+      "Error (line "
+      (number->string lnum)
+      ", char "
+      (number->string cnum)
+      "): "
+      msg)))
 
 ;; TODO: would be best if these did not have to be global
 (define *line-num* #f)
