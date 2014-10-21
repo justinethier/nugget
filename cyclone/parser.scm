@@ -1,21 +1,30 @@
 ;; TODO: line-num, char-num
 (define (cyc-read-all fp)
   (letrec (
+   ;; Add a token to the list, quoting it if necessary
+   (add-tok (lambda (tok toks quoted?)
+     (if quoted?
+        (cons (cons 'quote (cons tok '())) toks)
+        (cons tok toks))))
    (->tok (lambda (lst)
             (parse-atom (reverse lst))))
-   (with-tok (lambda (tok toks)
+   ;; Get completed list of tokens
+   ;; TODO: better name for this function?
+   (with-tok (lambda (tok toks quoted?)
                  (if (null? tok)
                    toks
-                   (cons (->tok tok) toks))))
+                   (add-tok (->tok tok) toks quoted?))))
+   ;; Keep looping, adding finished token if there is one
    (loop/tok (lambda (tok toks comment? quoted?)
                 (if (null? tok)
                     (loop '() toks comment? quoted?)
-                    (loop '() (cons (->tok tok) toks) comment? #f)))) ; read tok, no more '
+                    (loop '() (add-tok (->tok tok) toks quoted?) comment? #f)))) ; read tok, no more '
+   ;; Loop over input
    (loop (lambda (tok toks comment? quoted?)
     (let ((c (read-char fp)))
       (cond
         ((eof-object? c) 
-         (reverse (with-tok tok toks)))
+         (reverse (with-tok tok toks quoted?)))
         (comment?
          (if (eq? c #\newline)
              (loop '() toks #f quoted?)
@@ -27,21 +36,17 @@
         ((eq? c #\')
          (if (null? tok)
              (loop '() toks comment? #t)
-             (loop '() (cons (->tok tok) toks) comment? #t)))
+             (loop '() (add-tok (->tok tok) toks quoted?) comment? #t)))
         ((eq? c #\()
 ;idea is to form a new list when open paren encountered
 ;and to end that list upon close paren
          ;; TODO: need to error if close paren never found
          (let ((sub (cyc-read-all fp))
-               (toks* (with-tok tok toks)))
-;; TODO: if quoted, then pack up sub in quote
-idea is mark if quoted, then the next time we peel off a tok,
-quote it (and set quoted to false).
-when ' is encountered, need to quote next expression
-            (loop '() (cons sub toks*) #f #f)))
+               (toks* (with-tok tok toks quoted?)))
+            (loop '() (add-tok sub toks* quoted?) #f #f)))
         ((eq? c #\))
          ;; TODO: what if too many close parens??
-         (reverse (with-tok tok toks)))
+         (reverse (with-tok tok toks quoted?)))
         ((eq? c #\")
          (error `(Unable to parse strings at this time)))
         ((eq? c #\#)
@@ -49,15 +54,16 @@ when ' is encountered, need to quote next expression
            ;; # reader
            (let ((next-c (read-char fp)))
               (cond
-                ((eq? #\t next-c) (loop '() (cons #t toks) #f))
-                ((eq? #\f next-c) (loop '() (cons #f toks) #f))
+                ;; Do not use add-tok below, no need to quote a bool
+                ((eq? #\t next-c) (loop '() (cons #t toks) #f #f))
+                ((eq? #\f next-c) (loop '() (cons #f toks) #f #f))
                 (else
                   (error `(Unhandled input sequence ,c ,next-c)))))
            ;; just another char...
-           (loop (cons c tok) toks #f)))
+           (loop (cons c tok) toks #f quoted?)))
         (else
-          (loop (cons c tok) toks #f)))))))
-   (loop '() '() #f)))
+          (loop (cons c tok) toks #f quoted?)))))))
+   (loop '() '() #f #f)))
 
 ;; parse-atom -> [chars] -> literal
 (define (parse-atom a)
@@ -71,8 +77,9 @@ when ' is encountered, need to quote next expression
      (string->symbol
        (list->string a)))))
 
-(let ((fp (open-input-file "tests/quote.scm")))
-  (write (cyc-read-all fp)))
+;(let ((fp (open-input-file "tests/begin.scm")))
+;(let ((fp (open-input-file "tests/quote.scm")))
+;  (write (cyc-read-all fp)))
 
 ;(define (display-file filename)
 ;  (call-with-input-file filename
