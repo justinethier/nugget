@@ -1,12 +1,3 @@
-- Enhance parser before merging back into master:
-  - print line/char numbers when an error is found
-  - detect mismatched parens (IE, a close paren is found when there is no open paren, or EOF is found before a matching close paren)
-  - what else?
-
-  can use a custom error function to print information and then bail via (error)
-  do not want to gold plate this too much, but want a nice solid foundation before moving on.
-  a parser that cannot identify basic syntax errors will be difficult to work with later...
-
 - Improvements to (display) - should differentiate between lists and pairs
 - closure issue when setting a non-lambda variable, eg:
     (set! x #t) ; (+ 2 (* 3 4)))
@@ -30,5 +21,6 @@
  having an fn argument to each closure. Is that OK?
 - Add eval support. Will probably also require apply, read, etc. will probably be necessary to write interpreter in CPS style - see notes. One idea - parse and compile input to scheme expressions, then call apply. could that work? should also see chapter 6 of lisp in small pieces.
 - may be necessary to specify arity of functions in call to apply
+- Get rid of cyc script and integrate this into compiler (??)
 - look at chicken internals doc - is alpha conversion needed to prevent name collisions during compilation?
 - Just a thought: if this ever became self-hosting, could distribute compiled C files
