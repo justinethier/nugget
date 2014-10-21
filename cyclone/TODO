@@ -24,3 +24,53 @@
 - Get rid of cyc script and integrate this into compiler (??)
 - look at chicken internals doc - is alpha conversion needed to prevent name collisions during compilation?
 - Just a thought: if this ever became self-hosting, could distribute compiled C files
+
+                
+               :
+            .@@ 
+          `@@@  
+         #@@@   
+        @@@@@   
+      ,@@@@@;   
+     :@@@@@@;   
+    .@@@@@@@@   
+    @@@@@@@@@   
+   @@@@` ;@@@@  
+  `@@;     #@@  
+  @@@       @@# 
+  @@            
+  @@            
+  @@            
+  @@            
+  @@            
+  @@:        `  
+  ;@@       #@@ 
+   @@@.    @@@  
+   ;@@@@@@@@@@  
+    @@@@@@@@@   
+    #@@@@@@@    
+    :@@@@@@     
+    +@@@@@      
+    @@@@'       
+   '@@@         
+  `@@,          
+  @,            
+
+            
+         :@ 
+       @@@  
+     @@@@:  
+   `@@@@@+  
+  .@@@+@@@  
+  @@     @@ 
+ ,@         
+ '@         
+ .@         
+  @@     #@ 
+  `@@@#@@@. 
+   #@@@@@   
+   +@@@+    
+   @@#      
+ `@.  
+
+     
