@@ -213,7 +213,8 @@ static volatile object unify_subst = nil; /* This is a global Lisp variable. */
 static object terpri() {printf("\n"); return nil;}
 
 static object prin1(x) object x;
-{if (nullp(x)) {printf("nil "); return x;}
+{object tmp = nil;
+ if (nullp(x)) {printf("nil "); return x;}
  switch (type_of(x))
    {case closure0_tag:
     case closure1_tag:
@@ -232,7 +233,17 @@ static object prin1(x) object x;
       printf("%lf", ((double_type *) x)->value);
       break;
     case cons_tag:
-      printf("("); prin1(car(x)); printf(" . "); prin1(cdr(x)); printf(")");
+      printf("("); 
+      prin1(car(x));
+      for (tmp = cdr(x); tmp && ((closure) tmp)->tag == cons_tag; tmp = cdr(tmp)) {
+          printf(" ");
+          prin1(car(tmp));
+      }
+      if (tmp) {
+          printf(" . ");
+          prin1(tmp);
+      }
+      printf(")");
       break;
     default:
       printf("prin1: bad tag x=%ld\n", ((closure)x)->tag); getchar(); exit(0);}

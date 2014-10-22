@@ -1,4 +1,3 @@
-- Improvements to (display) - should differentiate between lists and pairs
 - closure issue when setting a non-lambda variable, eg:
     (set! x #t) ; (+ 2 (* 3 4)))
     (display x);)
