@@ -49,6 +49,14 @@
    return short signed sizeof static struct switch typedef union unsigned
    void volatile while))
 
+(define *c-main-function*
+"main(int argc,char **argv)
+{long stack_size = long_arg(argc,argv,\"-s\",STACK_SIZE);
+ long heap_size = long_arg(argc,argv,\"-h\",HEAP_SIZE);
+ global_stack_size = stack_size;
+ global_heap_size = heap_size;
+ main_main(stack_size,heap_size,(char *) &stack_size);
+ return 0;}")
 
 ;;; Auto-generation of C macros
 (define *c-call-arity* 0)
@@ -591,8 +599,8 @@
   
 (define (mta:code-gen input-program)
   (let ((compiled-program (c-compile-program input-program)))
-    ;; Emit C macros:
     (emit-c-macros)
+    (emit "#include \"mta/runtime.h\"")
     
     ;; Emit lambdas:
     ; Print the prototypes:
@@ -610,9 +618,10 @@
      lambdas)
   
     (emit "
-  static void test(env,cont) closure env,cont; { ")
+  static void c_entry_pt(env,cont) closure env,cont; { ")
     (emit compiled-program)
-    (emit "}")))
+    (emit "}")
+    (emit *c-main-function*)))
 
 ; Unused -
 ;;; Echo file to stdout

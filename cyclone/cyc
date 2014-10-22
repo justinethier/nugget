@@ -11,8 +11,4 @@ fi
 filename=$(basename "$1")
 filename="${filename%.*}"
 
-$CC $1 > $filename.out \
-  && cat mta/runtime-header.c > $filename.c \
-  && cat $filename.out >> $filename.c \
-  && cat mta/runtime-footer.c >> $filename.c \
-  && gcc $filename.c -o $filename && ./$filename && rm -f $filename.out
+$CC $1 > $filename.c && gcc $filename.c -o $filename && ./$filename
