@@ -1,3 +1,5 @@
+- Pass port along with emit procedures, to allow the scheme code to write to an output file (IE, c file)
+- Get rid of cyc script and integrate this into compiler. Add -v option (version), -d (debug), -h (help)
 - closure issue when setting a non-lambda variable, eg:
     (set! x #t) ; (+ 2 (* 3 4)))
     (display x);)
@@ -20,52 +22,21 @@
  having an fn argument to each closure. Is that OK?
 - Add eval support. Will probably also require apply, read, etc. will probably be necessary to write interpreter in CPS style - see notes. One idea - parse and compile input to scheme expressions, then call apply. could that work? should also see chapter 6 of lisp in small pieces.
 - may be necessary to specify arity of functions in call to apply
-- Get rid of cyc script and integrate this into compiler (??)
 - look at chicken internals doc - is alpha conversion needed to prevent name collisions during compilation?
 - Just a thought: if this ever became self-hosting, could distribute compiled C files
 
-                
-               :
-            .@@ 
-          `@@@  
-         #@@@   
-        @@@@@   
-      ,@@@@@;   
-     :@@@@@@;   
-    .@@@@@@@@   
-    @@@@@@@@@   
-   @@@@` ;@@@@  
-  `@@;     #@@  
-  @@@       @@# 
-  @@            
-  @@            
-  @@            
-  @@            
-  @@            
-  @@:        `  
-  ;@@       #@@ 
-   @@@.    @@@  
-   ;@@@@@@@@@@  
-    @@@@@@@@@   
-    #@@@@@@@    
-    :@@@@@@     
-    +@@@@@      
-    @@@@'       
-   '@@@         
-  `@@,          
-  @,            
-
+Tentative banner:
             
          :@ 
        @@@  
      @@@@:  
    `@@@@@+  
   .@@@+@@@  
-  @@     @@ 
- ,@         
- '@         
- .@         
-  @@     #@ 
+  @@     @@    Cyclone 
+ ,@            Scheme compiler
+ '@            TODO: project URL
+ .@            (c)2014 Justin Ethier
+  @@     #@    Version 0.01 (Pre-release)
   `@@@#@@@. 
    #@@@@@   
    +@@@+    
