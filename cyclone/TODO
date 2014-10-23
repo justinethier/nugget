@@ -9,6 +9,9 @@
 - WRT set! support, and mutable variables:
   - set aggressive GC, and see if there are any problems with data being lost
     need to do this with a more complicated example, though
+- Could add other scheme library functions to the compiled prog just
+  like call/cc. alternatively could compile them into a library somewhere
+  for inclusion.
 - define - can this with with mutable variable elimination, or does it require C globals (per cboyer)? Are there special cases for top-level? If cells can be used for vars, do we need to keep track of the roots to prevent invalid GC? lots of questions here
 - TBD: Can there be a lambda reference that is not a closure or a direct call?
 - interesting (but probably not a big deal):

@@ -19,9 +19,10 @@
       (trace:info "---------------- after desugar:")
       (trace:info input-program))) ;pretty-print
 
-  ;; Create placeholders for free variables
-TODO: filter call/cc from fv
-  (let ((fv (free-vars input-program)))
+  ;; Initialize top-level variables
+  (let ((fv (filter 
+              (lambda (v) (not (eq? 'call/cc v)))
+              (free-vars input-program))))
      (if (> (length fv) 0)
        (set! input-program
          `((lambda ,fv ,input-program)
