@@ -19,6 +19,14 @@
       (trace:info "---------------- after desugar:")
       (trace:info input-program))) ;pretty-print
 
+  ;; Create placeholders for free variables
+TODO: filter call/cc from fv
+  (let ((fv (free-vars input-program)))
+     (if (> (length fv) 0)
+       (set! input-program
+         `((lambda ,fv ,input-program)
+           ,@(map (lambda (_) #f) fv)))))
+
   (if *do-cps*
     (begin
       (set! input-program (cps-convert input-program))
