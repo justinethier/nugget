@@ -25,6 +25,29 @@
 (define (trace:info msg)  (trace 3 msg pretty-print ""))
 (define (trace:debug msg) (trace 4 msg display "DEBUG: "))
 
+;; File Utilities
+
+;; Get the basename of a file, without the extension.
+;; EG: "file.scm" ==> "file"
+(define (basename filename)
+  (let ((pos (list-index #\. (reverse (string->list filename)))))
+   (if (= pos -1)
+       filename
+       (substring filename 0 (- (string-length filename) pos 1)))))
+
+;; Find the first occurence of e within the given list.
+;; Returns -1 if e is not found.
+(define list-index
+  (lambda (e lst)
+    (if (null? lst)
+      -1
+      (if (eq? (car lst) e)
+        0
+        (if (= (list-index e (cdr lst)) -1) 
+          -1
+          (+ 1 (list-index e (cdr lst))))))))
+
+
 ;; Utilities.
 
 ; void : -> void

@@ -60,31 +60,30 @@
 
 (let ((args (command-line-arguments)))
   (if (< (length args) 1)
-      (error "usage: cyc file.scm"))
+      (error "usage: cyc file"))
 
-  (call-with-input-file (car (command-line-arguments))
-    (lambda (port)
-      (c-compile-and-emit 
-        (cons 'begin (cyc-read-all port))))))
-
-;(define the-program
-;    (cons 'begin (read-all))) ;; read-all is non-standard
-;
-;(c-compile-and-emit the-program)
-;
+  (let* ((in-file (car (command-line-arguments)))
+         (out-file (string-append (basename in-file) ".c")))
+    (call-with-input-file in-file
+      (lambda (port)
+        (let ((program (cyc-read-all port)))
+          ;(with-output-to-file 
+          ;  out-file 
+          ;  (lambda ()
+              (c-compile-and-emit 
+                (cons 'begin program)))))));))
 
 (define *version-banner*
-
 "         :@ 
        @@@  
      @@@@:  
    `@@@@@+  
-  .@@@+@@@     Cyclone  
-  @@     @@    A tiny scheme compiler
- ,@            TODO: project URL
+  .@@@+@@@      Cyclone  
+  @@     @@     An experimental Scheme compiler
+ ,@             TODO: project URL
  '@        
- .@            (c)2014 Justin Ethier
-  @@     #@    Version 0.01 (Pre-release)
+ .@             (c)2014 Justin Ethier
+  @@     #@     Version 0.01 (Pre-release)
   `@@@#@@@. 
    #@@@@@   
    +@@@+    
