@@ -1,5 +1,6 @@
-TESTSCM = app begin call-cc-simple call-cc closure-1 display if lambda one-liners prim quote set simple-if 
-# TODO: recursion square tail-call-optimization
+TESTSCM = adder app begin call-cc-set call-cc-simple call-cc closure-1 closure-sub display if lambda one-liners prim quote set simple-if square
+# TODO: fac recursion 
+# Cannot auto test tail-call-optimization because it runs forever
 TESTFILES = $(addprefix tests/, $(addsuffix .scm, $(TESTSCM)))
 
 compiler: compiler.scm trans.scm cgen.scm
