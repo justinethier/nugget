@@ -72,3 +72,22 @@
 ;
 ;(c-compile-and-emit the-program)
 ;
+
+(define *version-banner*
+
+"         :@ 
+       @@@  
+     @@@@:  
+   `@@@@@+  
+  .@@@+@@@     Cyclone  
+  @@     @@    A tiny scheme compiler
+ ,@            TODO: project URL
+ '@        
+ .@            (c)2014 Justin Ethier
+  @@     #@    Version 0.01 (Pre-release)
+  `@@@#@@@. 
+   #@@@@@   
+   +@@@+    
+   @@#      
+ `@.  ")
+
