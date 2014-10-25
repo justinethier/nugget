@@ -3,15 +3,16 @@ TESTSCM = adder app begin call-cc-set call-cc-simple call-cc closure-1 closure-s
 # Cannot auto test tail-call-optimization because it runs forever
 TESTFILES = $(addprefix tests/, $(addsuffix .scm, $(TESTSCM)))
 
-compiler: compiler.scm trans.scm cgen.scm
-	csc compiler.scm
+cyclone: cyclone.scm trans.scm cgen.scm
+	csc cyclone.scm
 
-test: $(TESTFILES) compiler
-	$(foreach f,$(TESTSCM), echo tests/$(f) ; ./compiler tests/$(f).scm && tests/$(f) && rm -rf tests/$(f);)
+test: $(TESTFILES) cyclone
+	$(foreach f,$(TESTSCM), echo tests/$(f) ; ./cyclone tests/$(f).scm && tests/$(f) && rm -rf tests/$(f);)
 
-.PHONY: repl
-repl:
-	huski compiler.scm
+# TODO: some kind of repl, but requires eval
+#.PHONY: repl
+#repl:
+#	huski cyclone.scm
 
 .PHONY: tags
 tags:
@@ -19,5 +20,5 @@ tags:
 
 .PHONY: clean
 clean:
-	rm -rf a.out *.o *.c *.out tags compiler
+	rm -rf a.out *.o *.c *.out tags cyclone
 	$(foreach f,$(TESTSCM), rm -rf $(f) $(f).c tests/$(f).c;)
