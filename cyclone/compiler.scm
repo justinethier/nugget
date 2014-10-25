@@ -63,15 +63,19 @@
       (error "usage: cyc file"))
 
   (let* ((in-file (car (command-line-arguments)))
-         (out-file (string-append (basename in-file) ".c")))
+         (exec-file (basename in-file))
+         (src-file (string-append exec-file ".c")))
     (call-with-input-file in-file
       (lambda (port)
         (let ((program (cyc-read-all port)))
-          ;(with-output-to-file 
-          ;  out-file 
-          ;  (lambda ()
+          (with-output-to-file 
+            src-file 
+            (lambda ()
               (c-compile-and-emit 
-                (cons 'begin program)))))));))
+                (cons 'begin program))))
+          (system 
+            ;; -I is a hack, real answer is to use 'make install' to place .h file
+            (string-append "gcc " src-file " -I. -o " exec-file)))))))
 
 (define *version-banner*
 "         :@ 
