@@ -1,10 +1,32 @@
-;;
-;; Front-end for the compiler itself
-;;
+;;;
+;;; Cyclone Scheme compiler
+;;; (c) 2014 Justin Ethier
+;;;
+;;; Front-end for the compiler itself
+;;;
 (load "bootstrap-chicken.scm")
 ;(load "bootstrap-husk.scm")
 (load "parser.scm")
 (load "trans.scm")
+
+(define *version-banner* "
+              :@ 
+            @@@  
+          @@@@:  
+        `@@@@@+  
+       .@@@+@@@      Cyclone  
+       @@     @@     An experimental Scheme compiler
+      ,@             TODO: project URL
+      '@        
+      .@        
+       @@     #@     (c) 2014 Justin Ethier
+       `@@@#@@@.     Version 0.01 (Pre-release) 
+        #@@@@@   
+        +@@@+    
+        @@#      
+      `@.  
+     
+")
 
 ;; Code emission.
   
@@ -55,42 +77,36 @@
   (trace:info "---------------- C code:")
   (mta:code-gen input-program))
 
-
 ;; Compile and emit:
-
-(let ((args (command-line-arguments)))
-  (if (< (length args) 1)
-      (error "usage: cyc file"))
-
-  (let* ((in-file (car (command-line-arguments)))
+(define (run-compiler args cc?)
+  (let* ((in-file (car args))
          (exec-file (basename in-file))
          (src-file (string-append exec-file ".c")))
     (call-with-input-file in-file
       (lambda (port)
         (let ((program (cyc-read-all port)))
+;; TODO: husk does not support with-output-to-file
+;; will be a problem bootstrapping from husk in the meantime...
           (with-output-to-file 
             src-file 
             (lambda ()
               (c-compile-and-emit 
                 (cons 'begin program))))
-          (system 
-            ;; -I is a hack, real answer is to use 'make install' to place .h file
-            (string-append "gcc " src-file " -I. -o " exec-file)))))))
+          (if cc?
+            (system 
+              ;; -I is a hack, real answer is to use 'make install' to place .h file
+              (string-append "gcc " src-file " -I. -o " exec-file))))))))
 
-(define *version-banner*
-"         :@ 
-       @@@  
-     @@@@:  
-   `@@@@@+  
-  .@@@+@@@      Cyclone  
-  @@     @@     An experimental Scheme compiler
- ,@             TODO: project URL
- '@        
- .@             (c)2014 Justin Ethier
-  @@     #@     Version 0.01 (Pre-release)
-  `@@@#@@@. 
-   #@@@@@   
-   +@@@+    
-   @@#      
- `@.  ")
+;; Handle command line arguments
+(let ((args (command-line-arguments))) ;; TODO: port (command-line-arguments) to husk??
+  (cond
+    ((< (length args) 1)
+     (display "cyclone: no input file")
+     (newline))
+    ((member "-v" args)
+     (display *version-banner*))
+    ((member "-d" args)
+     (run-compiler args #f)) ;; Debug, do not run GCC
+    (else
+      (run-compiler args #t))))
 
