@@ -689,6 +689,7 @@
 
 
 ;; Alpha conversion
+;; (aka alpha renaming)
 ;;
 ;; This phase is intended to rename identifiers to preserve lexical scoping
 (define (alpha-convert ast)
@@ -698,8 +699,10 @@
       ((const? ast) ast)
       ((quote? ast) ast)
       ((ref? ast)
-       ;; TODO: is it renamed?
-       ast)
+       (let ((renamed (assoc ast renamed)))
+         (if renamed
+             (cdr renamed)
+             ast)))
       ((set!? ast)
        ;; TODO
        ast)
@@ -710,14 +713,14 @@
                          (lambda (a) (convert a renamed))
                          (cdr ast))))
       ((lambda? ast)
-       (let ((args (lambda->formals ast))
-             (body (lambda->exp ast)))
-            
-       ;; TODO
-       ast))
+       (let* ((args (lambda->formals ast))
+              (a-lookup (map (lambda (a) (cons a (gensym a))) args))
+              (body (lambda->exp ast)))
+         `(lambda 
+            ,(map (lambda (p) (cdr p)) a-lookup)  
+            ,@(convert body (append a-lookup renamed)))))
       ((app? ast)
-       ;; TODO
-       ast)
+       (map (lambda (a) (convert a renamed)) ast))
       (else
         (error "unhandled expression: " ast))))
   (convert ast (list)))
