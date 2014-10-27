@@ -693,7 +693,34 @@
 ;; This phase is intended to rename identifiers to preserve lexical scoping
 (define (alpha-convert ast)
   ;; TODO: Implement
-  ast)
+  (define (convert ast renamed)
+    (cond
+      ((const? ast) ast)
+      ((quote? ast) ast)
+      ((ref? ast)
+       ;; TODO: is it renamed?
+       ast)
+      ((set!? ast)
+       ;; TODO
+       ast)
+      ((if? ast)
+       `(if ,@(map (lambda (a) (convert a renamed)) (cdr ast))))
+      ((prim-call? ast)
+       (cons (car ast) (map 
+                         (lambda (a) (convert a renamed))
+                         (cdr ast))))
+      ((lambda? ast)
+       (let ((args (lambda->formals ast))
+             (body (lambda->exp ast)))
+            
+       ;; TODO
+       ast))
+      ((app? ast)
+       ;; TODO
+       ast)
+      (else
+        (error "unhandled expression: " ast))))
+  (convert ast (list)))
 
 ;; CPS conversion 
 ;;
