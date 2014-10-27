@@ -54,6 +54,10 @@
       (trace:info "---------------- after desugar:")
       (trace:info input-program))) ;pretty-print
 
+;; TODO:  (set! input-program (alpha-convert input-program))
+;; TODO:  (trace:info "---------------- after alpha conversion:")
+;; TODO:  (trace:info input-program) ;pretty-print
+
   ;; Initialize top-level variables
   (let ((fv (filter 
               (lambda (v) (not (eq? 'call/cc v)))

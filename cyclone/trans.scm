@@ -688,6 +688,13 @@
     (else            (error "unknown expression type: " exp))))
 
 
+;; Alpha conversion
+;;
+;; This phase is intended to rename identifiers to preserve lexical scoping
+(define (alpha-convert ast)
+  ;; TODO: Implement
+  ast)
+
 ;; CPS conversion 
 ;;
 ;; This is a port of code from the 90-minute Scheme->C Compiler by Marc Feeley
