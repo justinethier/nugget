@@ -704,8 +704,8 @@
              (cdr renamed)
              ast)))
       ((set!? ast)
-       ;; TODO
-       ast)
+;; TODO: is this good enough? set! can potentially introduce new identifiers
+       `(set! ,@(map (lambda (a) (convert a renamed)) (cdr ast))))
       ((if? ast)
        `(if ,@(map (lambda (a) (convert a renamed)) (cdr ast))))
       ((prim-call? ast)
