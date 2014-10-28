@@ -484,13 +484,11 @@
          (then (compile (if->then exp)))
          (els (compile (if->else exp))))
   (c-code (string-append
-   "if("
+   "if( !eq(quote_f, "
    (c:serialize test "  ")
-    "){ \n"
-   "" 
+   ") ){ \n"
    (c:serialize then "  ")
    "\n} else { \n"
-   "" 
    (c:serialize els "  ")
    "}\n"))))
 
