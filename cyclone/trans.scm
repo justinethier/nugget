@@ -464,9 +464,63 @@
     (else               (error "unhandled expression type in substitution: " exp))))
 
 
+;; Macro expansion
 
+;TODO: loading of (define-syntax) forms
 
-;; Desugaring.
+(define *defined-macros* 
+  (list 
+    ;; TODO: just a stub, real code would read (define-syntax) 
+    ;;       from a lib file or such
+    (cons 'let (lambda (exp rename compare) (let=>lambda exp)))
+    (cons 'begin (lambda (exp rename compare) (begin=>let exp)))
+    (cons 'letrec (lambda (exp rename compare) (letrec=>lets+sets exp)))
+  ))
+
+(define (macro? exp) (assoc (car exp) *defined-macros*))
+(define (macro-expand exp)
+  (let ((macro (assoc (car exp) *defined-macros*)))
+    ;; assumes ER macro
+    (if macro
+      ((cdr macro) 
+        exp 
+        (lambda (sym)   ;; TODO: not good enough, need same results if
+          (gensym sym)) ;; the same symbol is renamed more than once
+        (lambda (sym-a sym-b) ;; TODO: the compare function from exrename.
+          (eq? sym-a sym-b))) ;; this may need to be more sophisticated
+      exp))) ;; TODO: error instead??
+
+; expand : exp -> exp
+(define (expand exp)
+  (cond
+    ((const? exp)      exp)
+    ((prim? exp)       exp)
+    ((ref? exp)        exp)
+    ((quote? exp)      exp)
+    ((lambda? exp)     `(lambda ,(lambda->formals exp)
+                          ,@(map expand (lambda->exp exp))))
+    ((set!? exp)       `(set! ,(expand (set!->var exp))
+                              ,(expand (set!->exp exp))))
+    ((if? exp)         `(if ,(expand (if->condition exp))
+                            ,(expand (if->then exp))
+                            ,(expand (if->else exp))))
+    ((app? exp)
+     (cond
+;; TODO: could check for a define-syntax here and load into memory
+;; if found. would then want to continue expanding. may need to 
+;; return some value such as #t or nil as a placeholder, since the
+;; define-syntax form would not be carried forward in the compiled code
+;;   ((define-syntax? exp) ...)
+     ((macro? exp)
+       (expand ;; Could expand into another macro
+         (macro-expand exp)))
+     (else
+       (map expand exp))))
+    (else
+      (error "unknown exp: " exp))))
+
+; TODO: eventually, merge below functions with above *defined-macros* defs and 
+;;      replace both with a lib of (define-syntax) constructs
 
 ; let=>lambda : let-exp -> app-exp
 (define (let=>lambda exp)
@@ -503,47 +557,47 @@
                           ,(dummy-bind (cdr exps))))))
   (dummy-bind (begin->exps exp)))
 
-; desugar : exp -> exp
-(define (desugar exp)
-  (cond
-    ; Core forms:
-    ((const? exp)      exp)
-    ((prim? exp)       exp)
-    ((ref? exp)        exp)
-    ((quote? exp)      exp)
-    ((lambda? exp)     `(lambda ,(lambda->formals exp)
-                          ,@(map desugar (lambda->exp exp))))
-    ((set!? exp)       `(set! ,(desugar (set!->var exp))
-                              ,(desugar (set!->exp exp))))
-    ((if? exp)         `(if ,(desugar (if->condition exp))
-                            ,(desugar (if->then exp))
-                            ,(desugar (if->else exp))))
-    
-    ; Sugar:
-    ((let? exp)        (desugar (let=>lambda exp)))
-    ((letrec? exp)     (desugar (letrec=>lets+sets exp)))
-    ((begin? exp)      (desugar (begin=>let exp)))
-    
-;    ; IR (1):
-;    ((cell? exp)       `(cell ,(desugar (cell->value exp))))
-;    ((cell-get? exp)   `(cell-get ,(desugar (cell-get->cell exp))))
-;    ((set-cell!? exp)  `(set-cell! ,(desugar (set-cell!->cell exp)) 
-;                                   ,(desugar (set-cell!->value exp))))
+;; desugar : exp -> exp
+;(define (desugar exp)
+;  (cond
+;    ; Core forms:
+;    ((const? exp)      exp)
+;    ((prim? exp)       exp)
+;    ((ref? exp)        exp)
+;    ((quote? exp)      exp)
+;    ((lambda? exp)     `(lambda ,(lambda->formals exp)
+;                          ,@(map desugar (lambda->exp exp))))
+;    ((set!? exp)       `(set! ,(desugar (set!->var exp))
+;                              ,(desugar (set!->exp exp))))
+;    ((if? exp)         `(if ,(desugar (if->condition exp))
+;                            ,(desugar (if->then exp))
+;                            ,(desugar (if->else exp))))
 ;    
-;    ; IR (2): 
-;    ((closure? exp)    `(closure ,(desugar (closure->lam exp))
-;                                 ,(desugar (closure->env exp))))
-;    ((env-make? exp)   `(env-make ,(env-make->id exp)
-;                                  ,@(azip (env-make->fields exp)
-;                                          (map desugar (env-make->values exp)))))
-;    ((env-get? exp)    `(env-get ,(env-get->id exp)
-;                                 ,(env-get->field exp)
-;                                 ,(env-get->env exp)))
-    
-    ; Applications:
-    ((app? exp)        (map desugar exp))    
-    (else              (error "unknown exp: " exp))))
-    
+;    ; Sugar:
+;    ((let? exp)        (desugar (let=>lambda exp)))
+;    ((letrec? exp)     (desugar (letrec=>lets+sets exp)))
+;    ((begin? exp)      (desugar (begin=>let exp)))
+;    
+;;    ; IR (1):
+;;    ((cell? exp)       `(cell ,(desugar (cell->value exp))))
+;;    ((cell-get? exp)   `(cell-get ,(desugar (cell-get->cell exp))))
+;;    ((set-cell!? exp)  `(set-cell! ,(desugar (set-cell!->cell exp)) 
+;;                                   ,(desugar (set-cell!->value exp))))
+;;    
+;;    ; IR (2): 
+;;    ((closure? exp)    `(closure ,(desugar (closure->lam exp))
+;;                                 ,(desugar (closure->env exp))))
+;;    ((env-make? exp)   `(env-make ,(env-make->id exp)
+;;                                  ,@(azip (env-make->fields exp)
+;;                                          (map desugar (env-make->values exp)))))
+;;    ((env-get? exp)    `(env-get ,(env-get->id exp)
+;;                                 ,(env-get->field exp)
+;;                                 ,(env-get->env exp)))
+;    
+;    ; Applications:
+;    ((app? exp)        (map desugar exp))    
+;    (else              (error "unknown exp: " exp))))
+;    
 
 
 
@@ -673,8 +727,9 @@
     (if (not (pair? formals))
         body-exp
         (if (is-mutable? (car formals))
-            `(let ((,(car formals) (cell ,(car formals))))
-               ,(wrap-mutable-formals (cdr formals) body-exp))
+            `((lambda (,(car formals))
+                ,(wrap-mutable-formals (cdr formals) body-exp))
+              (cell ,(car formals)))
             (wrap-mutable-formals (cdr formals) body-exp))))
   
   (cond

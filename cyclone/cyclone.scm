@@ -48,11 +48,9 @@
   (trace:info "---------------- input program:")
   (trace:info input-program) ;pretty-print
   
-  (if *do-desugar*
-    (begin
-      (set! input-program (desugar input-program))
-      (trace:info "---------------- after desugar:")
-      (trace:info input-program))) ;pretty-print
+  (set! input-program (expand input-program))
+  (trace:info "---------------- after macro expansion:")
+  (trace:info input-program) ;pretty-print
 
   (set! input-program (alpha-convert input-program))
   (trace:info "---------------- after alpha conversion:")
@@ -75,7 +73,7 @@
 
   (analyze-mutable-variables input-program)
 
-  (set! input-program (desugar (wrap-mutables input-program)))
+  (set! input-program (wrap-mutables input-program))
   (trace:info "---------------- after wrap-mutables:")
   (trace:info input-program) ;pretty-print
 
