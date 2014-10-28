@@ -1,4 +1,5 @@
-;(if #t 1 2)
+(display (if #t 1 2))
+(display (if #f 1 2))
 (if (+ 1 2) (+ 3 4) (* 3 4))
 (if ((lambda (x) (+ x 1)) 0) (+ 1 1) (* 0 0))
 

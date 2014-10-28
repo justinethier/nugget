@@ -1,8 +1,5 @@
 /* 
  * Cyclone Scheme
- * Copyright (c) 2014, Justin Ethier
- * All rights reserved.
- *
  * This file contains the C runtime used by compiled programs.
  */
 
@@ -289,6 +286,16 @@ static list assq(x,l) object x; list l;
 {for (; !nullp(l); l = cdr(l))
    {register list la = car(l); if (eq(x,car(la))) return la;}
  return nil;}
+
+static object __num_gt(x, y) object x, y;
+{//printf("DEBUG cmp %d, x %d, y %d, x tag %d, y tag %d\n", 
+ //   (((integer_type *)x)->value > ((integer_type *)y)->value),
+ //   ((integer_type *)x)->value, ((integer_type *)y)->value,
+ //   ((list)x)->tag, ((list)y)->tag);
+ //exit(1);
+ if (((integer_type *)x)->value > ((integer_type *)y)->value)
+    return quote_t;
+ return quote_f;}
 
 static integer_type CYC_length(object l){
     make_int(len, 0);
