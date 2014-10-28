@@ -1,5 +1,10 @@
 ;;
-;; Scheme-to-scheme transformations and utility functions used by the compiler
+;; Cyclone Scheme
+;; Copyright (c) 2014, Justin Ethier
+;; All rights reserved.
+;;
+;; This module performs Scheme-to-Scheme transformations, and also contains
+;; various utility functions used by the compiler.
 ;;
 
 ;; Tuning
@@ -277,6 +282,10 @@
      *
      /
      =
+     >
+     <
+     >=
+     <=
      %halt
      cons
      cell-get

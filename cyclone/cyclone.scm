@@ -1,9 +1,9 @@
-;;;
-;;; Cyclone Scheme compiler
-;;; (c) 2014 Justin Ethier
-;;;
-;;; Front-end for the compiler itself
-;;;
+;; Cyclone Scheme
+;; Copyright (c) 2014, Justin Ethier
+;; All rights reserved.
+;;
+;; This module contains a front-end for the compiler itself.
+;;
 
 (load "bootstrap-chicken.scm")
 ;(load "bootstrap-husk.scm")

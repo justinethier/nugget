@@ -1,3 +1,10 @@
+;; Cyclone Scheme
+;; Copyright (c) 2014, Justin Ethier
+;; All rights reserved.
+;;
+;; This module contains the s-expression parser and supporting functions.
+;;
+
 ;; Helper functions
 (define (add-tok tok toks quoted?)
   (if quoted?

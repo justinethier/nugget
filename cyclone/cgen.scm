@@ -1,8 +1,9 @@
 ;;
-;; Compile scheme code to a Cheney-on-the-MTA C runtime
-;;
+;; Cyclone Scheme
 ;; Copyright (c) 2014, Justin Ethier
 ;; All rights reserved.
+;;
+;; This module compiles scheme code to a Cheney-on-the-MTA C runtime.
 ;;
 
 (define (emit line)
@@ -323,6 +324,10 @@
             ((eq? p '*)       "__mul")
             ((eq? p '/)       "__div")
             ;((eq? p '=)       "__numEqual")
+            ;((eq? p '>)       "__numEqual")
+            ;((eq? p '<)       "__numEqual")
+            ;((eq? p '>=)       "__numEqual")
+            ;((eq? p '<=)       "__numEqual")
             ((eq? p '%halt)     "__halt")
             ((eq? p 'display)   "prin1")
             ((eq? p 'write)     "write")
