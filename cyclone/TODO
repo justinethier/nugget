@@ -1,3 +1,9 @@
+- Recursion example is broken. The proper results are printed, but then one of the lambdas returns
+  instead of calling into a continuation, causing the program to crash:
+
+static void __lambda_7(object self_73697, object _73_191) {
+  ((closure1)self_73697)->elt1;
+
 - Pass port along with emit procedures, to allow the scheme code to write to an output file (IE, c file)?? Or is with-output-file good enough? unfortunately that is not in husk yet so it makes boostrapping harder
 - Get other programs under 'tests' working. Will need to add numeric comparison ops
 - Test with nested variables of the same name (EG: 'x'). does it work, or do we need alpha conversion to prevent
