@@ -513,31 +513,32 @@
     ((quote? exp)      exp)
     ((lambda? exp)     `(lambda ,(lambda->formals exp)
                           ,@(map desugar (lambda->exp exp))))
-    ((set!? exp)       `(set! ,(set!->var exp) ,(set!->exp exp)))
-    ((if? exp)         `(if ,(if->condition exp)
-                            ,(if->then exp)
-                            ,(if->else exp)))
+    ((set!? exp)       `(set! ,(desugar (set!->var exp))
+                              ,(desugar (set!->exp exp))))
+    ((if? exp)         `(if ,(desugar (if->condition exp))
+                            ,(desugar (if->then exp))
+                            ,(desugar (if->else exp))))
     
     ; Sugar:
     ((let? exp)        (desugar (let=>lambda exp)))
     ((letrec? exp)     (desugar (letrec=>lets+sets exp)))
     ((begin? exp)      (desugar (begin=>let exp)))
     
-    ; IR (1):
-    ((cell? exp)       `(cell ,(desugar (cell->value exp))))
-    ((cell-get? exp)   `(cell-get ,(desugar (cell-get->cell exp))))
-    ((set-cell!? exp)  `(set-cell! ,(desugar (set-cell!->cell exp)) 
-                                   ,(desugar (set-cell!->value exp))))
-    
-    ; IR (2): 
-    ((closure? exp)    `(closure ,(desugar (closure->lam exp))
-                                 ,(desugar (closure->env exp))))
-    ((env-make? exp)   `(env-make ,(env-make->id exp)
-                                  ,@(azip (env-make->fields exp)
-                                          (map desugar (env-make->values exp)))))
-    ((env-get? exp)    `(env-get ,(env-get->id exp)
-                                 ,(env-get->field exp)
-                                 ,(env-get->env exp)))
+;    ; IR (1):
+;    ((cell? exp)       `(cell ,(desugar (cell->value exp))))
+;    ((cell-get? exp)   `(cell-get ,(desugar (cell-get->cell exp))))
+;    ((set-cell!? exp)  `(set-cell! ,(desugar (set-cell!->cell exp)) 
+;                                   ,(desugar (set-cell!->value exp))))
+;    
+;    ; IR (2): 
+;    ((closure? exp)    `(closure ,(desugar (closure->lam exp))
+;                                 ,(desugar (closure->env exp))))
+;    ((env-make? exp)   `(env-make ,(env-make->id exp)
+;                                  ,@(azip (env-make->fields exp)
+;                                          (map desugar (env-make->values exp)))))
+;    ((env-get? exp)    `(env-get ,(env-get->id exp)
+;                                 ,(env-get->field exp)
+;                                 ,(env-get->env exp)))
     
     ; Applications:
     ((app? exp)        (map desugar exp))    

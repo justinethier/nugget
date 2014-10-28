@@ -1,3 +1,4 @@
+- Implement ER-macros using eval, in scheme. with this in place, could implement basic macros using ER and replace "desugar". presumably syntax rules could be implemented this way as well, but that can wait for a later time
 - Recursion example is broken. The proper results are printed, but then one of the lambdas returns
   instead of calling into a continuation, causing the program to crash:
 
