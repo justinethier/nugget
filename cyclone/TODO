@@ -1,10 +1,4 @@
 - Implement ER-macros using eval, in scheme. with this in place, could implement basic macros using ER and replace "desugar". presumably syntax rules could be implemented this way as well, but that can wait for a later time
-- Recursion example is broken. The proper results are printed, but then one of the lambdas returns
-  instead of calling into a continuation, causing the program to crash:
-
-static void __lambda_7(object self_73697, object _73_191) {
-  ((closure1)self_73697)->elt1;
-
 - Pass port along with emit procedures, to allow the scheme code to write to an output file (IE, c file)?? Or is with-output-file good enough? unfortunately that is not in husk yet so it makes boostrapping harder
 - Get other programs under 'tests' working. Will need to add numeric comparison ops
 - Test with nested variables of the same name (EG: 'x'). does it work, or do we need alpha conversion to prevent
@@ -17,12 +11,6 @@ static void __lambda_7(object self_73697, object _73_191) {
   like call/cc. alternatively could compile them into a library somewhere
   for inclusion.
 - define - can this with with mutable variable elimination, or does it require C globals (per cboyer)? Are there special cases for top-level? If cells can be used for vars, do we need to keep track of the roots to prevent invalid GC? lots of questions here
-- TBD: Can there be a lambda reference that is not a closure or a direct call?
-- interesting (but probably not a big deal):
- (begin (let ((x #f)) (set! x (+ 2 (* 3 4))) (display x)))
- after desugar:
- ((lambda (x) (set! x (+ 2 (* 3 4)))) #f)
- was the begin optimized away?
 - Question about closures and continuations:
  Presumably every function will recieve a closure. Do we have to differentiate between continuation (which every
  function must have) and closure (which can be empty if no fv)? right now the MTA runtime combines the two by
@@ -36,7 +24,6 @@ static void __lambda_7(object self_73697, object _73_191) {
 
 - Add eval support. Will probably also require apply, read, etc. will probably be necessary to write interpreter in CPS style - see notes. One idea - parse and compile input to scheme expressions, then call apply. could that work? should also see chapter 6 of lisp in small pieces.
 - may be necessary to specify arity of functions in call to apply
-- look at chicken internals doc - is alpha conversion needed to prevent name collisions during compilation?
 - Just a thought: if this ever became self-hosting, could distribute compiled C files
             
      
