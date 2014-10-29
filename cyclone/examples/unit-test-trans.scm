@@ -1,8 +1,19 @@
-(define (%closure . args)
-  (let ((clo (list->vector args)))
-    
+(define (%closure . clo-args)
+  (define clo-data (list->vector clo-args))
+  (define clo
+    (lambda args
+      (cond 
+        ((and (> (length args) 1)
+              (equal? 'ref (car args)))
+         (vector-ref clo-data (cadr args)))
+        (else
+         (apply 
+           (car clo-args) 
+           (cons clo args))))))
+   clo)
 
-(define (%closure-ref clo idx
+(define (%closure-ref clo idx)
+  (clo 'ref idx))
 (define (%halt x)
   (exit))
 
@@ -26,7 +37,7 @@
          (set-cell! x$684 #t)))
       (cell x$684)))
    #f))
-
+(test-set)
 ;; Transformed scheme code from if.scm
 (define (test-if)
     ((lambda (k$699) (if #t (k$699 1) (k$699 2)))
