@@ -65,11 +65,9 @@
          `((lambda ,fv ,input-program)
            ,@(map (lambda (_) #f) fv)))))
 
-  (if *do-cps*
-    (begin
-      (set! input-program (cps-convert input-program))
-      (trace:info "---------------- after CPS:")
-      (trace:info input-program))) ;pretty-print
+  (set! input-program (cps-convert input-program))
+  (trace:info "---------------- after CPS:")
+  (trace:info input-program) ;pretty-print
 
   (analyze-mutable-variables input-program)
 

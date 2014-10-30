@@ -8,11 +8,7 @@
 ;;
 
 ;; Tuning
-(define *do-desugar* #t) ; Eventually replace w/a macro system
-(define *do-cps* #t)    ; Turn off to reduce code size, but no call/cc. 
-                        ; Also not sure if later phases work without CPS
 (define *do-code-gen* #t) ; Generate C code?
-(define *do-c-runtime* #t) ; Generate code for the C runtime?
 
 ;; Trace
 (define *trace-level* 4)
