@@ -3,7 +3,7 @@
  * This file contains the C runtime used by compiled programs.
  */
 
-#define DEBUG_ALWAYS_GC 1
+#define DEBUG_ALWAYS_GC 0
 #define DEBUG_SHOW_DIAG 1
 
 /* STACK_GROWS_DOWNWARD is a machine-specific preprocessor switch. */
@@ -287,6 +287,13 @@ static list assq(x,l) object x; list l;
    {register list la = car(l); if (eq(x,car(la))) return la;}
  return nil;}
 
+
+// TODO: generate these using macros???
+static object __num_eq(x, y) object x, y;
+{if (((integer_type *)x)->value = ((integer_type *)y)->value)
+    return quote_t;
+ return quote_f;}
+
 static object __num_gt(x, y) object x, y;
 {//printf("DEBUG cmp %d, x %d, y %d, x tag %d, y tag %d\n", 
  //   (((integer_type *)x)->value > ((integer_type *)y)->value),
@@ -296,6 +303,7 @@ static object __num_gt(x, y) object x, y;
  if (((integer_type *)x)->value > ((integer_type *)y)->value)
     return quote_t;
  return quote_f;}
+
 
 static integer_type CYC_length(object l){
     make_int(len, 0);

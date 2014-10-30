@@ -43,62 +43,56 @@
 ;; END matt might
 
 (define (test-fac)
-    ((lambda (fac zero?)
-       ((%closure
-          (lambda (self$694 fac)
-            ((%closure
-               (lambda (self$699 r$689)
-                 ((%closure
-                    (lambda (self$700 r$687)
-                      ((%closure
-                         (lambda (self$701 $_$684)
-                           ((%closure-ref (cell-get (%closure-ref self$701 1)) 0)
-                            (cell-get (%closure-ref self$701 1))
-                            (%closure
-                              (lambda (self$702 r$688)
-                                ((lambda (r$686) (%halt r$686)) (display r$688))))
-                            10))
-                         (%closure-ref self$700 1))
-                       r$687))
-                    (%closure-ref self$699 1))
-                  (set-cell! (%closure-ref self$699 1) r$689)))
-               fac)
-             (%closure
-               (lambda (self$695 k$690 n$685)
-                 ((%closure-ref (%closure-ref self$695 2) 0)
-                  (%closure-ref self$695 2)
-                  (%closure
-                    (lambda (self$696 r$691)
-                      (if r$691
-                        ((%closure-ref (%closure-ref self$696 2) 0)
-                         (%closure-ref self$696 2)
-                         1)
-                        ((%closure
-                           (lambda (self$697 r$693)
-                             ((%closure-ref (cell-get (%closure-ref self$697 1)) 0)
-                              (cell-get (%closure-ref self$697 1))
-                              (%closure
-                                (lambda (self$698 r$692)
-                                  ((%closure-ref (%closure-ref self$698 1) 0)
-                                   (%closure-ref self$698 1)
-                                   (* (%closure-ref self$698 2) r$692)))
-                                (%closure-ref self$697 2)
-                                (%closure-ref self$697 3))
-                              r$693))
-                           (%closure-ref self$696 1)
-                           (%closure-ref self$696 2)
-                           (%closure-ref self$696 3))
-                         (- (%closure-ref self$696 3) 1))))
-                    (%closure-ref self$695 1)
-                    k$690
-                    n$685)
-                  n$685))
-               fac
-               (%closure-ref self$694 1))))
-          zero?)
-        (cell fac)))
-     #f
-     #f))
+((lambda (fac)
+   ((lambda (fac)
+      ((%closure
+         (lambda (self$698 r$689)
+           ((%closure
+              (lambda (self$699 r$687)
+                ((%closure
+                   (lambda (self$700 $_$684)
+                     ((%closure-ref (cell-get (%closure-ref self$700 1)) 0)
+                      (cell-get (%closure-ref self$700 1))
+                      (%closure
+                        (lambda (self$701 r$688)
+                          ((lambda (r$686) (%halt r$686)) (display r$688))))
+                      10))
+                   (%closure-ref self$699 1))
+                 r$687))
+              (%closure-ref self$698 1))
+            (set-cell! (%closure-ref self$698 1) r$689)))
+         fac)
+       (%closure
+         (lambda (self$694 k$690 n$685)
+           ((%closure
+              (lambda (self$695 r$691)
+                (if r$691
+                  ((%closure-ref (%closure-ref self$695 2) 0)
+                   (%closure-ref self$695 2)
+                   1)
+                  ((%closure
+                     (lambda (self$696 r$693)
+                       ((%closure-ref (cell-get (%closure-ref self$696 1)) 0)
+                        (cell-get (%closure-ref self$696 1))
+                        (%closure
+                          (lambda (self$697 r$692)
+                            ((%closure-ref (%closure-ref self$697 1) 0)
+                             (%closure-ref self$697 1)
+                             (* (%closure-ref self$697 2) r$692)))
+                          (%closure-ref self$696 2)
+                          (%closure-ref self$696 3))
+                        r$693))
+                     (%closure-ref self$695 1)
+                     (%closure-ref self$695 2)
+                     (%closure-ref self$695 3))
+                   (- (%closure-ref self$695 3) 1))))
+              (%closure-ref self$694 1)
+              k$690
+              n$685)
+            (= 0 n$685)))
+         fac)))
+    (cell fac)))
+ #f))
 (test-fac)
 
 (define (test-set)

@@ -323,7 +323,7 @@
             ((eq? p '-)       "__sub")
             ((eq? p '*)       "__mul")
             ((eq? p '/)       "__div")
-            ;((eq? p '=)       "__numEqual")
+            ((eq? p '=)       "__num_eq")
             ((eq? p '>)       "__num_gt")
             ;((eq? p '<)       "__numEqual")
             ;((eq? p '>=)       "__numEqual")
