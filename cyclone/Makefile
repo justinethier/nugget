@@ -1,5 +1,4 @@
-TESTSCM = adder app begin call-cc-set call-cc-simple call-cc closure-1 closure-sub display if lambda one-liners prim quote recursion scoping set simple-if square
-# TODO: fac 
+TESTSCM = adder app begin call-cc-set call-cc-simple call-cc closure-1 closure-sub display fac if lambda one-liners prim quote recursion scoping set simple-if square
 # Cannot auto test tail-call-optimization because it runs forever
 TESTFILES = $(addprefix tests/, $(addsuffix .scm, $(TESTSCM)))
 

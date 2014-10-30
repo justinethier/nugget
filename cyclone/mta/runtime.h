@@ -304,6 +304,21 @@ static object __num_gt(x, y) object x, y;
     return quote_t;
  return quote_f;}
 
+static object __num_lt(x, y) object x, y;
+{if (((integer_type *)x)->value < ((integer_type *)y)->value)
+    return quote_t;
+ return quote_f;}
+
+static object __num_gte(x, y) object x, y;
+{if (((integer_type *)x)->value >= ((integer_type *)y)->value)
+    return quote_t;
+ return quote_f;}
+
+static object __num_lte(x, y) object x, y;
+{if (((integer_type *)x)->value <= ((integer_type *)y)->value)
+    return quote_t;
+ return quote_f;}
+
 
 static integer_type CYC_length(object l){
     make_int(len, 0);
