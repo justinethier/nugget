@@ -24,6 +24,12 @@
 
 - Add eval support. Will probably also require apply, read, etc. will probably be necessary to write interpreter in CPS style - see notes. One idea - parse and compile input to scheme expressions, then call apply. could that work? should also see chapter 6 of lisp in small pieces.
 - may be necessary to specify arity of functions in call to apply
+- GC - notes from: http://www.more-magic.net/posts/internals-gc.html
+
+ Important point, that the heap must be reallocated during a major GC if there is too much data in the stack / old heap. Considered this but not sure if cyclone's GC does that right now:
+
+The smart reader might have noticed a small problem here: what if the amount of garbage cleaned up is less than the data on the stack? Then, the stack data can't be copied to the new heap because it simply is too small. Well, this is when a third GC mode is triggered: a reallocating GC. This causes a new heap to be allocated, twice as big as the current heap. This is also split in from- and tospace. Then, Cheney's algorithm is performed on the old heap's fromspace, using one half of the new heap as tospace. When it's finished, the new tospace is called fromspace, and the other half of the new heap is called tospace. Then, the old heap is de-allocated.
+
 - Just a thought: if this ever became self-hosting, could distribute compiled C files
             
      
