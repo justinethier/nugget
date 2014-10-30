@@ -290,7 +290,7 @@ static list assq(x,l) object x; list l;
 
 // TODO: generate these using macros???
 static object __num_eq(x, y) object x, y;
-{if (((integer_type *)x)->value = ((integer_type *)y)->value)
+{if (((integer_type *)x)->value == ((integer_type *)y)->value)
     return quote_t;
  return quote_f;}
 
