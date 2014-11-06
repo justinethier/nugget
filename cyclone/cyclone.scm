@@ -52,18 +52,12 @@
   (trace:info "---------------- after macro expansion:")
   (trace:info input-program) ;pretty-print
 
-  (set! input-program (alpha-convert input-program))
+  (set! input-program 
+    (alpha-convert
+      (initialize-top-level-vars 
+        input-program)))
   (trace:info "---------------- after alpha conversion:")
   (trace:info input-program) ;pretty-print
-
-  ;; Initialize top-level variables
-  (let ((fv (filter 
-              (lambda (v) (not (eq? 'call/cc v)))
-              (free-vars input-program))))
-     (if (> (length fv) 0)
-       (set! input-program
-         `((lambda ,fv ,input-program)
-           ,@(map (lambda (_) #f) fv)))))
 
   (set! input-program (cps-convert input-program))
   (trace:info "---------------- after CPS:")

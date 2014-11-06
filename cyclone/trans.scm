@@ -27,7 +27,7 @@
 (define (trace:debug msg) (trace 4 msg display "DEBUG: "))
 
 (define (cyc:error msg)
-  (write msg)
+  (error msg)
   (exit))
 
 ;; File Utilities
@@ -305,6 +305,28 @@
 ; begin->exps : begin-exp -> list[exp]
 (define (begin->exps exp)
   (cdr exp))
+
+; define : exp -> boolean
+(define (define? exp)
+  (tagged-list? 'define exp))
+
+(define (define-lambda? exp)
+  (let ((var (cadr exp)))
+    (and (list? var) 
+         (> (length var) 0)
+         (symbol? (car var)))))
+
+; define->var : define-exp -> var
+(define (define->var exp)
+  (cond
+    ((define-lambda? exp)
+     (caadr exp))
+    (else 
+     (cadr exp))))
+
+; define->exp : define-exp -> exp
+(define (define->exp exp)
+  (cddr exp))
 
 ; set! : exp -> boolean
 (define (set!? exp)
@@ -617,6 +639,8 @@
     ((if? exp)       (union (free-vars (if->condition exp))
                             (union (free-vars (if->then exp))
                                    (free-vars (if->else exp)))))
+    ((define? exp)     (union (list (define->var exp)) 
+                            (free-vars (define->exp exp))))
     ((set!? exp)     (union (list (set!->var exp)) 
                             (free-vars (set!->exp exp))))
     
@@ -752,6 +776,16 @@
     ((app? exp)      (map wrap-mutables exp))
     (else            (error "unknown expression type: " exp))))
 
+;; Initialize top-level variables
+(define (initialize-top-level-vars ast)
+  (let ((fv (filter 
+              (lambda (v) (not (eq? 'call/cc v)))
+              (free-vars ast))))
+     (if (> (length fv) 0)
+        ;; Free variables found, set initial values
+        `((lambda ,fv ,ast)
+           ,@(map (lambda (_) #f) fv))
+         ast)))
 
 ;; Alpha conversion
 ;; (aka alpha renaming)
@@ -767,22 +801,24 @@
          (if renamed
              (cdr renamed)
              ast)))
-      ((tagged-list? 'define ast)
+      ((define? ast)
        (cond
-         ((symbol? (cadr ast))
-          (let* ((var (cadr ast))
-                 (var-renamed (gensym var)))
-          `(set! ,var-renamed ,@(map (lambda (a) (convert a (cons (cons var var-renamed) renamed)))
-                                     (cdr ast)))))))
+         ((define-lambda? ast)
+;; TODO: need to convert to a (set! _ (lambda ...)) form
+          (error "TODO: define-lambda"))
+         (else
+          `(set! 
+             ,(convert (define->var ast) renamed)
+             ,@(map (lambda (a) (convert a renamed)) 
+                    (define->exp ast))))))
       ((set!? ast)
        (cond
-         ((and (symbol? (set!->var ast))
-               (not (assoc (set!->var ast) renamed)))
-           (cyc:error (string-append "Setting an unbound variable: " 
-                                     (symbol->string (set!->var ast))))
+;         ((and (symbol? (set!->var ast))
+;               (not (assoc (set!->var ast) renamed)))
+;           (cyc:error (string-append "Setting an unbound variable: " 
+;                                     (symbol->string (set!->var ast)))))
          (else
-;; TODO: is this good enough? set! can potentially introduce new identifiers
-          `(set! ,@(map (lambda (a) (convert a renamed)) (cdr ast)))))))
+          `(set! ,@(map (lambda (a) (convert a renamed)) (cdr ast))))))
       ((if? ast)
        `(if ,@(map (lambda (a) (convert a renamed)) (cdr ast))))
       ((prim-call? ast)
