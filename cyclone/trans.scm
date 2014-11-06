@@ -26,6 +26,10 @@
 (define (trace:info msg)  (trace 3 msg pretty-print ""))
 (define (trace:debug msg) (trace 4 msg display "DEBUG: "))
 
+(define (cyc:error msg)
+  (write msg)
+  (exit))
+
 ;; File Utilities
 
 ;; Get the basename of a file, without the extension.
@@ -754,7 +758,6 @@
 ;;
 ;; This phase is intended to rename identifiers to preserve lexical scoping
 (define (alpha-convert ast)
-  ;; TODO: Implement
   (define (convert ast renamed)
     (cond
       ((const? ast) ast)
@@ -764,9 +767,22 @@
          (if renamed
              (cdr renamed)
              ast)))
+      ((tagged-list? 'define ast)
+       (cond
+         ((symbol? (cadr ast))
+          (let* ((var (cadr ast))
+                 (var-renamed (gensym var)))
+          `(set! ,var-renamed ,@(map (lambda (a) (convert a (cons (cons var var-renamed) renamed)))
+                                     (cdr ast)))))))
       ((set!? ast)
+       (cond
+         ((and (symbol? (set!->var ast))
+               (not (assoc (set!->var ast) renamed)))
+           (cyc:error (string-append "Setting an unbound variable: " 
+                                     (symbol->string (set!->var ast))))
+         (else
 ;; TODO: is this good enough? set! can potentially introduce new identifiers
-       `(set! ,@(map (lambda (a) (convert a renamed)) (cdr ast))))
+          `(set! ,@(map (lambda (a) (convert a renamed)) (cdr ast)))))))
       ((if? ast)
        `(if ,@(map (lambda (a) (convert a renamed)) (cdr ast))))
       ((prim-call? ast)
