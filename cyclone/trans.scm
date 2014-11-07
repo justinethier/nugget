@@ -804,8 +804,12 @@
       ((define? ast)
        (cond
          ((define-lambda? ast)
-;; TODO: need to convert to a (set! _ (lambda ...)) form
-          (error "TODO: define-lambda"))
+          (let* ((args (cdadr ast))
+                 (a-lookup (map (lambda (a) (cons a (gensym a))) args)))
+            `(set! 
+               ,(convert (define->var ast) renamed)
+               (lambda ,(map (lambda (p) (cdr p)) a-lookup)
+                ,@(convert (define->exp ast) (append a-lookup renamed))))))
          (else
           `(set! 
              ,(convert (define->var ast) renamed)
@@ -813,10 +817,10 @@
                     (define->exp ast))))))
       ((set!? ast)
        (cond
-;         ((and (symbol? (set!->var ast))
-;               (not (assoc (set!->var ast) renamed)))
-;           (cyc:error (string-append "Setting an unbound variable: " 
-;                                     (symbol->string (set!->var ast)))))
+         ((and (symbol? (set!->var ast))
+               (not (assoc (set!->var ast) renamed)))
+           (cyc:error (string-append "Setting an unbound variable: " 
+                                     (symbol->string (set!->var ast)))))
          (else
           `(set! ,@(map (lambda (a) (convert a renamed)) (cdr ast))))))
       ((if? ast)
