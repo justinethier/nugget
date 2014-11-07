@@ -124,10 +124,19 @@
           (loop (cons c tok) toks #f quoted? parens)))))))
    (loop '() '() #f #f parens)))
 
+(define (sign? c)
+  (or
+    (equal? c #\+)
+    (equal? c #\-)))
+
 ;; parse-atom -> [chars] -> literal
 (define (parse-atom a)
   (cond 
-    ((char-numeric? (car a))
+    ((or
+        (char-numeric? (car a))
+        (and (> (length a) 1)
+             (char-numeric? (cadr a))
+             (sign? (car a))))
      (string->number  ;; TODO: this is cheating! need to do this, too.
                       ;; but, it could be done by a library function
                       ;; exposed as string->number... so, ok here

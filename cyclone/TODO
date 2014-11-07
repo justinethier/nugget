@@ -1,4 +1,3 @@
-- Parser does not accept negative numbers, eg: -1. See adder example
 - Implement ER-macros using eval, in scheme. with this in place, could implement basic macros using ER and replace "desugar". presumably syntax rules could be implemented this way as well, but that can wait for a later time
 - Pass port along with emit procedures, to allow the scheme code to write to an output file (IE, c file)?? Or is with-output-file good enough? unfortunately that is not in husk yet so it makes boostrapping harder
 - Test with nested variables of the same name (EG: 'x'). does it work, or do we need alpha conversion to prevent

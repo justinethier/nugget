@@ -5,7 +5,7 @@
 ;(define make-adder
 ;    (lambda (x)
 ;        (lambda (y) (+ x  y))))
-(define increment (make-adder 1))
+(define increment (make-adder +1))
 (display (increment 41)) ; => 42
 (define decrement (make-adder -1))
 (display (decrement 42)) ; => 41
