@@ -291,9 +291,11 @@
      cell-get
      set-cell!
      cell
+     equal?
      length
      boolean?
      number?
+     pair?
      write
      display)))
 

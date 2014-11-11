@@ -262,7 +262,7 @@ static object write(x) object x;
 /* Some of these non-consing functions have been optimized from CPS. */
 
 static object memberp(x,l) object x; list l;
-{for (; !nullp(l); l = cdr(l)) if (equalp(x,car(l))) return quote_t;
+{for (; !nullp(l); l = cdr(l)) if (quote_f != equalp(x,car(l))) return quote_t;
  return nil;}
 
 static object get(x,i) object x,i;
@@ -279,8 +279,8 @@ static object equalp(x,y) object x,y;
 {for (; ; x = cdr(x), y = cdr(y))
    {if (eq(x,y)) return quote_t;
     if (nullp(x) || nullp(y) ||
-        type_of(x)!=cons_tag || type_of(y)!=cons_tag) return nil;
-    if (!equalp(car(x),car(y))) return nil;}}
+        type_of(x)!=cons_tag || type_of(y)!=cons_tag) return quote_f;
+    if (quote_f == equalp(car(x),car(y))) return quote_f;}}
 
 static list assq(x,l) object x; list l;
 {for (; !nullp(l); l = cdr(l))
@@ -319,22 +319,25 @@ static object __num_lte(x, y) object x, y;
     return quote_t;
  return quote_f;}
 
-static object CYC_is_boolean(object o){
+// TODO: static object Cyc_is_eq(x, y) object x, y)
+static object Cyc_is_boolean(object o){
     if (!nullp(o) && 
         ((list)o)->tag == symbol_tag &&
-        (eq(quote_f, o) || eq(quote_t, o))){
+        (eq(quote_f, o) || eq(quote_t, o)))
         return quote_t;
-    }
     return quote_f;}
 
-static object CYC_is_number(object o){
-    if (!nullp(o) && 
-        ((list)o)->tag == integer_tag){
+static object Cyc_is_cons(object o){
+    if (!nullp(o) && ((list)o)->tag == cons_tag)
         return quote_t;
-    }
     return quote_f;}
 
-static integer_type CYC_length(object l){
+static object Cyc_is_number(object o){
+    if (!nullp(o) && ((list)o)->tag == integer_tag)
+        return quote_t;
+    return quote_f;}
+
+static integer_type Cyc_length(object l){
     make_int(len, 0);
     while(!nullp(l)){
         if (((list)l)->tag != cons_tag){

@@ -7,7 +7,7 @@
 
 (define (tagged-list? exp tag)
   (if (pair? exp)
-      (eq? (car exp) tag)
+      (equal? (car exp) tag)
       #f))
 
 (define (self-evaluating? exp)
