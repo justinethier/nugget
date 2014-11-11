@@ -295,7 +295,7 @@
 
 ;; c-compile-const : const-exp -> c-pair
 ;;
-;; Typically this function is used to compile constatn values such as
+;; Typically this function is used to compile constant values such as
 ;; a single number, boolean, etc. However, it can be passed a quoted
 ;; item such as a list, to compile as a literal.
 (define (c-compile-const exp)
@@ -312,6 +312,10 @@
     ((boolean? exp) 
       (c-code (string-append
                 (if exp "quote_t" "quote_f"))))
+TODO: not good enough, need to store new symbols in a table so they can
+be inserted into the C program
+    ((symbol? exp)
+     (c-code (string-append "quote_" (symbol->string exp))))
     (else
       (error "unknown constant: " exp))))
 

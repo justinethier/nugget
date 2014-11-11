@@ -1,3 +1,10 @@
+- Active TODO items
+ - Build table of new symbols and write to C file (like lambda's)
+ - autogenerate mclosure macros, and closure types??
+   longer term, will probably need a more robust solution to these
+   n-ary problems, other than generating macros. how will the evaluator handle
+   all this stuff? will adding an arity parameter help fix any of it??
+
 - Add eval support. 
     - moving forward with meta-circular evaluator from SICP. Let's try to add more cases and code, and see how far it can be pushed.
     - also want to try integrating it with trans somehow. IE, if eval is a free var, then add eval code to the compiled program.
