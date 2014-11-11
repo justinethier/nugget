@@ -5,16 +5,24 @@
 (define (eval exp env)
   ((analyze exp) env))
 
+(define (tagged-list? exp tag)
+  (if (pair? exp)
+      (eq? (car exp) tag)
+      #f))
+
 (define (self-evaluating? exp)
   (cond ((number? exp) #t)
         ;((string? exp) true)
         (else #f)))
 
+(define (quoted? exp)
+  (tagged-list? exp 'quote))
+
 ;; Improvement from section 4.1.7 - Separate syntactic analysis from execution
 (define (analyze exp)
   (cond ((self-evaluating? exp) 
          (analyze-self-evaluating exp))
-        ;((quoted? exp) (analyze-quoted exp))
+         ((quoted? exp) (analyze-quoted exp))
         ;((variable? exp) (analyze-variable exp))
         ;((assignment? exp) (analyze-assignment exp))
         ;((definition? exp) (analyze-definition exp))
@@ -30,9 +38,10 @@
 (define (analyze-self-evaluating exp)
   (lambda (env) exp))
 
-;(define (analyze-quoted exp)
-;  (let ((qval (text-of-quotation exp)))
-;    (lambda (env) qval))
+(define (analyze-quoted exp)
+  (let ((qval (cadr exp)))
+    (lambda (env) qval)))
 
 ;; JAE - Testing
 (write (eval 2 #f))
+(write (eval ''(1 . 2) #f))
