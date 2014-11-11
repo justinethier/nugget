@@ -292,6 +292,8 @@
      set-cell!
      cell
      length
+     boolean?
+     number?
      write
      display)))
 
@@ -497,6 +499,28 @@
     (cons 'let (lambda (exp rename compare) (let=>lambda exp)))
     (cons 'begin (lambda (exp rename compare) (begin=>let exp)))
     (cons 'letrec (lambda (exp rename compare) (letrec=>lets+sets exp)))
+    (cons 'cond
+          (lambda (expr rename compare)
+            (if (null? (cdr expr))
+                (if #f #f)
+                ((lambda (cl)
+                   (if (compare (rename 'else) (car cl))
+                       (if (pair? (cddr expr))
+                           (error "non-final else in cond" expr)
+                           (cons (rename 'begin) (cdr cl)))
+                       (if (if (null? (cdr cl)) #t (compare (rename '=>) (cadr cl)))
+                           (list (list (rename 'lambda) (list (rename 'tmp))
+                                       (list (rename 'if) (rename 'tmp)
+                                             (if (null? (cdr cl))
+                                                 (rename 'tmp)
+                                                 (list (car (cddr cl)) (rename 'tmp)))
+                                             (cons (rename 'cond) (cddr expr))))
+                                 (car cl))
+                           (list (rename 'if)
+                                 (car cl)
+                                 (cons (rename 'begin) (cdr cl))
+                                 (cons (rename 'cond) (cddr expr))))))
+                 (cadr expr)))))
   ))
 
 (define (macro? exp) (assoc (car exp) *defined-macros*))
@@ -506,8 +530,8 @@
     (if macro
       ((cdr macro) 
         exp 
-        (lambda (sym)   ;; TODO: not good enough, need same results if
-          (gensym sym)) ;; the same symbol is renamed more than once
+        (lambda (sym) ;; TODO: not good enough, need to actually rename, and keep same results if
+          sym)        ;; the same symbol is renamed more than once
         (lambda (sym-a sym-b) ;; TODO: the compare function from exrename.
           (eq? sym-a sym-b))) ;; this may need to be more sophisticated
       exp))) ;; TODO: error instead??

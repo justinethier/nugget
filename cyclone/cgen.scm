@@ -332,6 +332,8 @@
             ((eq? p 'display)   "prin1")
             ((eq? p 'write)     "write")
             ((eq? p 'length)    "CYC_length")
+            ((eq? p 'boolean?)  "CYC_is_boolean")
+            ((eq? p 'number?)   "CYC_is_number")
             ((eq? p 'cons)      "make_cons")
             ((eq? p 'cell)      "make_cell")
             ((eq? p 'cell-get)  "cell_get")

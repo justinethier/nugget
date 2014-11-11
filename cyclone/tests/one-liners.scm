@@ -10,6 +10,11 @@
 ; 'done
 (display 1)
 (display (cons (cons 1 2) 3))
+
+(write (boolean? 1))
+(write (boolean? #t))
+(write (number? 1))
+(write (number? #t))
 ; (display '(1 2 3)
 ; (display '(a b c)
 ; TODO: actual closure demonstration

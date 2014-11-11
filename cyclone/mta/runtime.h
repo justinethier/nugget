@@ -319,6 +319,20 @@ static object __num_lte(x, y) object x, y;
     return quote_t;
  return quote_f;}
 
+static object CYC_is_boolean(object o){
+    if (!nullp(o) && 
+        ((list)o)->tag == symbol_tag &&
+        (eq(quote_f, o) || eq(quote_t, o))){
+        return quote_t;
+    }
+    return quote_f;}
+
+static object CYC_is_number(object o){
+    if (!nullp(o) && 
+        ((list)o)->tag == integer_tag){
+        return quote_t;
+    }
+    return quote_f;}
 
 static integer_type CYC_length(object l){
     make_int(len, 0);

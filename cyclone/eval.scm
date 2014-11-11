@@ -2,7 +2,7 @@
 ;; http://mitpress.mit.edu/sicp/full-text/book/book-Z-H-26.html#%_sec_4.1
 ;;
 
-(define (eval exp . env)
+(define (eval exp env)
   ((analyze exp) env))
 
 (define (self-evaluating? exp)
@@ -24,7 +24,8 @@
         ;((cond? exp) (analyze (cond->if exp)))
         ;((application? exp) (analyze-application exp))
         (else
-         (error "Unknown expression type -- ANALYZE" exp))))
+        ; (error "Unknown expression type -- ANALYZE" exp))))
+         #f))) ; JAE - this is a debug line
 
 (define (analyze-self-evaluating exp)
   (lambda (env) exp))
@@ -34,4 +35,4 @@
 ;    (lambda (env) qval))
 
 ;; JAE - Testing
-(write (eval 2))
+(write (eval 2 #f))
