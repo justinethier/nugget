@@ -1,3 +1,9 @@
+- Add eval support. 
+    - moving forward with meta-circular evaluator from SICP. Let's try to add more cases and code, and see how far it can be pushed.
+    - also want to try integrating it with trans somehow. IE, if eval is a free var, then add eval code to the compiled program.
+
+Original notes: Will probably also require apply, read, etc. will probably be necessary to write interpreter in CPS style - see notes. One idea - parse and compile input to scheme expressions, then call apply. could that work? should also see chapter 6 of lisp in small pieces.
+
 - Implement ER-macros using eval, in scheme. with this in place, could implement basic macros using ER and replace "desugar". presumably syntax rules could be implemented this way as well, but that can wait for a later time
 - Pass port along with emit procedures, to allow the scheme code to write to an output file (IE, c file)?? Or is with-output-file good enough? unfortunately that is not in husk yet so it makes boostrapping harder
 - Test with nested variables of the same name (EG: 'x'). does it work, or do we need alpha conversion to prevent
@@ -21,7 +27,6 @@
    - continuation (function to call into)
    - actual args
 
-- Add eval support. Will probably also require apply, read, etc. will probably be necessary to write interpreter in CPS style - see notes. One idea - parse and compile input to scheme expressions, then call apply. could that work? should also see chapter 6 of lisp in small pieces.
 - may be necessary to specify arity of functions in call to apply
 - GC - notes from: http://www.more-magic.net/posts/internals-gc.html
 
