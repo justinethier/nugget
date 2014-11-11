@@ -13,6 +13,18 @@
    include num_args and an area for those args. tbd on how to implement this, especially while
    preventing memory leaks (IE, cannot just use malloc because GC would not be able to reclaim lost objs)
 
+try experimentation on a branch. for example:
+
+  typedef struct {
+    tag_type tag; 
+    function_type fn; 
+    int num_elt;
+    object *elts;
+  } closure_type;
+
+could alloca the elt's. need to be careful how this is handled, especially during GC.
+maybe throw an error if num_elt exceeds a certain number (100?)
+
 - Add eval support. 
     - moving forward with meta-circular evaluator from SICP. Let's try to add more cases and code, and see how far it can be pushed.
     - also want to try integrating it with trans somehow. IE, if eval is a free var, then add eval code to the compiled program.
