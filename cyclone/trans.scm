@@ -296,6 +296,7 @@
      boolean?
      number?
      pair?
+     symbol?
      write
      display)))
 

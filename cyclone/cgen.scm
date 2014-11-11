@@ -340,6 +340,7 @@ be inserted into the C program
             ((eq? p 'boolean?)  "Cyc_is_boolean")
             ((eq? p 'number?)   "Cyc_is_number")
             ((eq? p 'pair?)     "Cyc_is_cons")
+            ((eq? p 'symbol?)   "Cyc_is_symbol")
             ((eq? p 'cons)      "make_cons")
             ((eq? p 'cell)      "make_cell")
             ((eq? p 'cell-get)  "cell_get")

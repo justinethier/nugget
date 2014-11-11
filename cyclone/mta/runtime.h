@@ -337,6 +337,11 @@ static object Cyc_is_number(object o){
         return quote_t;
     return quote_f;}
 
+static object Cyc_is_symbol(object o){
+    if (!nullp(o) && ((list)o)->tag == symbol_tag)
+        return quote_t;
+    return quote_f;}
+
 static integer_type Cyc_length(object l){
     make_int(len, 0);
     while(!nullp(l)){
