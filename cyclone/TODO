@@ -1,5 +1,4 @@
 - Active TODO items
- - Build table of new symbols and write to C file (like lambda's)
  - autogenerate mclosure macros, and closure types??
    no, cannot do that because closure arity is embedded in tags, GC, etc.
 
@@ -31,6 +30,7 @@ maybe throw an error if num_elt exceeds a certain number (100?)
 
 Original notes: Will probably also require apply, read, etc. will probably be necessary to write interpreter in CPS style - see notes. One idea - parse and compile input to scheme expressions, then call apply. could that work? should also see chapter 6 of lisp in small pieces.
 
+- Improvements to symbol handling, including printing of symbols with invalid C chars, like 'hello-world
 - Implement ER-macros using eval, in scheme. with this in place, could implement basic macros using ER and replace "desugar". presumably syntax rules could be implemented this way as well, but that can wait for a later time
 - Pass port along with emit procedures, to allow the scheme code to write to an output file (IE, c file)?? Or is with-output-file good enough? unfortunately that is not in husk yet so it makes boostrapping harder
 - Test with nested variables of the same name (EG: 'x'). does it work, or do we need alpha conversion to prevent

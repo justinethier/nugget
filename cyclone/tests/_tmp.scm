@@ -19,4 +19,6 @@
 ; TODO: if demonstration with a variable
 ; TODO: loop demonstration
 ;(lambda (x) (tautology (rewrite x) 1 2)) ; Incomplete snippet from boyer
-(display (eval 2))
+(display 'hello)
+(display 'hello-world)
+;TODO: (display (eval 2))

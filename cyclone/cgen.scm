@@ -312,10 +312,11 @@
     ((boolean? exp) 
       (c-code (string-append
                 (if exp "quote_t" "quote_f"))))
-TODO: not good enough, need to store new symbols in a table so they can
-be inserted into the C program
+;TODO: not good enough, need to store new symbols in a table so they can
+;be inserted into the C program
     ((symbol? exp)
-     (c-code (string-append "quote_" (symbol->string exp))))
+     (allocate-symbol exp)
+     (c-code (string-append "quote_" (mangle exp))))
     (else
       (error "unknown constant: " exp))))
 
@@ -501,6 +502,12 @@ be inserted into the C program
    (c:serialize els "  ")
    "}\n"))))
 
+;; Symbol compilation
+
+(define *symbols* '())
+
+(define (allocate-symbol sym)
+  (set! *symbols* (cons sym *symbols*)))
 
 ;; Lambda compilation.
 
@@ -614,6 +621,12 @@ be inserted into the C program
     (emit-c-macros)
     (emit "#include \"mta/runtime.h\"")
     
+    ;; Emit symbols
+    (for-each
+        (lambda (sym)
+            (emit (string-append "defsymbol(" (mangle sym) ");")))
+        *symbols*)
+
     ;; Emit lambdas:
     ; Print the prototypes:
     (for-each
