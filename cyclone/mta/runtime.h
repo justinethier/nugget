@@ -3,7 +3,7 @@
  * This file contains the C runtime used by compiled programs.
  */
 
-#define DEBUG_ALWAYS_GC 0
+#define DEBUG_ALWAYS_GC 1
 #define DEBUG_SHOW_DIAG 1
 
 /* STACK_GROWS_DOWNWARD is a machine-specific preprocessor switch. */
@@ -67,8 +67,9 @@ typedef long tag_type;
 #define closure2_tag 5
 #define closure3_tag 6
 #define closure4_tag 7
-#define integer_tag 8
-#define double_tag 9
+#define closureN_tag 8
+#define integer_tag 9
+#define double_tag 10
 
 #define nil NULL
 #define eq(x,y) (x == y)
@@ -130,12 +131,14 @@ typedef struct {tag_type tag; function_type fn; object elt1;} closure1_type;
 typedef struct {tag_type tag; function_type fn; object elt1,elt2;} closure2_type;
 typedef struct {tag_type tag; function_type fn; object elt1,elt2,elt3;} closure3_type;
 typedef struct {tag_type tag; function_type fn; object elt1,elt2,elt3,elt4;} closure4_type;
+typedef struct {tag_type tag; function_type fn; int num_elt; object *elts;} closureN_type;
 
 typedef closure0_type *closure0;
 typedef closure1_type *closure1;
 typedef closure2_type *closure2;
 typedef closure3_type *closure3;
 typedef closure4_type *closure4;
+typedef closureN_type *closureN;
 typedef closure0_type *closure;
 
 #define mclosure0(c,f) closure0_type c; c.tag = closure0_tag; c.fn = f;
@@ -148,6 +151,13 @@ typedef closure0_type *closure;
 #define mclosure4(c,f,a1,a2,a3,a4) closure4_type c; c.tag = closure4_tag; \
    c.fn = f; c.elt1 = a1; c.elt2 = a2; c.elt3 = a3; c.elt4 = a4;
 #define setq(x,e) x = e
+
+// TODO: no portable way to pass variable args to a macro, so, may need to
+//       generate mclosureN code from scheme, instead of trying to have a
+//       generic C function. Just doing the below as exploratory research
+#define DEBUG_mclosure(c, f, a1, a2) closureN_type c; c.tag = closureN_tag; c.fn = f; \
+  c.num_elt = 2; c.elts = (object *)alloca(sizeof(object) * c.num_elt); c.elts[0] = a1; c.elts[1] = a2;
+
 
 #define mlist1(e1) (mcons(e1,nil))
 #define mlist2(e2,e1) (mcons(e2,mlist1(e1)))
@@ -226,6 +236,7 @@ static object prin1(x) object x;
     case closure2_tag:
     case closure3_tag:
     case closure4_tag:
+    case closureN_tag:
       printf("<%p>",(void *)((closure) x)->fn);
       break;
     case symbol_tag:
@@ -431,6 +442,18 @@ static char *transport(x) char *x;
        forward(x) = nx; type_of(x) = forward_tag;
        x = (char *) nx; allocp = ((char *) nx)+sizeof(closure4_type);
        return (char *) nx;}
+    case closureN_tag:
+      {register closureN nx = (closureN) allocp;
+       int i;
+       type_of(nx) = closureN_tag; nx->fn = ((closureN) x)->fn;
+       nx->num_elt = ((closureN) x)->num_elt;
+       nx->elts = (object *)(((char *)nx) + sizeof(closureN_type));
+       for (i = 0; i < nx->num_elt; i++) {
+         nx->elts[i] = ((closureN) x)->elts[i];
+       }
+       forward(x) = nx; type_of(x) = forward_tag;
+       x = (char *) nx; allocp = ((char *) nx)+sizeof(closureN_type) + sizeof(object) * nx->num_elt;
+       return (char *) nx;}
     case integer_tag:
       {register integer_type *nx = (integer_type *) allocp;
        type_of(nx) = integer_tag; nx->value = ((integer_type *) x)->value;
@@ -508,6 +531,14 @@ static void GC_loop(int major, closure cont, object *ans, int num_ans)
         transp(((closure4) scanp)->elt1); transp(((closure4) scanp)->elt2);
         transp(((closure4) scanp)->elt3); transp(((closure4) scanp)->elt4);
         scanp += sizeof(closure4_type); break;
+      case closureN_tag:
+       {int i;
+        for (i = 0; i < ((closureN) scanp)->num_elt; i++) {
+          transp(((closureN) scanp)->elts[i]);
+        }
+       }
+       scanp += sizeof(closureN_type) + sizeof(object) * ((closureN) scanp)->num_elt;
+       break;
       case integer_tag:
         scanp += sizeof(integer_type); break;
       case symbol_tag: default:
