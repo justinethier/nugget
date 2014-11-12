@@ -555,41 +555,49 @@
 ;;    the closure. The closure conversion phase tags each access
 ;;    to one with the corresponding index so `lambda` can use them.
 ;;
-(define (c-compile-closure exp append-preamble cont) ; fv-lst is crap, get rid of it?
+(define (c-compile-closure exp append-preamble cont)
   (let* ((lam (closure->lam exp))
          (free-vars
            (map
              (lambda (free-var)
                 (if (tagged-list? '%closure-ref free-var)
                     (let ((var (cadr free-var))
-                          (idx (number->string (caddr free-var))))
+                          (idx (number->string (- (caddr free-var) 1))))
                         (string-append 
-                            "((closure" idx ")" (mangle var) ")->elt" idx))
+                            "((closureN)" (mangle var) ")->elts[" idx "]"))
                     (mangle free-var)))
              (closure->fv exp))) ; Note these are not necessarily symbols, but in cc form
          (cv-name (mangle (gensym 'c)))
-         (lid (allocate-lambda (c-compile-lambda lam))))
+         (lid (allocate-lambda (c-compile-lambda lam)))
+         (create-nclosure (lambda ()
+           (string-append
+             "closureN_type " cv-name ";\n"
+             cv-name ".tag = closureN_tag;\n "
+             cv-name ".fn = __lambda_" (number->string lid) ";\n"
+             cv-name ".num_elt = " (number->string (length free-vars)) ";\n"
+             cv-name ".elts = (object *)alloca(sizeof(object) * " 
+                     (number->string (length free-vars)) ");\n"
+             (let loop ((i 0) 
+                        (vars free-vars))
+               (if  (null? vars)
+                 ""
+                 (string-append 
+                   cv-name ".elts[" (number->string i) "] = " 
+                           (car vars) ";\n"
+                   (loop (+ i 1) (cdr vars))))))))
+         (create-mclosure (lambda () 
+           (string-append
+            "mclosure" (number->string (length free-vars)) "(" cv-name ", "
+            "__lambda_" (number->string lid)
+            (if (> (length free-vars) 0) "," "")
+            (string-join free-vars ", ")
+            ");"))))
   (c-code/vars
     (string-append "&" cv-name)
-    (list (string-append
-; TODO: create a function for this. still need to figure out elt number
-;     "closureN_type " cv-name ";"
-;     cv-name ".tag = closureN_tag; "
-;     cv-name ".fn = __lambda_" (number->string lid) ";"
-;     cv-name ".num_elt = " (number->string (length free-vars)) ";"
-;     cv-name ".elts = (object *)alloca(sizeof(object) * " (number->string (length free-vars)) ");"
-;     (string-join 
-;       (map (lambda (v)
-;              (string-append cv-name ".elts[] = " v ";"
-;            free-vars)))
-; TODO: still want to do this for mclosure0, possibly others
-     "mclosure" (number->string (length free-vars)) "(" cv-name ", "
-     "__lambda_" (number->string lid)
-     (if (> (length free-vars) 0) "," "")
-     (string-join free-vars ", ")
-     ");"
-
-     )))))
+    (list 
+      (if (> (length free-vars) 0)
+        (create-nclosure)
+        (create-mclosure))))))
 
 ; c-compile-formals : list[symbol] -> string
 (define (c-compile-formals formals)
