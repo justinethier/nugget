@@ -572,11 +572,24 @@
   (c-code/vars
     (string-append "&" cv-name)
     (list (string-append
+; TODO: create a function for this. still need to figure out elt number
+;     "closureN_type " cv-name ";"
+;     cv-name ".tag = closureN_tag; "
+;     cv-name ".fn = __lambda_" (number->string lid) ";"
+;     cv-name ".num_elt = " (number->string (length free-vars)) ";"
+;     cv-name ".elts = (object *)alloca(sizeof(object) * " (number->string (length free-vars)) ");"
+;     (string-join 
+;       (map (lambda (v)
+;              (string-append cv-name ".elts[] = " v ";"
+;            free-vars)))
+; TODO: still want to do this for mclosure0, possibly others
      "mclosure" (number->string (length free-vars)) "(" cv-name ", "
      "__lambda_" (number->string lid)
      (if (> (length free-vars) 0) "," "")
      (string-join free-vars ", ")
-     ");")))))
+     ");"
+
+     )))))
 
 ; c-compile-formals : list[symbol] -> string
 (define (c-compile-formals formals)

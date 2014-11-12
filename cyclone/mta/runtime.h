@@ -155,8 +155,14 @@ typedef closure0_type *closure;
 // TODO: no portable way to pass variable args to a macro, so, may need to
 //       generate mclosureN code from scheme, instead of trying to have a
 //       generic C function. Just doing the below as exploratory research
-#define DEBUG_mclosure(c, f, a1, a2) closureN_type c; c.tag = closureN_tag; c.fn = f; \
+#define DEBUG_mclosure0(c, f) closureN_type c; c.tag = closureN_tag; c.fn = f; \
+  c.num_elt = 0; c.elts = (object *)alloca(sizeof(object) * c.num_elt);
+#define DEBUG_mclosure1(c, f, a1) closureN_type c; c.tag = closureN_tag; c.fn = f; \
+  c.num_elt = 1; c.elts = (object *)alloca(sizeof(object) * c.num_elt); c.elts[0] = a1;
+#define DEBUG_mclosure2(c, f, a1, a2) closureN_type c; c.tag = closureN_tag; c.fn = f; \
   c.num_elt = 2; c.elts = (object *)alloca(sizeof(object) * c.num_elt); c.elts[0] = a1; c.elts[1] = a2;
+#define DEBUG_mclosure3(c, f, a1, a2, a3) closureN_type c; c.tag = closureN_tag; c.fn = f; \
+  c.num_elt = 3; c.elts = (object *)alloca(sizeof(object) * c.num_elt); c.elts[0] = a1; c.elts[1] = a2; c.elts[2] = a3;
 
 
 #define mlist1(e1) (mcons(e1,nil))
