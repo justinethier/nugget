@@ -5,6 +5,7 @@
 
 #define DEBUG_ALWAYS_GC 1
 #define DEBUG_SHOW_DIAG 1
+#define NUM_GC_ANS 100
 
 /* STACK_GROWS_DOWNWARD is a machine-specific preprocessor switch. */
 /* It is true for the Macintosh 680X0 and the Intel 80860. */
@@ -214,7 +215,7 @@ static char *alloc_end;
 static long no_gcs = 0; /* Count the number of GC's. */
 
 static volatile object gc_cont;   /* GC continuation closure. */
-static volatile object gc_ans[10];    /* argument for GC continuation closure. */
+static volatile object gc_ans[NUM_GC_ANS];    /* argument for GC continuation closure. */
 static volatile int gc_num_ans;
 static jmp_buf jmp_main; /* Where to jump to. */
 
@@ -510,6 +511,13 @@ static void GC_loop(int major, closure cont, object *ans, int num_ans)
  transp(cont);
  gc_cont = cont;
  gc_num_ans = num_ans;
+
+ /* Prevent overrunning buffer */
+ if (num_ans > NUM_GC_ANS) {
+   printf("Fatal error - too many arguments (%d) to GC\n", num_ans);
+   exit(1);
+ }
+
  for (i = 0; i < num_ans; i++){ 
      transp(ans[i]);
      gc_ans[i] = ans[i];
