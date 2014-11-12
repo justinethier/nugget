@@ -21,4 +21,5 @@
 ;(lambda (x) (tautology (rewrite x) 1 2)) ; Incomplete snippet from boyer
 (display 'hello)
 (display 'hello-world)
+(display (car '(1 . 2)))
 ;TODO: (display (eval 2))

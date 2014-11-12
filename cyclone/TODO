@@ -1,28 +1,5 @@
 - Active TODO items
- - autogenerate mclosure macros, and closure types??
-   no, cannot do that because closure arity is embedded in tags, GC, etc.
-
-   short term can just add more for eval.scm, BUT...
-
-   longer term, will probably need a more robust solution to these
-   n-ary problems, other than generating macros. how will the evaluator handle
-   all this stuff? will adding an arity parameter help fix any of it??
-   
-   need to investigate implementing n-arity closures somehow. I suppose the closure would have to
-   include num_args and an area for those args. tbd on how to implement this, especially while
-   preventing memory leaks (IE, cannot just use malloc because GC would not be able to reclaim lost objs)
-
-try experimentation on a branch. for example:
-
-  typedef struct {
-    tag_type tag; 
-    function_type fn; 
-    int num_elt;
-    object *elts;
-  } closure_type;
-
-could alloca the elt's. need to be careful how this is handled, especially during GC.
-maybe throw an error if num_elt exceeds a certain number (100?)
+ - add car, cdr, and cadr to compiler
 
 - Add eval support. 
     - moving forward with meta-circular evaluator from SICP. Let's try to add more cases and code, and see how far it can be pushed.
