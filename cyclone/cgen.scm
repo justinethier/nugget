@@ -447,10 +447,10 @@
          (c-code (apply string-append (list
             "("
             ;; TODO: probably not the ideal solution, but works for now
-            "(closure" (number->string (cadr args)) ")"
+            "(closureN)"
             (mangle (car args))
-            ")->elt"
-            (number->string (cadr args))))))
+            ")->elts["
+            (number->string (- (cadr args) 1))"]"))))
 
         ;; TODO: may not be good enough, closure app could be from an elt
         ((tagged-list? '%closure-ref fun)
