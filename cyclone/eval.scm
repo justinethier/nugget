@@ -33,7 +33,7 @@
         ;((application? exp) (analyze-application exp))
         (else
         ; (error "Unknown expression type -- ANALYZE" exp))))
-         #f))) ; JAE - this is a debug line
+         (lambda () 'TODO-unknown-exp-type)))) ; JAE - this is a debug line
 
 (define (analyze-self-evaluating exp)
   (lambda (env) exp))
@@ -44,4 +44,5 @@
 
 ;; JAE - Testing
 (write (eval 2 #f))
-(write (eval ''(1 . 2) #f))
+(write (eval '''(1 2) #f))
+(write (eval '''(1 . 2) #f))

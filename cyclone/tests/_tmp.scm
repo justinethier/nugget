@@ -26,3 +26,6 @@
 (display (cdr '(1 2)))
 (display (cadr '(1 2)))
 ;TODO: (display (eval 2))
+
+(display ''''test)
+(display 'test)

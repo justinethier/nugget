@@ -6,9 +6,14 @@
 ;;
 
 ;; Helper functions
-(define (add-tok tok toks quoted?)
-  (if quoted?
-     (cons (cons 'quote (cons tok '())) toks)
+(define (add-tok tok toks quotes)
+  (if quotes
+     (cons
+       (let loop ((i 0))
+         (if (= quotes i)
+           tok
+           (cons 'quote (cons (loop (+ i 1)) '()))))
+       toks)
      (cons tok toks)))
 
 ;; Add a token to the list, quoting it if necessary
@@ -17,10 +22,10 @@
 
 ;; Get completed list of tokens
 ;; TODO: better name for this function?
-(define (with-tok tok toks quoted?)
+(define (with-tok tok toks quotes)
   (if (null? tok)
     toks
-    (add-tok (->tok tok) toks quoted?)))
+    (add-tok (->tok tok) toks quotes)))
 
 ;; Did we read a dotted list
 (define (dotted? lst) 
@@ -59,39 +64,43 @@
 (define (_cyc-read-all fp parens)
   (letrec (
    ;; Keep looping, adding finished token if there is one
-   (loop/tok (lambda (tok toks comment? quoted? parens)
+   (loop/tok (lambda (tok toks comment? quotes parens)
                 (if (null? tok)
-                    (loop '() toks comment? quoted? parens)
-                    (loop '() (add-tok (->tok tok) toks quoted?) comment? #f parens)))) ; read tok, no more '
+                    (loop '() toks comment? quotes parens)
+                    (loop '() (add-tok (->tok tok) toks quotes) comment? #f parens)))) ; read tok, no more '
    ;; Loop over input
-   (loop (lambda (tok toks comment? quoted? parens)
+   (loop (lambda (tok toks comment? quotes parens)
     (set! *char-num* (+ 1 *char-num*))
     (let ((c (read-char fp)))
       (cond
         ((eof-object? c) 
          (if (> parens 0)
              (parse-error "missing closing parenthesis" *line-num* *char-num*))
-         (reverse (with-tok tok toks quoted?)))
+         (reverse (with-tok tok toks quotes)))
         (comment?
          (if (eq? c #\newline)
              (begin
                 (set! *line-num* (+ 1 *line-num*))
                 (set! *char-num* 0)
-                (loop '() toks #f quoted? parens))
-             (loop '() toks #t quoted? parens)))
+                (loop '() toks #f quotes parens))
+             (loop '() toks #t quotes parens)))
         ((char-whitespace? c)
          (if (equal? c #\newline) (set! *line-num* (+ 1 *line-num*)))
          (if (equal? c #\newline) (set! *char-num* 0))
-         (loop/tok tok toks #f quoted? parens))
+         (loop/tok tok toks #f quotes parens))
         ((eq? c #\;)
-         (loop/tok tok toks #t quoted? parens))
+         (loop/tok tok toks #t quotes parens))
         ((eq? c #\')
-         (if (null? tok)
-             (loop '() toks comment? #t parens)
-             (loop '() (add-tok (->tok tok) toks quoted?) comment? #t parens)))
+         (let ((quote-level (if quotes
+                                (+ quotes 1)
+                                1)))
+           (if (null? tok)
+               (loop '() toks comment? quote-level parens)
+               (loop '() (add-tok (->tok tok) toks quotes) 
+                                  comment? quote-level parens))))
         ((eq? c #\()
          (let ((sub (_cyc-read-all fp (+ parens 1)))
-               (toks* (with-tok tok toks quoted?)))
+               (toks* (with-tok tok toks quotes)))
             (loop 
               '() 
               (add-tok 
@@ -99,12 +108,12 @@
                     (->dotted-list sub)
                     sub)
                 toks* 
-                quoted?) 
+                quotes) 
               #f #f parens)))
         ((eq? c #\))
          (if (= parens 0)
              (parse-error "unexpected closing parenthesis" *line-num* *char-num*))
-         (reverse (with-tok tok toks quoted?)))
+         (reverse (with-tok tok toks quotes)))
         ((eq? c #\")
          (parse-error "Unable to parse strings at this time" *line-num* *char-num*))
         ((eq? c #\#)
@@ -119,9 +128,9 @@
                 (else
                   (parse-error "Unhandled input sequence" *line-num* *char-num*))))
            ;; just another char...
-           (loop (cons c tok) toks #f quoted? parens)))
+           (loop (cons c tok) toks #f quotes parens)))
         (else
-          (loop (cons c tok) toks #f quoted? parens)))))))
+          (loop (cons c tok) toks #f quotes parens)))))))
    (loop '() '() #f #f parens)))
 
 (define (sign? c)
@@ -146,7 +155,7 @@
        (list->string a)))))
 
 ;(let ((fp (open-input-file "tests/begin.scm")))
-;(let ((fp (open-input-file "tests/quote.scm")))
+;(let ((fp (open-input-file "tests/_tmp.scm")))
 ;  (write (cyc-read-all fp)))
 
 ;(define (display-file filename)
