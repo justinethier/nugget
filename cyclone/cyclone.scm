@@ -101,7 +101,7 @@
           (if cc?
             (system 
               ;; -I is a hack, real answer is to use 'make install' to place .h file
-              (string-append "gcc " src-file " -I. -o " exec-file))))))))
+              (string-append "gcc " src-file " -I. -g -o " exec-file))))))))
 
 ;; Handle command line arguments
 (let ((args (command-line-arguments))) ;; TODO: port (command-line-arguments) to husk??
