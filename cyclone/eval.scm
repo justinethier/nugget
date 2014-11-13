@@ -44,5 +44,5 @@
 
 ;; JAE - Testing
 (write (eval 2 #f))
-(write (eval '''(1 2) #f))
-(write (eval '''(1 . 2) #f))
+(write (eval ''(1 2) #f))
+(write (eval ''(1 . 2) #f))

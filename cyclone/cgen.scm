@@ -515,7 +515,8 @@
 (define *symbols* '())
 
 (define (allocate-symbol sym)
-  (set! *symbols* (cons sym *symbols*)))
+  (if (not (member sym *symbols*))
+      (set! *symbols* (cons sym *symbols*))))
 
 ;; Lambda compilation.
 
