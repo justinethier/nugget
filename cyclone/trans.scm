@@ -293,6 +293,14 @@
      cell
      equal?
      length
+     car
+     cdr
+     caar
+     cadr
+     cdar
+     cddr
+     caddr
+     cadddr
      boolean?
      number?
      pair?
