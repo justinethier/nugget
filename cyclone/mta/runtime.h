@@ -3,7 +3,7 @@
  * This file contains the C runtime used by compiled programs.
  */
 
-#define DEBUG_ALWAYS_GC 1
+#define DEBUG_ALWAYS_GC 0
 #define DEBUG_SHOW_DIAG 1
 #define NUM_GC_ANS 100
 

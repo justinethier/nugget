@@ -1,5 +1,5 @@
 - Active TODO items
- - add car, cdr, and cadr to compiler
+ - issue with scheme-to-scheme transformation for eval.scm
 
 - Add eval support. 
     - moving forward with meta-circular evaluator from SICP. Let's try to add more cases and code, and see how far it can be pushed.
