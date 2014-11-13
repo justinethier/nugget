@@ -22,7 +22,7 @@
 (define (if-predicate exp) (cadr exp))
 (define (if-consequent exp) (caddr exp))
 (define (if-alternative exp)
-  (if (not (null? (cdddr exp))) ;; TODO: null? and cdddr not in cyclone
+  (if (not (null? (cdddr exp)))
       (cadddr exp)
       #f))
 
@@ -102,3 +102,7 @@
 (write (eval 2 #f))
 (write (eval ''(1 2) #f))
 (write (eval ''(1 . 2) #f))
+(write (eval '(if #t 'test-ok 'test-fail)))
+;(write (eval '(if 1 'test-ok)))
+;(write (eval '(if #f 'test-fail 'test-ok)))
+
