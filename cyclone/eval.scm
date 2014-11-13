@@ -22,7 +22,7 @@
 (define (if-predicate exp) (cadr exp))
 (define (if-consequent exp) (caddr exp))
 (define (if-alternative exp)
-  (if (not (null? (cdddr exp)))
+  (if (not (null? (cdddr exp))) ;; TODO: add (not) support
       (cadddr exp)
       #f))
 

@@ -1,5 +1,5 @@
 - Active TODO items
- - issue with scheme-to-scheme transformation for eval.scm
+ - Add (not) support, do more if testing (IE, with symbols)
 
 - Add eval support. 
     - moving forward with meta-circular evaluator from SICP. Let's try to add more cases and code, and see how far it can be pushed.
