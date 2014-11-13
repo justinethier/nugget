@@ -300,7 +300,7 @@
 ;; item such as a list, to compile as a literal.
 (define (c-compile-const exp)
   (cond
-    ((list? exp)
+    ((pair? exp)
      (c-compile-scalars exp))
     ((integer? exp) 
       (let ((cvar-name (mangle (gensym 'c))))
