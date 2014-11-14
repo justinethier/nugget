@@ -10,6 +10,7 @@
 ;; Built-in functions
 ;; TODO: relocate these somewhere else, like a lib.scm!!!
 (define *built-ins*
+  ;'())
   '((not . (define (not x) (if x #f #t)))))
 (define (built-in-syms)
   (cons 'call/cc
@@ -366,7 +367,7 @@
      (let ((var (caadr exp))
            (args (cdadr exp))
            (body (cddr exp)))
-       `(define ,var (lambda ,args ,body))))
+       `(define ,var (lambda ,args ,@body))))
     (else exp)))
 
 ; define->var : define-exp -> var
@@ -596,6 +597,10 @@
     ((quote? exp)      exp)
     ((lambda? exp)     `(lambda ,(lambda->formals exp)
                           ,@(map expand (lambda->exp exp))))
+    ((define? exp)     (if (define-lambda? exp)
+                           (expand (define->lambda exp))
+                          `(set! ,(expand (define->var exp))
+                                ,@(expand (define->exp exp)))))
     ((set!? exp)       `(set! ,(expand (set!->var exp))
                               ,(expand (set!->exp exp))))
     ((if? exp)         `(if ,(expand (if->condition exp))
@@ -720,14 +725,6 @@
       ((if? exp)       (union (search (if->condition exp))
                               (union (search (if->then exp))
                                      (search (if->else exp)))))
-;; TODO: inefficient to keep doing define->lambda conversions here!!
-;;  ideally want to restructure rest of compiler to avoid having
-;;  raw defines being sent to this function
-      ((define? exp)
-       (if (define-lambda? exp)
-           (search (define->lambda exp))
-           (union (list (define->var exp)) 
-                  (search (define->exp exp)))))
       ((set!? exp)     (union (list (set!->var exp)) 
                               (search (set!->exp exp))))
       ; Application:
@@ -855,8 +852,6 @@
 ;; pass that renaming information downstream
 (define (alpha-convert ast)
 ;TODO: 
-; - move define->lambda to after (or part) of syntax expansion
-;   negates throwing an error for (set!)'ing an unbound var, but oh well
 ; - clean this up, delete dead code, etc
 ; - remove (define) code from free-vars
 ; - figure some way of inserting built-in def's
@@ -879,11 +874,6 @@
     ;;       fully handle lexical scoping??
     (member sym '(lambda if set! define quote call/cc)))
 
-;  (define *bound-vars* '())
-;  (define (append-bound-vars sym)
-;    (if (not (member sym *bound-vars*))
-;      (set! *bound-vars* (cons sym *bound-vars*))))
-
   (define (convert ast renamed)
     (cond
       ((const? ast) ast)
@@ -902,31 +892,16 @@
 ;            (cyc:error (string-append 
 ;                          "Unbound variable: "
 ;                          (symbol->string ast)))))))
-      ((define? ast)
-       (cond
-         ;; TODO: should consider move define->lambda conversion outside
-         ;;       of alpha convert, since it makes free-vars less efficient
-         ;; unfortunately, that would also change the error checking around
-         ;; setting an unbound variable, if we want to keep that (and maybe
-         ;; it is reasonble to not have it at all)
-         ((define-lambda? ast)
-          (let* ((args (cdadr ast))
-                 (a-lookup (map (lambda (a) (cons a (gensym a))) args)))
-            `(set! 
-               ,(convert (define->var ast) renamed)
-               (lambda ,(map (lambda (p) (cdr p)) a-lookup)
-                ,@(convert (define->exp ast) (append a-lookup renamed))))))
-         (else
-          `(set! 
-             ,(convert (define->var ast) renamed)
-             ,@(map (lambda (a) (convert a renamed)) 
-                    (define->exp ast))))))
       ((set!? ast)
        (cond
-         ((and (symbol? (set!->var ast))
-               (not (assoc (set!->var ast) renamed)))
-           (cyc:error (string-append "Setting an unbound variable: " 
-                                     (symbol->string (set!->var ast)))))
+         ;; Without define, we have no way of knowing if this was a
+         ;; define or a set prior to this phase. But no big deal, since
+         ;; the set will still work in either case, so no need to check:
+         ;;
+         ;;((and (symbol? (set!->var ast))
+         ;;      (not (assoc (set!->var ast) renamed)))
+         ;;  (cyc:error (string-append "Setting an unbound variable: " 
+         ;;                            (symbol->string (set!->var ast)))))
          (else
           `(set! ,@(map (lambda (a) (convert a renamed)) (cdr ast))))))
       ((if? ast)
