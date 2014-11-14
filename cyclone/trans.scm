@@ -853,11 +853,11 @@
 (define (alpha-convert ast)
 ;TODO: 
 ; - clean this up, delete dead code, etc
-; - remove (define) code from free-vars
-; - figure some way of inserting built-in def's
+; - figure some way of inserting built-in def's (EG: not)
 ; - look at union/difference - is there a way to optimize them?
   (define (find-free-variables ast)
     (difference (free-vars ast) (built-in-syms)))
+
   (define (find-bound-variables ast) 
     (difference (free-vars ast #t) (built-in-syms)))
 
