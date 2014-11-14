@@ -100,10 +100,13 @@
 ;          proc))))
 
 ;; JAE - Testing, should work both with cyclone and other compilers (husk, chicken, etc)
+;;       although, that may not be possible with (app) and possibly other forms. 
 (write (eval 2 #f))
 (write (eval ''(1 2) #f))
 (write (eval ''(1 . 2) #f))
 (write (eval '(if #t 'test-ok 'test-fail) #f))
 (write (eval '(if 1 'test-ok) #f))
 (write (eval '(if #f 'test-fail 'test-ok) #f))
+(write (eval '(cons 1 2) #f)) ; TODO
+(write (eval '(+ 1 2) #f)) ; TODO
 
