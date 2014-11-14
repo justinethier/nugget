@@ -54,8 +54,7 @@
 
   (set! input-program 
     (alpha-convert
-      (initialize-top-level-vars 
-        input-program)))
+        input-program))
   (trace:info "---------------- after alpha conversion:")
   (trace:info input-program) ;pretty-print
 

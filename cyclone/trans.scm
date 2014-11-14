@@ -352,6 +352,21 @@
          (> (length var) 0)
          (symbol? (car var)))))
 
+(define (define->lambda exp)
+  (cond
+    ((define-lambda? exp)
+     (let ((var (caadr exp))
+           (args (cdadr exp))
+           (body (cddr exp)))
+       `(define ,var (lambda ,args ,body))))
+    (else exp)))
+
+(define eval (lambda (exp env)
+  ((analyze exp) env)))
+
+(define (var args) body)
+(define var (lambda (args) body))
+
 ; define->var : define-exp -> var
 (define (define->var exp)
   (cond
@@ -685,43 +700,38 @@
 ;; Syntactic analysis.
 
 ; free-vars : exp -> sorted-set[var]
-(define (free-vars exp)
-  (cond
-    ; Core forms:
-    ((const? exp)    '())
-    ((prim? exp)     '())    
-    ((quote? exp)    '())    
-    ((ref? exp)      (list exp))
-    ((lambda? exp)   (difference (reduce union (map free-vars (lambda->exp exp)) '())
-                                 (lambda->formals exp)))
-    ((if? exp)       (union (free-vars (if->condition exp))
-                            (union (free-vars (if->then exp))
-                                   (free-vars (if->else exp)))))
-    ((define? exp)     (union (list (define->var exp)) 
-                            (free-vars (define->exp exp))))
-    ((set!? exp)     (union (list (set!->var exp)) 
-                            (free-vars (set!->exp exp))))
-    
-    ; Sugar:
-    ((let? exp)      (free-vars (let=>lambda exp)))
-    ((letrec? exp)   not-handled)
-    ((begin? exp)    (reduce union (map free-vars (begin->exps exp)) '()))
+(define (free-vars ast . opts)
+  (define bound-only? 
+    (and (not (null? opts))
+         (car opts)))
 
-    ; IR (1):
-    ((cell-get? exp)  (free-vars (cell-get->cell exp)))
-    ((cell? exp)      (free-vars (cell->value exp)))
-    ((set-cell!? exp) (union (free-vars (set-cell!->cell exp))
-                             (free-vars (set-cell!->value exp))))
-    
-    ; IR (2):
-    ((closure? exp)   (union (free-vars (closure->lam exp))
-                             (free-vars (closure->env exp))))
-    ((env-make? exp)  (reduce union (map free-vars (env-make->values exp)) '()))
-    ((env-get? exp)   (free-vars (env-get->env exp)))
-
-    ; Application:
-    ((app? exp)       (reduce union (map free-vars exp) '()))
-    (else             (error "unknown expression: " exp))))
+  (define (search exp)
+    (cond
+      ; Core forms:
+      ((const? exp)    '())
+      ((prim? exp)     '())    
+      ((quote? exp)    '())    
+      ((ref? exp)      (if bound-only? '() (list exp)))
+      ((lambda? exp)   
+        (difference (reduce union (map search (lambda->exp exp)) '())
+                    (lambda->formals exp)))
+      ((if? exp)       (union (search (if->condition exp))
+                              (union (search (if->then exp))
+                                     (search (if->else exp)))))
+;; TODO: inefficient to keep doing define->lambda conversions here!!
+;;  ideally want to restructure rest of compiler to avoid having
+;;  raw defines being sent to this function
+      ((define? exp)
+       (if (define-lambda? exp)
+           (search (define->lambda exp))
+           (union (list (define->var exp)) 
+                  (search (define->exp exp)))))
+      ((set!? exp)     (union (list (set!->var exp)) 
+                              (search (set!->exp exp))))
+      ; Application:
+      ((app? exp)       (reduce union (map search exp) '()))
+      (else             (error "unknown expression: " exp))))
+  (search ast))
 
 
 
@@ -834,33 +844,63 @@
     ((app? exp)      (map wrap-mutables exp))
     (else            (error "unknown expression type: " exp))))
 
-;; Initialize top-level variables
-(define (initialize-top-level-vars ast)
-  (let ((fv (filter 
-              (lambda (v) (not (eq? 'call/cc v)))
-              (free-vars ast))))
-     (if (> (length fv) 0)
-        ;; Free variables found, set initial values
-        `((lambda ,fv ,ast)
-           ,@(map (lambda (_) #f) fv))
-         ast)))
-
 ;; Alpha conversion
 ;; (aka alpha renaming)
 ;;
 ;; This phase is intended to rename identifiers to preserve lexical scoping
+;;
+;; TODO: does not properly handle renaming builtin functions, would probably need to
+;; pass that renaming information downstream
 (define (alpha-convert ast)
+  (define (find-free-variables ast)
+    (filter 
+      (lambda (v) (not (eq? 'call/cc v)))
+      (free-vars ast)))
+  (define (find-bound-variables ast)
+    (filter 
+      (lambda (v) (not (eq? 'call/cc v)))
+      (free-vars ast #t)))
+
+  ;; Initialize top-level variables
+  (define (initialize-top-level-vars ast fv)
+    (if (> (length fv) 0)
+       ;; Free variables found, set initial values
+       `((lambda ,fv ,ast)
+          ,@(map (lambda (_) #f) fv))
+        ast))
+
+  (define (builtin? sym)
+    ;; TODO: does this need long-term improvements to 
+    ;;       fully handle lexical scoping??
+    (member sym '(lambda if set! define quote call/cc)))
+
+;  (define *bound-vars* '())
+;  (define (append-bound-vars sym)
+;    (if (not (member sym *bound-vars*))
+;      (set! *bound-vars* (cons sym *bound-vars*))))
+
   (define (convert ast renamed)
     (cond
       ((const? ast) ast)
       ((quote? ast) ast)
       ((ref? ast)
        (let ((renamed (assoc ast renamed)))
-         (if renamed
-             (cdr renamed)
-             ast)))
+         (cond
+          (renamed 
+            (cdr renamed))
+          ((builtin? ast) 
+            ast)
+          (else
+            (cyc:error (string-append 
+                          "Unbound variable: "
+                          (symbol->string ast)))))))
       ((define? ast)
        (cond
+         ;; TODO: should consider move define->lambda conversion outside
+         ;;       of alpha convert, since it makes free-vars less efficient
+         ;; unfortunately, that would also change the error checking around
+         ;; setting an unbound variable, if we want to keep that (and maybe
+         ;; it is reasonble to not have it at all)
          ((define-lambda? ast)
           (let* ((args (cdadr ast))
                  (a-lookup (map (lambda (a) (cons a (gensym a))) args)))
@@ -898,7 +938,13 @@
        (map (lambda (a) (convert a renamed)) ast))
       (else
         (error "unhandled expression: " ast))))
-  (convert ast (list)))
+  (let* ((fv (find-free-variables ast))
+         (bound-vars (find-bound-variables ast))
+         (result (convert (initialize-top-level-vars ast fv) (list))))
+;    (write `(DEBUG fv: ,fv))
+;    (write `(DEBUG bound-vars ,bound-vars))
+;    (write `(DEBUG diff ,(difference fv bound-vars)))
+    result))
 
 ;; CPS conversion 
 ;;
@@ -1132,3 +1178,4 @@
 ;                       (if get? value (set! value new-value))))
 ;(define (set-cell! c v) (c #f v))
 ;(define (cell-get c) (c #t #t))
+
