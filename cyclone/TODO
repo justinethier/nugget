@@ -1,7 +1,3 @@
-- Active TODO items
- - Add (not) support, do more if testing (IE, with symbols)
- - See TODO at top of alpha-convert function in trans.scm
-
 - Add eval support. 
     - moving forward with meta-circular evaluator from SICP. Let's try to add more cases and code, and see how far it can be pushed.
     - also want to try integrating it with trans somehow. IE, if eval is a free var, then add eval code to the compiled program.
