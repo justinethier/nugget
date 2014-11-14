@@ -361,12 +361,6 @@
        `(define ,var (lambda ,args ,body))))
     (else exp)))
 
-(define eval (lambda (exp env)
-  ((analyze exp) env)))
-
-(define (var args) body)
-(define var (lambda (args) body))
-
 ; define->var : define-exp -> var
 (define (define->var exp)
   (cond
