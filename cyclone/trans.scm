@@ -7,6 +7,14 @@
 ;; various utility functions used by the compiler.
 ;;
 
+;; Built-in functions
+;; TODO: relocate these somewhere else, like a lib.scm!!!
+(define *built-ins*
+  '((not . (define (not x) (if x #f #t)))))
+(define (built-in-syms)
+  (cons 'call/cc
+        (map (lambda (b) (car b)) *built-ins*)))
+
 ;; Tuning
 (define *do-code-gen* #t) ; Generate C code?
 
@@ -846,19 +854,17 @@
 ;; TODO: does not properly handle renaming builtin functions, would probably need to
 ;; pass that renaming information downstream
 (define (alpha-convert ast)
-TODO: 
- - move define->lambda to after (or part) of syntax expansion
-   negates throwing an error for (set!)'ing an unbound var, but oh well
- - clean this up, delete dead code, etc
- - remove (define) code from free-vars
+;TODO: 
+; - move define->lambda to after (or part) of syntax expansion
+;   negates throwing an error for (set!)'ing an unbound var, but oh well
+; - clean this up, delete dead code, etc
+; - remove (define) code from free-vars
+; - figure some way of inserting built-in def's
+; - look at union/difference - is there a way to optimize them?
   (define (find-free-variables ast)
-    (filter 
-      (lambda (v) (not (eq? 'call/cc v)))
-      (free-vars ast)))
-  (define (find-bound-variables ast)
-    (filter 
-      (lambda (v) (not (eq? 'call/cc v)))
-      (free-vars ast #t)))
+    (difference (free-vars ast) (built-in-syms)))
+  (define (find-bound-variables ast) 
+    (difference (free-vars ast #t) (built-in-syms)))
 
   ;; Initialize top-level variables
   (define (initialize-top-level-vars ast fv)
