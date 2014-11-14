@@ -48,6 +48,8 @@
   (trace:info "---------------- input program:")
   (trace:info input-program) ;pretty-print
   
+  (set! input-program (add-libs input-program))
+
   (set! input-program (expand input-program))
   (trace:info "---------------- after macro expansion:")
   (trace:info input-program) ;pretty-print

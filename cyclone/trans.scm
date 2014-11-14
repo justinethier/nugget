@@ -9,12 +9,20 @@
 
 ;; Built-in functions
 ;; TODO: relocate these somewhere else, like a lib.scm!!!
-(define *built-ins*
-  ;'())
-  '((not . (define (not x) (if x #f #t)))))
+(define *built-ins* '(
+  (define (not x) (if x #f #t)))
+)
+
 (define (built-in-syms)
-  (cons 'call/cc
-        (map (lambda (b) (car b)) *built-ins*)))
+  '(call/cc))
+
+(define (add-libs ast)
+  (cond
+    ((begin? ast)
+     `(begin 
+        ,@(append *built-ins* (cdr ast))))
+    (else
+      (error "Unexpected input program:" ast))))
 
 ;; Tuning
 (define *do-code-gen* #t) ; Generate C code?
@@ -855,11 +863,8 @@
 ; - clean this up, delete dead code, etc
 ; - figure some way of inserting built-in def's (EG: not)
 ; - look at union/difference - is there a way to optimize them?
-  (define (find-free-variables ast)
-    (difference (free-vars ast) (built-in-syms)))
-
-  (define (find-bound-variables ast) 
-    (difference (free-vars ast #t) (built-in-syms)))
+  (define (find-free-variables ast) (free-vars ast))
+  (define (find-bound-variables ast) (free-vars ast #t))
 
   ;; Initialize top-level variables
   (define (initialize-top-level-vars ast fv)
@@ -922,11 +927,22 @@
       (else
         (error "unhandled expression: " ast))))
   (let* ((fv (find-free-variables ast))
+         ;; set! and lambda vars
          (bound-vars (find-bound-variables ast))
-         (unbound-vars (difference fv bound-vars)))
-    (if (> (length unbound-vars) 0)
-      (error "Unbound variable(s)" unbound-vars)
-      (convert (initialize-top-level-vars ast fv) (list)))))
+         ;; vars never bound in prog, but could be built-in
+         (unbound-vars (difference fv bound-vars))
+         ;; vars we know nothing about - error!
+         (unknown-vars (difference unbound-vars (built-in-syms)))
+         )
+    (cond
+     ((> (length unknown-vars) 0)
+      (error "Unbound variable(s)" unknown-vars))
+     (else
+      (convert 
+        (initialize-top-level-vars 
+          ast 
+          (difference fv (built-in-syms)))
+        (list))))))
 
 ;; CPS conversion 
 ;;
