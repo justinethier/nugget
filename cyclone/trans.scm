@@ -934,11 +934,10 @@
         (error "unhandled expression: " ast))))
   (let* ((fv (find-free-variables ast))
          (bound-vars (find-bound-variables ast))
-         (result (convert (initialize-top-level-vars ast fv) (list))))
-;    (write `(DEBUG fv: ,fv))
-;    (write `(DEBUG bound-vars ,bound-vars))
-;    (write `(DEBUG diff ,(difference fv bound-vars)))
-    result))
+         (unbound-vars (difference fv bound-vars)))
+    (if (> (length unbound-vars) 0)
+      (error "Unbound variable(s)" unbound-vars)
+      (convert (initialize-top-level-vars ast fv) (list)))))
 
 ;; CPS conversion 
 ;;
