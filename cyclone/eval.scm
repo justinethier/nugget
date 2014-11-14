@@ -12,6 +12,7 @@
 
 (define (self-evaluating? exp)
   (cond ((number? exp) #t)
+        ((boolean? exp) #t)
         ;((string? exp) true)
         (else #f)))
 
@@ -98,11 +99,11 @@
 ;          "Unknown procedure type -- EXECUTE-APPLICATION"
 ;          proc))))
 
-;; JAE - Testing
+;; JAE - Testing, should work both with cyclone and other compilers (husk, chicken, etc)
 (write (eval 2 #f))
 (write (eval ''(1 2) #f))
 (write (eval ''(1 . 2) #f))
-(write (eval '(if #t 'test-ok 'test-fail)))
-;(write (eval '(if 1 'test-ok)))
-;(write (eval '(if #f 'test-fail 'test-ok)))
+(write (eval '(if #t 'test-ok 'test-fail) #f))
+(write (eval '(if 1 'test-ok) #f))
+(write (eval '(if #f 'test-fail 'test-ok) #f))
 
