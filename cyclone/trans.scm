@@ -859,13 +859,6 @@
 ;; TODO: does not properly handle renaming builtin functions, would probably need to
 ;; pass that renaming information downstream
 (define (alpha-convert ast)
-;TODO: 
-; - clean this up, delete dead code, etc
-; - figure some way of inserting built-in def's (EG: not)
-; - look at union/difference - is there a way to optimize them?
-  (define (find-free-variables ast) (free-vars ast))
-  (define (find-bound-variables ast) (free-vars ast #t))
-
   ;; Initialize top-level variables
   (define (initialize-top-level-vars ast fv)
     (if (> (length fv) 0)
@@ -873,11 +866,6 @@
        `((lambda ,fv ,ast)
           ,@(map (lambda (_) #f) fv))
         ast))
-
-  (define (builtin? sym)
-    ;; TODO: does this need long-term improvements to 
-    ;;       fully handle lexical scoping??
-    (member sym '(lambda if set! define quote call/cc)))
 
   (define (convert ast renamed)
     (cond
@@ -889,26 +877,11 @@
           (renamed 
             (cdr renamed))
           (else ast))))
-; TODO: a good idea, but for now unbound checking happens before alpha convert
-; should delete this as obsolete code down the road
-;          ((builtin? ast) 
-;            ast)
-;          (else
-;            (cyc:error (string-append 
-;                          "Unbound variable: "
-;                          (symbol->string ast)))))))
       ((set!? ast)
-       (cond
          ;; Without define, we have no way of knowing if this was a
          ;; define or a set prior to this phase. But no big deal, since
-         ;; the set will still work in either case, so no need to check:
-         ;;
-         ;;((and (symbol? (set!->var ast))
-         ;;      (not (assoc (set!->var ast) renamed)))
-         ;;  (cyc:error (string-append "Setting an unbound variable: " 
-         ;;                            (symbol->string (set!->var ast)))))
-         (else
-          `(set! ,@(map (lambda (a) (convert a renamed)) (cdr ast))))))
+         ;; the set will still work in either case, so no need to check
+         `(set! ,@(map (lambda (a) (convert a renamed)) (cdr ast))))
       ((if? ast)
        `(if ,@(map (lambda (a) (convert a renamed)) (cdr ast))))
       ((prim-call? ast)
@@ -926,9 +899,10 @@
        (map (lambda (a) (convert a renamed)) ast))
       (else
         (error "unhandled expression: " ast))))
-  (let* ((fv (find-free-variables ast))
-         ;; set! and lambda vars
-         (bound-vars (find-bound-variables ast))
+
+  (let* ((fv (free-vars ast))
+         ;; Only find set! and lambda vars
+         (bound-vars (free-vars ast #t))
          ;; vars never bound in prog, but could be built-in
          (unbound-vars (difference fv bound-vars))
          ;; vars we know nothing about - error!
@@ -938,11 +912,10 @@
      ((> (length unknown-vars) 0)
       (error "Unbound variable(s)" unknown-vars))
      (else
-      (convert 
-        (initialize-top-level-vars 
-          ast 
-          (difference fv (built-in-syms)))
-        (list))))))
+      (convert (initialize-top-level-vars 
+                 ast 
+                 (difference fv (built-in-syms)))
+               (list))))))
 
 ;; CPS conversion 
 ;;
