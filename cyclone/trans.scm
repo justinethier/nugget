@@ -846,6 +846,11 @@
 ;; TODO: does not properly handle renaming builtin functions, would probably need to
 ;; pass that renaming information downstream
 (define (alpha-convert ast)
+TODO: 
+ - move define->lambda to after (or part) of syntax expansion
+   negates throwing an error for (set!)'ing an unbound var, but oh well
+ - clean this up, delete dead code, etc
+ - remove (define) code from free-vars
   (define (find-free-variables ast)
     (filter 
       (lambda (v) (not (eq? 'call/cc v)))
