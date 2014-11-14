@@ -882,12 +882,15 @@
          (cond
           (renamed 
             (cdr renamed))
-          ((builtin? ast) 
-            ast)
-          (else
-            (cyc:error (string-append 
-                          "Unbound variable: "
-                          (symbol->string ast)))))))
+          (else ast))))
+; TODO: a good idea, but for now unbound checking happens before alpha convert
+; should delete this as obsolete code down the road
+;          ((builtin? ast) 
+;            ast)
+;          (else
+;            (cyc:error (string-append 
+;                          "Unbound variable: "
+;                          (symbol->string ast)))))))
       ((define? ast)
        (cond
          ;; TODO: should consider move define->lambda conversion outside
