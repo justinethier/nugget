@@ -1,3 +1,15 @@
+- Add native apply support for primitives
+  - do we need to create a table of primitives, like husk?
+    might allow for more efficient comparisons than the stupid string cmp's
+    that are required if we use symbols to denote primitives (which also 
+    breaks lexical scoping)
+  - can an apply function return n_tag where that is the largest of the tag
+    types? would that work? that way can call/return from apply and have
+    everything work without additional allocations on either side. want
+    something simple, fast, etc.
+  - need to figure this out before continuing with eval, since apply is
+    critical for the interpreter (otherwise how to call primitives?)
+
 - Add eval support. 
     - moving forward with meta-circular evaluator from SICP. Let's try to add more cases and code, and see how far it can be pushed.
     - also want to try integrating it with trans somehow. IE, if eval is a free var, then add eval code to the compiled program.
