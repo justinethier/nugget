@@ -28,8 +28,8 @@
       #f))
 
 (define (application? exp) (pair? exp))
-;(define (operator exp) (car exp))
-;(define (operands exp) (cdr exp))
+(define (operator exp) (car exp))
+(define (operands exp) (cdr exp))
 ;(define (no-operands? ops) (null? ops))
 ;(define (first-operand ops) (car ops))
 ;(define (rest-operands ops) (cdr ops))
@@ -57,7 +57,7 @@
        ; TODO: ideally, macro system would handle these two
        ;((begin? exp) (analyze-sequence (begin-actions exp)))
        ;((cond? exp) (analyze (cond->if exp)))
-        ;((application? exp) (analyze-application exp))
+        ((application? exp) (analyze-application exp))
         (else
         ; (error "Unknown expression type -- ANALYZE" exp))))
          (lambda () 'TODO-unknown-exp-type)))) ; JAE - this is a debug line
@@ -78,26 +78,33 @@
           (cproc env)
           (aproc env)))))
 
-;(define (analyze-application exp)
-;  (let ((fproc (analyze (operator exp)))
-;        (aprocs (map analyze (operands exp))))
-;    (lambda (env)
-;      (execute-application (fproc env)
-;                           (map (lambda (aproc) (aproc env))
-;                                aprocs)))))
-;(define (execute-application proc args)
-;  (cond ((primitive-procedure? proc)
-;         (apply-primitive-procedure proc args))
+(define (analyze-application exp)
+  (let ((fproc (analyze (operator exp)))
+        (aprocs (operands exp))) ; TODO: (map analyze (operands exp))))
+    (lambda (env)
+      (execute-application (fproc env)
+; TODO:                           (map (lambda (aproc) (aproc env))
+        aprocs)))) ;; TODO: temporary testing w/constants
+; TODO:                                aprocs)))))
+(define (execute-application proc args)
+  (cond ((primitive-procedure? proc)
+         (apply-primitive-procedure proc args))
 ;; TODO:
 ;        ;((compound-procedure? proc)
 ;        ; ((procedure-body proc)
 ;        ;  (extend-environment (procedure-parameters proc)
 ;        ;                      args
 ;        ;                      (procedure-environment proc))))
-;        (else
+        (else
+#f))) ;; TODO: this is a temporary debug line
 ;         (error
 ;          "Unknown procedure type -- EXECUTE-APPLICATION"
 ;          proc))))
+
+;; TODO: temporary testing
+(define (primitive-procedure? proc)
+  (equal? proc 'cons))
+
 
 ;; JAE - Testing, should work both with cyclone and other compilers (husk, chicken, etc)
 ;;       although, that may not be possible with (app) and possibly other forms. 
@@ -108,5 +115,5 @@
 (write (eval '(if 1 'test-ok) #f))
 (write (eval '(if #f 'test-fail 'test-ok) #f))
 (write (eval '(cons 1 2) #f)) ; TODO
-(write (eval '(+ 1 2) #f)) ; TODO
+;(write (eval '(+ 1 2) #f)) ; TODO
 
