@@ -247,6 +247,10 @@ static jmp_buf jmp_main; /* Where to jump to. */
 
 defsymbol(f);
 defsymbol(t);
+defsymbol(cons);
+defsymbol(length);
+defsymbol(car);
+defsymbol(cdr);
 
 //static object quote_list_f;  /* Initialized by main to '(f) */
 //static object quote_list_t;  /* Initialized by main to '(t) */

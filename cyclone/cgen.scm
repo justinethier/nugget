@@ -537,8 +537,12 @@
 
 (define *symbols* '())
 
+; These are (at least for now) preallocated by the runtime
+(define *reserved-symbols* '(t f cons length car cdr))
+
 (define (allocate-symbol sym)
-  (if (not (member sym *symbols*))
+  (if (and (not (member sym *symbols*))
+           (not (member sym *reserved-symbols*)))
       (set! *symbols* (cons sym *symbols*))))
 
 ;; Lambda compilation.
