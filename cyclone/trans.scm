@@ -303,6 +303,7 @@
      <
      >=
      <=
+     apply
      %halt
      cons
      cell-get

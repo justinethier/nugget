@@ -333,6 +333,7 @@
             ((eq? p '<)       "__num_lt")
             ((eq? p '>=)      "__num_gte")
             ((eq? p '<=)      "__num_lte")
+            ((eq? p 'apply)     "apply")
             ((eq? p '%halt)     "__halt")
             ((eq? p 'display)   "prin1")
             ((eq? p 'write)     "write")
@@ -380,6 +381,7 @@
             (else
               (error "unhandled primitive: " p)))))
     (cond
+(error "TODO: the day has arrived, see apply")
      ;; TODO: this is crap. if there is another function that requires a
      ;; traditional c variable assignment (IE, obj x = y) then generalize
      ;; all of this...
@@ -401,7 +403,7 @@
 ; Does primitive create a c variable?
 (define (prim/cvar? exp)
     (and (prim? exp)
-         (member exp '(+ - * / cons length cell))))
+         (member exp '(+ - * / apply cons length cell))))
 
 ; c-compile-ref : ref-exp -> string
 (define (c-compile-ref exp)

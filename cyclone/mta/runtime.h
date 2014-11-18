@@ -430,24 +430,35 @@ static void __halt(object obj) {
 #define __div(c,x,y) integer_type c; c.tag = integer_tag; c.value = (((integer_type *)(x))->value / ((integer_type *)(y))->value);
 
 
-static cons_type apply(object func, object args){
+// TODO: experimental apply support
+typedef union {
+  cons_type cons_t;
+  symbol_type symbol_t;
+  integer_type integer_t;
+  double_type double_t;
+} common_type;
+static common_type apply(object func, object args){
+  common_type result;
   switch(type_of(func)) {
     case symbol_tag:
       if (func == quote_cons) {
           make_cons(c, car(args), cadr(args));
-          return c;
+          result.cons_t = c;
       } else if (func == quote_length) {
-
+          result.integer_t = Cyc_length(car (args));
       } else {
           printf("Unrecognized primitive function %s\n", ((symbol_type *)func)->pname);
           exit(1);
       }
       break;
     default:
-      printf("Invalid object type %d\n", type_of(func));
+      printf("Invalid object type %ld\n", type_of(func));
       exit(1);
   }
+  return result;
 }
+// END apply
+
 
 static char *transport(x) char *x;
 /* Transport one object.  WARNING: x cannot be nil!!! */
