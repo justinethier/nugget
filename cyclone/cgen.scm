@@ -322,7 +322,7 @@
 
 ;; c-compile-prim : prim-exp -> string
 (define (c-compile-prim p)
-  (let ((c-func
+  (let* ((c-func
           (cond
             ((eq? p '+)       "__sum")
             ((eq? p '-)       "__sub")
@@ -379,18 +379,18 @@
             ((eq? p 'cell-get)  "cell_get")
             ((eq? p 'set-cell!) "cell_set")
             (else
-              (error "unhandled primitive: " p)))))
+              (error "unhandled primitive: " p))))
+         (c-var-assign 
+            (lambda (type)
+              (let ((cv-name (mangle (gensym 'c))))
+                (c-code/vars 
+                  (string-append "&" cv-name)
+                  (list
+                    (string-append 
+                      type " " cv-name " = " c-func "(")))))))
     (cond
-(error "TODO: the day has arrived, see apply")
-     ;; TODO: this is crap. if there is another function that requires a
-     ;; traditional c variable assignment (IE, obj x = y) then generalize
-     ;; all of this...
-     ((eq? p 'length)
-        (let ((cv-name (mangle (gensym 'c))))
-           (c-code/vars 
-            (string-append "&" cv-name)
-            (list
-                (string-append "integer_type " cv-name " = " c-func "(")))))
+     ((prim/c-var-assign p)
+      (c-var-assign (prim/c-var-assign p)))
      ((prim/cvar? p)
         (let ((cv-name (mangle (gensym 'c))))
            (c-code/vars 
@@ -399,6 +399,14 @@
                 (string-append c-func "(" cv-name)))))
      (else
         (c-code (string-append c-func "("))))))
+
+;; Determine if primitive assigns (allocates) a c variable
+;; EG: int v = prim();
+(define (prim/c-var-assign p)
+  (cond
+    ((eq? p 'length) "integer_type")
+    ((eq? p 'apply)  "common_type")
+    (else #f)))
 
 ; Does primitive create a c variable?
 (define (prim/cvar? exp)
@@ -469,7 +477,7 @@
                   (c:allocs c-args) ;; fun alloc depends upon arg allocs
                   (list (string-append 
                     (car (c:allocs c-fun)) 
-                         (if (eq? fun 'length) "" "," ) ; TODO: a special case, generalize this
+                         (if (prim/c-var-assign fun) "" ",") ; Allocating C var
                          (c:body c-args) ");"))))
               ;; Args stay with body
               (c:append
