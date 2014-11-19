@@ -239,7 +239,10 @@
   (cond
     ; Core forms:
     ((const? exp)       (c-compile-const exp))
-    ((prim?  exp)       (c-compile-prim exp))
+    ((prim?  exp)       
+      ;; TODO: This is a hack for apply, the real code should
+      ;;       use some variable-based mechanism
+      (c-compile-const exp))
     ((ref?   exp)       (c-compile-ref exp))
     ((quote? exp)       (c-compile-quote exp))
     ((if? exp)          (c-compile-if exp append-preamble cont))
@@ -466,7 +469,7 @@
 
         ((prim? fun)
          (let ((c-fun 
-                (c-compile-exp fun append-preamble cont))
+                (c-compile-prim fun))
                (c-args
                 (c-compile-args args append-preamble "" cont)))
             (if (prim/cvar? fun)
