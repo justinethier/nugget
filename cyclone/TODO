@@ -11,6 +11,12 @@
   for example, how to store the + symbol, how to differentiate #t and 't etc.
   perhaps could use a malloc'd table for this? do want the lookups to be fast - IE, integer (pointer) comparisons and NOT string comparisons (those are unacceptable for symbols)
 
+- Notes on implementing variables
+
+ * could maintain env's in the interpreted code, and perform operations there to lookup vars. If a lookup fails though, would have to then fall back to looking in the compiled code. The compiler would have to (only if eval is used) set aside data to allow a reference back to vars in this case. Also, this becomes tricky because a var may not even be used, so it might not be added to any closures. There may have to be special analysis done if eval is used.
+ * chicken does this, obviously. could map var ==> rename (how to know?) and then look it up in a C-based symbol table 
+ * lexical addressing (see chapter 5 of SICP) can be used to find a variable in recursive env's, so you can access it directly instead of having to recursively traverse environments.
+
 - Add eval support. 
     - moving forward with meta-circular evaluator from SICP. Let's try to add more cases and code, and see how far it can be pushed.
     - also want to try integrating it with trans somehow. IE, if eval is a free var, then add eval code to the compiled program.
