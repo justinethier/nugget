@@ -134,6 +134,8 @@
 ;          "Unknown procedure type -- EXECUTE-APPLICATION"
 ;          proc))))
 
+TODO: operations on environments
+
 ;; TODO: temporary testing
 ;; also, it would be nice to pass around something other than
 ;; symbols for primitives. could the runtime inject something into the env?
