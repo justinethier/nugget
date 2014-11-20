@@ -68,28 +68,131 @@
 ;(define (first-operand ops) (car ops))
 ;(define (rest-operands ops) (cdr ops))
 
-; TODO: add supported primitives. also, this may not be the
-; best place for this??
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Evaluator data structures
+
+(define (make-procedure parameters body env)
+  (list 'procedure parameters body env))
+(define (compound-procedure? p)
+  (tagged-list? p 'procedure))
+(define (procedure-parameters p) (cadr p))
+(define (procedure-body p) (caddr p))
+(define (procedure-environment p) (cadddr p))
+
+;; Environments
+(define (enclosing-environment env) (cdr env))
+(define (first-frame env) (car env))
+(define the-empty-environment '())
+
+(define (make-frame variables values)
+  (cons variables values))
+(define (frame-variables frame) (car frame))
+(define (frame-values frame) (cdr frame))
+(define (add-binding-to-frame! var val frame)
+  (set-car! frame (cons var (car frame)))
+  (set-cdr! frame (cons val (cdr frame))))
+
+(define (extend-environment vars vals base-env)
+  (if (= (length vars) (length vals))
+      (cons (make-frame vars vals) base-env)
+      (if (< (length vars) (length vals))
+          (error "Too many arguments supplied" vars vals)
+          (error "Too few arguments supplied" vars vals))))
+
+(define (lookup-variable-value var env)
+  (define (env-loop env)
+    (define (scan vars vals)
+      (cond ((null? vars)
+             (env-loop (enclosing-environment env)))
+            ((eq? var (car vars))
+             (car vals))
+            (else (scan (cdr vars) (cdr vals)))))
+    (if (eq? env the-empty-environment)
+        (error "Unbound variable" var)
+        (let ((frame (first-frame env)))
+          (scan (frame-variables frame)
+                (frame-values frame)))))
+  (env-loop env))
+
+(define (set-variable-value! var val env)
+  (define (env-loop env)
+    (define (scan vars vals)
+      (cond ((null? vars)
+             (env-loop (enclosing-environment env)))
+            ((eq? var (car vars))
+             (set-car! vals val))
+            (else (scan (cdr vars) (cdr vals)))))
+    (if (eq? env the-empty-environment)
+        (error "Unbound variable -- SET!" var)
+        (let ((frame (first-frame env)))
+          (scan (frame-variables frame)
+                (frame-values frame)))))
+  (env-loop env))
+
+(define (define-variable! var val env)
+  (let ((frame (first-frame env)))
+    (define (scan vars vals)
+      (cond ((null? vars)
+             (add-binding-to-frame! var val frame))
+            ((eq? var (car vars))
+             (set-car! vals val))
+            (else (scan (cdr vars) (cdr vals)))))
+    (scan (frame-variables frame)
+          (frame-values frame))))
+
 (define (primitive-procedure? proc)
- #f)
+  (tagged-list? proc 'primitive))
 
-; TODO: 
-;(define (apply-primitive-procedure proc args)
-;  (apply-in-underlying-scheme
-;   (primitive-implementation proc) args))
+(define (primitive-implementation proc) (cadr proc))
 
-;TODO: operations on environments
+(define primitive-procedures
+  (list (list 'car car)
+        (list 'cdr cdr)
+        (list 'cons cons)
+        (list 'null? null?)
+        ; TODO: <more primitives>
+        ))
+
+(define (primitive-procedure-names)
+  (map car
+       primitive-procedures))
+
+(define (primitive-procedure-objects)
+  (map (lambda (proc) (list 'primitive (cadr proc)))
+       primitive-procedures))
+
+(define (apply-primitive-procedure proc args)
+  (apply ;apply-in-underlying-scheme
+   (primitive-implementation proc) args))
 
 ;; TODO: temporary testing
 ;; also, it would be nice to pass around something other than
 ;; symbols for primitives. could the runtime inject something into the env?
 ;; of course that is a problem for stuff like make_cons, that is just a
 ;; C macro...
-(define (primitive-procedure? proc)
-  (equal? proc 'cons))
+;; (define (primitive-procedure? proc)
+;;   (equal? proc 'cons))
+
+(define (setup-environment)
+  (let ((initial-env
+         (extend-environment (primitive-procedure-names)
+                             (primitive-procedure-objects)
+                             the-empty-environment)))
+    initial-env))
+(define *global-environment* (setup-environment))
+
+(define (loop)
+  (display (eval (read) *global-environment*))
+  (display (newline))
+  (loop))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Improvement from section 4.1.7 - Separate syntactic analysis from execution
+;;
+;; TODO: need to finish this section
+;; TODO: see 4.1.6  Internal Definitions
+;;
 (define (analyze exp)
   (cond ((self-evaluating? exp) 
          (analyze-self-evaluating exp))
@@ -147,17 +250,16 @@
 ;          "Unknown procedure type -- EXECUTE-APPLICATION"
 ;          proc))))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; JAE - Testing, should work both with cyclone and other compilers (husk, chicken, etc)
 ;;       although, that may not be possible with (app) and possibly other forms. 
-(define *global-environment* '())
-;(write (eval 2 *global-environment*))
-;(write (eval ''(1 2) *global-environment*))
-;(write (eval ''(1 . 2) *global-environment*))
-;(write (eval '(if #t 'test-ok 'test-fail) *global-environment*))
-;(write (eval '(if 1 'test-ok) *global-environment*))
-;(write (eval '(if #f 'test-fail 'test-ok) *global-environment*))
-(write (eval '(cons 1 2) *global-environment*)) ; TODO
+(write (eval 2 *global-environment*))
+(write (eval ''(1 2) *global-environment*))
+(write (eval ''(1 . 2) *global-environment*))
+(write (eval '(if #t 'test-ok 'test-fail) *global-environment*))
+(write (eval '(if 1 'test-ok) *global-environment*))
+(write (eval '(if #f 'test-fail 'test-ok) *global-environment*))
+(loop)
+;(write (eval '(cons 1 2) *global-environment*)) ; TODO
 ;(write (eval '(+ 1 2) *global-environment*)) ; TODO
 
