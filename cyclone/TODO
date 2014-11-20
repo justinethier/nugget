@@ -1,7 +1,9 @@
-- Add set-car! and set-cdr! - as primitive functions?
-- Add error - tricky in a way because it takes a variable number of args, which has not been done yet
-- Other stuff required by eval.scm:
-  cond, let, map,  
+Add stuff required for eval:
+ - Add set-car! and set-cdr! - as primitive functions?
+ - Add error - tricky in a way because it takes a variable number of args, which has not been done yet
+ - Other stuff required by eval.scm:
+   cond, let, map,  
+
 
 - Add native apply support for primitives
   - do we need to create a table of primitives, like husk?
