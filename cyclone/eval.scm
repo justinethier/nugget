@@ -5,6 +5,8 @@
 (define (eval exp env)
   ((analyze exp) env))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Expression handling helper functions
 (define (tagged-list? exp tag)
   (if (pair? exp)
       (equal? (car exp) tag)
@@ -76,6 +78,17 @@
 ;  (apply-in-underlying-scheme
 ;   (primitive-implementation proc) args))
 
+;TODO: operations on environments
+
+;; TODO: temporary testing
+;; also, it would be nice to pass around something other than
+;; symbols for primitives. could the runtime inject something into the env?
+;; of course that is a problem for stuff like make_cons, that is just a
+;; C macro...
+(define (primitive-procedure? proc)
+  (equal? proc 'cons))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Improvement from section 4.1.7 - Separate syntactic analysis from execution
 (define (analyze exp)
   (cond ((self-evaluating? exp) 
@@ -134,17 +147,8 @@
 ;          "Unknown procedure type -- EXECUTE-APPLICATION"
 ;          proc))))
 
-TODO: operations on environments
 
-;; TODO: temporary testing
-;; also, it would be nice to pass around something other than
-;; symbols for primitives. could the runtime inject something into the env?
-;; of course that is a problem for stuff like make_cons, that is just a
-;; C macro...
-(define (primitive-procedure? proc)
-  (equal? proc 'cons))
-
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; JAE - Testing, should work both with cyclone and other compilers (husk, chicken, etc)
 ;;       although, that may not be possible with (app) and possibly other forms. 
 (define *global-environment* '())
