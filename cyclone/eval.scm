@@ -16,8 +16,34 @@
         ;((string? exp) true)
         (else #f)))
 
+(define (variable? exp) (symbol? exp))
+
 (define (quoted? exp)
   (tagged-list? exp 'quote))
+
+(define (assignment? exp)
+  (tagged-list? exp 'set!))
+(define (assignment-variable exp) (cadr exp))
+(define (assignment-value exp) (caddr exp))
+
+(define (definition? exp)
+  (tagged-list? exp 'define))
+(define (definition-variable exp)
+  (if (symbol? (cadr exp))
+      (cadr exp)
+      (caadr exp)))
+(define (definition-value exp)
+  (if (symbol? (cadr exp))
+      (caddr exp)
+      (make-lambda (cdadr exp)   ; formal parameters
+                   (cddr exp)))) ; body
+
+(define (lambda? exp) (tagged-list? exp 'lambda))
+(define (lambda-parameters exp) (cadr exp))
+(define (lambda-body exp) (cddr exp))
+
+(define (make-lambda parameters body)
+  (cons 'lambda (cons parameters body)))
 
 (define (if? exp) (tagged-list? exp 'if))
 (define (if-predicate exp) (cadr exp))
@@ -26,6 +52,12 @@
   (if (not (null? (cdddr exp))) ;; TODO: add (not) support
       (cadddr exp)
       #f))
+
+(define (begin? exp) (tagged-list? exp 'begin))
+(define (begin-actions exp) (cdr exp))
+(define (last-exp? seq) (null? (cdr seq)))
+(define (first-exp seq) (car seq))
+(define (rest-exps seq) (cdr seq))
 
 (define (application? exp) (pair? exp))
 (define (operator exp) (car exp))
@@ -59,8 +91,8 @@
        ;((cond? exp) (analyze (cond->if exp)))
         ((application? exp) (analyze-application exp))
         (else
-        ; (error "Unknown expression type -- ANALYZE" exp))))
-         (lambda () 'TODO-unknown-exp-type)))) ; JAE - this is a debug line
+         (error "Unknown expression type -- ANALYZE" exp))))
+         ;(lambda () 'TODO-unknown-exp-type)))) ; JAE - this is a debug line
 
 (define (analyze-self-evaluating exp)
   (lambda (env) exp))
@@ -88,7 +120,8 @@
 ; TODO:                                aprocs)))))
 (define (execute-application proc args)
   (cond ((primitive-procedure? proc)
-         (apply-primitive-procedure proc args))
+         (apply proc args))
+         ;(apply-primitive-procedure proc args))
 ;; TODO:
 ;        ;((compound-procedure? proc)
 ;        ; ((procedure-body proc)
@@ -112,12 +145,13 @@
 
 ;; JAE - Testing, should work both with cyclone and other compilers (husk, chicken, etc)
 ;;       although, that may not be possible with (app) and possibly other forms. 
-(write (eval 2 #f))
-(write (eval ''(1 2) #f))
-(write (eval ''(1 . 2) #f))
-(write (eval '(if #t 'test-ok 'test-fail) #f))
-(write (eval '(if 1 'test-ok) #f))
-(write (eval '(if #f 'test-fail 'test-ok) #f))
-(write (eval '(cons 1 2) #f)) ; TODO
-;(write (eval '(+ 1 2) #f)) ; TODO
+(define *global-environment* '())
+;(write (eval 2 *global-environment*))
+;(write (eval ''(1 2) *global-environment*))
+;(write (eval ''(1 . 2) *global-environment*))
+;(write (eval '(if #t 'test-ok 'test-fail) *global-environment*))
+;(write (eval '(if 1 'test-ok) *global-environment*))
+;(write (eval '(if #f 'test-fail 'test-ok) *global-environment*))
+(write (eval '(cons 1 2) *global-environment*)) ; TODO
+;(write (eval '(+ 1 2) *global-environment*)) ; TODO
 
