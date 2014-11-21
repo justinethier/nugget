@@ -71,6 +71,7 @@ typedef long tag_type;
 #define closureN_tag 8
 #define integer_tag 9
 #define double_tag 10
+#define string_tag 11
 
 #define nil NULL
 #define eq(x,y) (x == y)
@@ -100,11 +101,15 @@ typedef symbol_type *symbol;
 static symbol_type name##_symbol = {symbol_tag, #name, nil}; \
 static const object quote_##name = &name##_symbol
 
-/* Define numeric types (experimental) */
+/* Define numeric types */
 typedef struct {tag_type tag; int value;} integer_type;
 #define make_int(n,v) integer_type n; n.tag = integer_tag; n.value = v;
 typedef struct {tag_type tag; double value;} double_type;
 #define make_double(n,v) double_type n; n.tag = double_tag; n.value = v;
+
+/* Define string type */
+typedef struct {tag_type tag; char *str;} string_type;
+#define make_string(cv,s) string_type cv; cv.tag = string_tag; cv.str = s;
 
 /* Define cons type. */
 
@@ -281,6 +286,9 @@ static object prin1(x) object x;
     case double_tag:
       printf("%lf", ((double_type *) x)->value);
       break;
+    case string_tag:
+      printf("%s", ((string_type *) x)->str);
+      break;
     case cons_tag:
       printf("("); 
       prin1(car(x));
@@ -446,6 +454,7 @@ typedef union {
   symbol_type symbol_t;
   integer_type integer_t;
   double_type double_t;
+  string_type string_t;
 } common_type;
 static common_type apply(object func, object args){
   common_type result;
@@ -530,6 +539,17 @@ static char *transport(x) char *x;
        }
        forward(x) = nx; type_of(x) = forward_tag;
        x = (char *) nx; allocp = ((char *) nx)+sizeof(closureN_type) + sizeof(object) * nx->num_elt;
+       return (char *) nx;}
+    case string_tag:
+      {register string_type *nx = (string_type *) allocp;
+       type_of(nx) = string_tag; nx->str = NULL; //TODO
+       // TODO: copy x->str, but where? will it screw things up to have the string placed
+       // in heap immediately after the string_type?? where else could it go? could there
+       // be another heap dedicated to string data?
+       // it might be best to put the string immediately inside the string_type. not sure
+       // if this is ideal but it should work, per closureN.
+       forward(x) = nx; type_of(x) = forward_tag;
+       x = (char *) nx; allocp = ((char *) nx)+sizeof(integer_type);
        return (char *) nx;}
     case integer_tag:
       {register integer_type *nx = (integer_type *) allocp;
@@ -623,6 +643,8 @@ static void GC_loop(int major, closure cont, object *ans, int num_ans)
        }
        scanp += sizeof(closureN_type) + sizeof(object) * ((closureN) scanp)->num_elt;
        break;
+      case string_tag:
+        scanp += sizeof(string_type); break;
       case integer_tag:
         scanp += sizeof(integer_type); break;
       case symbol_tag: default:
