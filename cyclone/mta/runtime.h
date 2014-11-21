@@ -391,6 +391,16 @@ static object Cyc_is_symbol(object o){
         return quote_t;
     return quote_f;}
 
+static object Cyc_set_car(object l, object val) {
+    ((list)l)->cons_car = val;
+    return l;
+}
+
+static object Cyc_set_cdr(object l, object val) {
+    ((list)l)->cons_cdr = val;
+    return l;
+}
+
 static integer_type Cyc_length(object l){
     make_int(len, 0);
     while(!nullp(l)){

@@ -311,6 +311,8 @@
      cell
      equal?
      length
+     set-car!
+     set-cdr!
      car
      cdr
      caar
