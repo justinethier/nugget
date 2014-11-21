@@ -1,7 +1,14 @@
 Add stuff required for eval:
+ - String support
+   issue is how to support strings themselves in memory. can add them directly to the string_type, but then apply won't work 
+   because it could return an unknown number of bytes. on the other hand could use a separate data heap that is mirrored during GC.
+   may need some extra buffer for that because technically it could overflow any time a new string is allocated, not just during
+   function calls. but this would work for apply as well as everything else, I believe. obviously it makes GC a bit harder because
+   there is another pair of heaps to deal with. but all that would be done is that strings from heap A would be copied to B during GC.
+   GC would need to keep track of a pointer to each one. Sounds straightforward, but have to be careful of complications.
  - Add error - tricky in a way because it takes a variable number of args, which has not been done yet
  - Other stuff required by eval.scm:
-   cond, let, map, strings
+   cond, let, map
 
 
 - Add native apply support for primitives
