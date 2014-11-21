@@ -6,6 +6,18 @@ Add stuff required for eval:
    function calls. but this would work for apply as well as everything else, I believe. obviously it makes GC a bit harder because
    there is another pair of heaps to deal with. but all that would be done is that strings from heap A would be copied to B during GC.
    GC would need to keep track of a pointer to each one. Sounds straightforward, but have to be careful of complications.
+   Initial plan:
+    - Add two "data" heap sections, and vars for each (head ptr, pos ptr [active only?], size)
+    - Allocate string on active data heap via make_string
+    - Initiate GC when stack exceeded or data heap under certain threshold
+    - Need adequate extra space in data heap (100K? make config), since we only check it upon function call
+    - Need to update GC to copy strings to other heap
+    - Wait, this is broken if anything is pointing to one of these strings, since memory location changes upon GC!
+      Is that a fatal issue? How to handle? could write string operations such that any operate on copies of
+      strings rather than pointing to another string. not nearly as efficient but avoids this problem. could revisit
+      other solutions down the road.
+    - Anything else? Probably want to branch for this development, just in case there are complications
+
  - Add error - tricky in a way because it takes a variable number of args, which has not been done yet
  - Other stuff required by eval.scm:
    cond, let, map
