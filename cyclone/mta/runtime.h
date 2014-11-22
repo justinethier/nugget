@@ -3,8 +3,8 @@
  * This file contains the C runtime used by compiled programs.
  */
 
-#define DEBUG_ALWAYS_GC 0
-#define DEBUG_SHOW_DIAG 0
+#define DEBUG_ALWAYS_GC 1
+#define DEBUG_SHOW_DIAG 1
 #define NUM_GC_ANS 100
 
 /* STACK_GROWS_DOWNWARD is a machine-specific preprocessor switch. */
@@ -109,7 +109,9 @@ typedef struct {tag_type tag; double value;} double_type;
 
 /* Define string type */
 typedef struct {tag_type tag; char *str;} string_type;
-#define make_string(cv,s) string_type cv; cv.tag = string_tag; cv.str = s;
+#define make_string(cv,s) string_type cv; cv.tag = string_tag; \
+{ int len = strlen(s); cv.str = dhallocp; \
+  memcpy(dhallocp, s, len + 1); dhallocp += len + 1; }
 
 /* Define cons type. */
 
@@ -238,6 +240,10 @@ static char *stack_limit2;
 static char *bottom;    /* Bottom of tospace. */
 static char *allocp;    /* Cheney allocate pointer. */
 static char *alloc_end;
+
+static char *dhbottom; /* Bottom of data heap */
+static char *dhallocp; /* Current place in data heap */
+static char *dhalloc_end;
 
 static long no_gcs = 0; /* Count the number of GC's. */
 
@@ -542,12 +548,10 @@ static char *transport(x) char *x;
        return (char *) nx;}
     case string_tag:
       {register string_type *nx = (string_type *) allocp;
-       type_of(nx) = string_tag; nx->str = NULL; //TODO
-       // TODO: copy x->str, but where? will it screw things up to have the string placed
-       // in heap immediately after the string_type?? where else could it go? could there
-       // be another heap dedicated to string data?
-       // it might be best to put the string immediately inside the string_type. not sure
-       // if this is ideal but it should work, per closureN.
+       type_of(nx) = string_tag; nx->str = dhallocp;
+       int len = strlen(((string_type *) x)->str);
+       memcpy(dhallocp, ((string_type *) x)->str, len + 1);
+       dhallocp += len + 1;
        forward(x) = nx; type_of(x) = forward_tag;
        x = (char *) nx; allocp = ((char *) nx)+sizeof(integer_type);
        return (char *) nx;}
@@ -587,6 +591,9 @@ static void GC_loop(int major, closure cont, object *ans, int num_ans)
  char *tmp_bottom = bottom;    /* Bottom of tospace. */
  char *tmp_allocp = allocp;    /* Cheney allocate pointer. */
  char *tmp_alloc_end = alloc_end;
+ char *tmp_dhbottom = dhbottom;
+ char *tmp_dhallocp = dhallocp;
+ char *tmp_dhallocp_end = dhalloc_end;
  if (major) {
     // Initialize new heap (TODO: make a function for this)
     bottom = calloc(1,global_heap_size);
@@ -595,6 +602,9 @@ static void GC_loop(int major, closure cont, object *ans, int num_ans)
     scanp = allocp;
     old_heap_low_limit = tmp_bottom;
     old_heap_high_limit = tmp_alloc_end;
+    
+    dhallocp = dhbottom = calloc(1, global_heap_size);
+    dhalloc_end = dhallocp + global_heap_size - 8;
  }
 
  /* Transport GC's continuation and its argument. */
@@ -653,6 +663,7 @@ static void GC_loop(int major, closure cont, object *ans, int num_ans)
 
  if (major) {
      free(tmp_bottom);
+     free(tmp_dhbottom);
  }
 }
 
@@ -731,6 +742,9 @@ static void main_main (stack_size,heap_size,stack_base)
   bottom = calloc(1,heap_size);
   allocp = (char *) ((((long) bottom)+7) & -8);
   alloc_end = allocp + heap_size - 8;
+  
+  dhallocp = dhbottom = calloc(1, heap_size);
+  dhalloc_end = dhallocp + heap_size - 8;
 #if DEBUG_SHOW_DIAG
   printf("main: heap_size=%ld  allocp=%p  alloc_end=%p\n",
          (long) heap_size,(void *)allocp,(void *)alloc_end);
