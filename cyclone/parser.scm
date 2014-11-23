@@ -115,7 +115,9 @@
              (parse-error "unexpected closing parenthesis" *line-num* *char-num*))
          (reverse (with-tok tok toks quotes)))
         ((eq? c #\")
-         (parse-error "Unable to parse strings at this time" *line-num* *char-num*))
+         (let ((str (read-str fp '()))
+               (toks* (with-tok tok toks quotes)))
+           (loop '() (add-tok str toks* quotes) #f #f parens)))
         ((eq? c #\#)
          (if (null? tok)
            ;; # reader
@@ -132,6 +134,18 @@
         (else
           (loop (cons c tok) toks #f quotes parens)))))))
    (loop '() '() #f #f parens)))
+
+(define (read-str fp buf)
+  (let ((c (read-char fp)))
+    ;; TODO: for now, end on raw double-quote. real scheme
+    ;; strings are not quite this simple - see spec.
+    (cond
+      ((eof-object? c)
+       (parse-error "missing closing double-quote" *line-num* *char-num*))
+      ((equal? #\" c)
+       (list->string (reverse buf)))
+      (else
+        (read-str fp (cons c buf))))))
 
 (define (sign? c)
   (or
