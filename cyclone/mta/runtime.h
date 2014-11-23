@@ -246,6 +246,7 @@ static char *dhallocp; /* Current place in data heap */
 static char *dhalloc_end;
 
 static long no_gcs = 0; /* Count the number of GC's. */
+static long no_major_gcs = 0; /* Count the number of GC's. */
 
 static volatile object gc_cont;   /* GC continuation closure. */
 static volatile object gc_ans[NUM_GC_ANS];    /* argument for GC continuation closure. */
@@ -433,8 +434,8 @@ static void my_exit(closure) never_returns;
 
 static void my_exit(env) closure env; {
 #if DEBUG_SHOW_DIAG
-    printf("my_exit: heap bytes allocated=%d  time=%ld ticks  no_gcs=%ld\n",
-        allocp-bottom,clock()-start,no_gcs);
+    printf("my_exit: heap bytes allocated=%d  time=%ld ticks  no_gcs=%ld no_m_gcs=%ld\n",
+        allocp-bottom,clock()-start,no_gcs,no_major_gcs);
  printf("my_exit: ticks/second=%ld\n",(long) CLOCKS_PER_SEC);
 #endif
  exit(0);}
@@ -680,6 +681,7 @@ static void GC(cont,ans,num_ans) closure cont; object *ans; int num_ans;
  //
  if (allocp >= (bottom + (global_heap_size - global_stack_size))) {
      //printf("Possibly only room for one more minor GC. no_gcs = %ld\n", no_gcs);
+     no_major_gcs++;
      GC_loop(1, cont, ans, num_ans);
  } else {
      no_gcs++; /* Count the number of minor GC's. */
