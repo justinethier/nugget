@@ -315,6 +315,13 @@
     ((boolean? exp) 
       (c-code (string-append
                 (if exp "quote_t" "quote_f"))))
+    ((string? exp)
+      (let ((cvar-name (mangle (gensym 'c))))
+        (c-code/vars
+            (string-append "&" cvar-name) ; Code is just the variable name
+            (list     ; Allocate integer on the C stack
+              (string-append 
+                "make_string(" cvar-name ", " (->cstr exp) ");")))))
 ;TODO: not good enough, need to store new symbols in a table so they can
 ;be inserted into the C program
     ((symbol? exp)
@@ -322,6 +329,15 @@
      (c-code (string-append "quote_" (mangle exp))))
     (else
       (error "unknown constant: " exp))))
+
+;; Convert a "scheme" string to a corresponding representation in C.
+;; Keep in mind scheme strings can span lines, contain chars that
+;; might not be allowed in C, etc.
+;;
+;; TODO; this is a placeholder since it doesn't do anything right now
+;;
+(define (->cstr str) 
+  (string-append "\"" str "\""))
 
 ;; c-compile-prim : prim-exp -> string
 (define (c-compile-prim p)
