@@ -549,10 +549,13 @@ static char *transport(x) char *x;
        return (char *) nx;}
     case string_tag:
       {register string_type *nx = (string_type *) allocp;
-       type_of(nx) = string_tag; nx->str = dhallocp;
-       int len = strlen(((string_type *) x)->str);
-       memcpy(dhallocp, ((string_type *) x)->str, len + 1);
-       dhallocp += len + 1;
+       type_of(nx) = string_tag; 
+      nx->str = ((string_type *)x)->str; // TODO: this is fine for a minor collection
+      // TODO: do this during a major collection:
+      // nx->str = dhallocp;
+      // int len = strlen(((string_type *) x)->str);
+      // memcpy(dhallocp, ((string_type *) x)->str, len + 1);
+      // dhallocp += len + 1;
        forward(x) = nx; type_of(x) = forward_tag;
        x = (char *) nx; allocp = ((char *) nx)+sizeof(integer_type);
        return (char *) nx;}
