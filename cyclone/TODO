@@ -18,6 +18,10 @@ Add stuff required for eval:
       other solutions down the road.
     - Anything else? Probably want to branch for this development, just in case there are complications
 
+  COMPLICATION - only need to memcpy strings on data heap during a major collection. during a minor collection the strings are already where they need to be
+  need to fully-implement this in the runtime by passing minor/major flag to transport
+
+
  - Add error - tricky in a way because it takes a variable number of args, which has not been done yet
  - Other stuff required by eval.scm:
    cond, let, map
