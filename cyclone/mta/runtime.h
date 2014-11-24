@@ -267,7 +267,7 @@ defsymbol(cdr);
 //static object quote_list_f;  /* Initialized by main to '(f) */
 //static object quote_list_t;  /* Initialized by main to '(t) */
 
-static volatile object unify_subst = nil; /* This is a global Lisp variable. */
+//static volatile object unify_subst = nil; /* This is a global Lisp variable. */
 
 /* These (crufty) printing functions are used for debugging. */
 static object terpri() {printf("\n"); return nil;}
@@ -488,7 +488,11 @@ static common_type apply(object func, object args){
 
 static char *transport(x) char *x;
 /* Transport one object.  WARNING: x cannot be nil!!! */
-{switch (type_of(x))
+{
+ if (nullp(x)) return x;
+ printf("entered transport ");
+ printf("transport %ld\n", type_of(x));
+ switch (type_of(x))
    {case cons_tag:
       {register list nx = (list) allocp;
        type_of(nx) = cons_tag; car(nx) = car(x); cdr(nx) = cdr(x);
@@ -567,7 +571,7 @@ static char *transport(x) char *x;
        return (char *) nx;}
     case forward_tag:
        return (char *) forward(x);
-    case symbol_tag:
+    case symbol_tag: break; // JAE TODO: raise an error here? Should not be possible in real code, though (IE, without GC DEBUG flag)
     default:
       printf("transport: bad tag x=%p x.tag=%ld\n",(void *)x,type_of(x)); exit(0);}
  return x;}
@@ -576,7 +580,8 @@ static char *transport(x) char *x;
 /* Major collection, transport objects on stack or old heap */
 #define transp(p) \
 temp = (p); \
-if ((check_overflow(low_limit,temp) && \
+if (DEBUG_ALWAYS_GC || \
+    (check_overflow(low_limit,temp) && \
      check_overflow(temp,high_limit)) || \
     (check_overflow(old_heap_low_limit - 1, temp) && \
      check_overflow(temp,old_heap_high_limit + 1))) \
@@ -611,10 +616,12 @@ static void GC_loop(int major, closure cont, object *ans, int num_ans)
     dhalloc_end = dhallocp + global_heap_size - 8;
  }
 
+ printf("\n=== started GC type = %d === \n", major);
  /* Transport GC's continuation and its argument. */
  transp(cont);
  gc_cont = cont;
  gc_num_ans = num_ans;
+ printf("DEBUG done transporting cont\n");
 
  /* Prevent overrunning buffer */
  if (num_ans > NUM_GC_ANS) {
@@ -626,40 +633,51 @@ static void GC_loop(int major, closure cont, object *ans, int num_ans)
      transp(ans[i]);
      gc_ans[i] = ans[i];
  }
+ printf("DEBUG done transporting gc_ans\n");
+
  /* Transport global variable. */
- transp(unify_subst);
+ //transp(unify_subst);
  while (scanp<allocp)       /* Scan the newspace. */
    switch (type_of(scanp))
      {case cons_tag:
+ printf("DEBUG transport cons_tag\n");
         transp(car(scanp)); transp(cdr(scanp));
         scanp += sizeof(cons_type); break;
       case closure0_tag:
+ printf("DEBUG transport closure0 \n");
         scanp += sizeof(closure0_type); break;
       case closure1_tag:
+ printf("DEBUG transport closure1 \n");
         transp(((closure1) scanp)->elt1);
         scanp += sizeof(closure1_type); break;
       case closure2_tag:
+ printf("DEBUG transport closure2 \n");
         transp(((closure2) scanp)->elt1); transp(((closure2) scanp)->elt2);
         scanp += sizeof(closure2_type); break;
       case closure3_tag:
+ printf("DEBUG transport closure3 \n");
         transp(((closure3) scanp)->elt1); transp(((closure3) scanp)->elt2);
         transp(((closure3) scanp)->elt3);
         scanp += sizeof(closure3_type); break;
       case closure4_tag:
+ printf("DEBUG transport closure4 \n");
         transp(((closure4) scanp)->elt1); transp(((closure4) scanp)->elt2);
         transp(((closure4) scanp)->elt3); transp(((closure4) scanp)->elt4);
         scanp += sizeof(closure4_type); break;
       case closureN_tag:
-       {int i;
-        for (i = 0; i < ((closureN) scanp)->num_elt; i++) {
+ printf("DEBUG transport closureN \n");
+       {int i; int n = ((closureN) scanp)->num_elt;
+        for (i = 0; i < n; i++) {
           transp(((closureN) scanp)->elts[i]);
         }
+        scanp += sizeof(closureN_type) + sizeof(object) * n;
        }
-       scanp += sizeof(closureN_type) + sizeof(object) * ((closureN) scanp)->num_elt;
        break;
       case string_tag:
+ printf("DEBUG transport string \n");
         scanp += sizeof(string_type); break;
       case integer_tag:
+ printf("DEBUG transport integer \n");
         scanp += sizeof(integer_type); break;
       case symbol_tag: default:
         printf("GC: bad tag scanp=%p scanp.tag=%ld\n",(void *)scanp,type_of(scanp));
