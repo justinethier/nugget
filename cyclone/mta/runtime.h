@@ -87,6 +87,19 @@ typedef void *object;
 #define type_of(x) (((list) x)->tag)
 #define forward(x) (((list) x)->cons_car)
 
+/* Define value types. 
+   Depending on the underlying architecture, compiler, etc these types
+   have extra least significant bits that can be used to mark them as
+   values instead of objects (IE, pointer to a tagged object).
+   On many machines, addresses are multiples of four, leaving the two
+   least significant bits free - according to lisp in small pieces.
+
+   experimenting with chars below:
+*/
+#define obj_is_char(x)  ((unsigned long)(x) & (unsigned long)1)
+#define obj_obj2char(x) (char)((long)(x)>>1)
+#define obj_char2obj(c) ((void *)(((c)<<1) | 1))
+
 /* Define function type. */
 
 typedef void (*function_type)();
@@ -242,6 +255,9 @@ static char *bottom;    /* Bottom of tospace. */
 static char *allocp;    /* Cheney allocate pointer. */
 static char *alloc_end;
 
+/* TODO: not sure this is the best strategy for strings, especially if there 
+   are a lot of long, later gen strings because that will cause a lot of
+   copying to occur during GC */
 static char *dhbottom; /* Bottom of data heap */
 static char *dhallocp; /* Current place in data heap */
 static char *dhalloc_end;
@@ -276,6 +292,7 @@ static object terpri() {printf("\n"); return nil;}
 static object prin1(x) object x;
 {object tmp = nil;
  if (nullp(x)) {printf("()"); return x;}
+ if (obj_is_char(x)) {printf("%c", obj_obj2char(x)); return x;}
  switch (type_of(x))
    {case closure0_tag:
     case closure1_tag:
@@ -338,7 +355,8 @@ static object get(x,i) object x,i;
 static object equalp(x,y) object x,y;
 {for (; ; x = cdr(x), y = cdr(y))
    {if (eq(x,y)) return quote_t;
-    if (nullp(x) || nullp(y) ||
+    if (obj_is_char(x) || obj_is_char(y) || 
+        nullp(x) || nullp(y) ||
         type_of(x)!=cons_tag || type_of(y)!=cons_tag) return quote_f;
     if (quote_f == equalp(car(x),car(y))) return quote_f;}}
 
@@ -491,6 +509,7 @@ static char *transport(x, gcgen) char *x; int gcgen;
 /* Transport one object.  WARNING: x cannot be nil!!! */
 {
  if (nullp(x)) return x;
+ if (obj_is_char(x)) return x;
 #if DEBUG_GC
  printf("entered transport ");
  printf("transport %ld\n", type_of(x));
