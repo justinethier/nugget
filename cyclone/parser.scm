@@ -127,6 +127,9 @@
                 ;; Do not use add-tok below, no need to quote a bool
                 ((eq? #\t next-c) (loop '() (cons #t toks) #f #f parens))
                 ((eq? #\f next-c) (loop '() (cons #f toks) #f #f parens))
+                ((eq? #\\ next-c)
+                 ;; TODO: error handling, read could return EOF
+                 (loop '() (cons (read-char fp) toks) #f #f parens))
                 (else
                   (parse-error "Unhandled input sequence" *line-num* *char-num*))))
            ;; just another char...
@@ -169,7 +172,7 @@
        (list->string a)))))
 
 ;(let ((fp (open-input-file "tests/begin.scm")))
-;(let ((fp (open-input-file "tests/_tmp.scm")))
+;(let ((fp (open-input-file "tests/strings.scm")))
 ;  (write (cyc-read-all fp)))
 
 ;(define (display-file filename)
