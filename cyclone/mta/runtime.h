@@ -5,7 +5,7 @@
 
 #define DEBUG_ALWAYS_GC 1
 #define DEBUG_GC 0
-#define DEBUG_SHOW_DIAG 0
+#define DEBUG_SHOW_DIAG 1
 #define NUM_GC_ANS 100
 
 /* STACK_GROWS_DOWNWARD is a machine-specific preprocessor switch. */
@@ -224,7 +224,7 @@ static list assq(object,list);
 static object get(object,object);
 static object equalp(object,object);
 static object memberp(object,list);
-static char *transport(char *);
+static char *transport(char *,int);
 static void GC(closure,object*,int) never_returns;
 
 static void main_main(long stack_size,long heap_size,char *stack_base) never_returns;
@@ -487,7 +487,7 @@ static common_type apply(object func, object args){
 // END apply
 
 
-static char *transport(x) char *x;
+static char *transport(x, gcgen) char *x; int gcgen;
 /* Transport one object.  WARNING: x cannot be nil!!! */
 {
  if (nullp(x)) return x;
@@ -557,12 +557,16 @@ static char *transport(x) char *x;
     case string_tag:
       {register string_type *nx = (string_type *) allocp;
        type_of(nx) = string_tag; 
-      nx->str = ((string_type *)x)->str; // TODO: this is fine for a minor collection
-      // TODO: do this during a major collection:
-      // nx->str = dhallocp;
-      // int len = strlen(((string_type *) x)->str);
-      // memcpy(dhallocp, ((string_type *) x)->str, len + 1);
-      // dhallocp += len + 1;
+       if (gcgen == 0) {
+         // Minor, data heap is not relocated
+         nx->str = ((string_type *)x)->str;
+       } else {
+         // Major collection, data heap is moving
+         nx->str = dhallocp;
+         int len = strlen(((string_type *) x)->str);
+         memcpy(dhallocp, ((string_type *) x)->str, len + 1);
+         dhallocp += len + 1;
+       }
        forward(x) = nx; type_of(x) = forward_tag;
        x = (char *) nx; allocp = ((char *) nx)+sizeof(integer_type);
        return (char *) nx;}
@@ -588,7 +592,7 @@ if (DEBUG_ALWAYS_GC || \
      check_overflow(temp,high_limit)) || \
     (check_overflow(old_heap_low_limit - 1, temp) && \
      check_overflow(temp,old_heap_high_limit + 1))) \
-   (p) = (object) transport(temp);
+   (p) = (object) transport(temp,major);
 
 static void GC_loop(int major, closure cont, object *ans, int num_ans)
 {char foo;
