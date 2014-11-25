@@ -4,7 +4,8 @@
  */
 
 #define DEBUG_ALWAYS_GC 1
-#define DEBUG_SHOW_DIAG 1
+#define DEBUG_GC 0
+#define DEBUG_SHOW_DIAG 0
 #define NUM_GC_ANS 100
 
 /* STACK_GROWS_DOWNWARD is a machine-specific preprocessor switch. */
@@ -490,8 +491,10 @@ static char *transport(x) char *x;
 /* Transport one object.  WARNING: x cannot be nil!!! */
 {
  if (nullp(x)) return x;
+#if DEBUG_GC
  printf("entered transport ");
  printf("transport %ld\n", type_of(x));
+#endif
  switch (type_of(x))
    {case cons_tag:
       {register list nx = (list) allocp;
@@ -616,12 +619,16 @@ static void GC_loop(int major, closure cont, object *ans, int num_ans)
     dhalloc_end = dhallocp + global_heap_size - 8;
  }
 
+#if DEBUG_GC
  printf("\n=== started GC type = %d === \n", major);
+#endif
  /* Transport GC's continuation and its argument. */
  transp(cont);
  gc_cont = cont;
  gc_num_ans = num_ans;
+#if DEBUG_GC
  printf("DEBUG done transporting cont\n");
+#endif
 
  /* Prevent overrunning buffer */
  if (num_ans > NUM_GC_ANS) {
@@ -633,39 +640,55 @@ static void GC_loop(int major, closure cont, object *ans, int num_ans)
      transp(ans[i]);
      gc_ans[i] = ans[i];
  }
+#if DEBUG_GC
  printf("DEBUG done transporting gc_ans\n");
+#endif
 
  /* Transport global variable. */
  //transp(unify_subst);
  while (scanp<allocp)       /* Scan the newspace. */
    switch (type_of(scanp))
      {case cons_tag:
+#if DEBUG_GC
  printf("DEBUG transport cons_tag\n");
+#endif
         transp(car(scanp)); transp(cdr(scanp));
         scanp += sizeof(cons_type); break;
       case closure0_tag:
+#if DEBUG_GC
  printf("DEBUG transport closure0 \n");
+#endif
         scanp += sizeof(closure0_type); break;
       case closure1_tag:
+#if DEBUG_GC
  printf("DEBUG transport closure1 \n");
+#endif
         transp(((closure1) scanp)->elt1);
         scanp += sizeof(closure1_type); break;
       case closure2_tag:
+#if DEBUG_GC
  printf("DEBUG transport closure2 \n");
+#endif
         transp(((closure2) scanp)->elt1); transp(((closure2) scanp)->elt2);
         scanp += sizeof(closure2_type); break;
       case closure3_tag:
+#if DEBUG_GC
  printf("DEBUG transport closure3 \n");
+#endif
         transp(((closure3) scanp)->elt1); transp(((closure3) scanp)->elt2);
         transp(((closure3) scanp)->elt3);
         scanp += sizeof(closure3_type); break;
       case closure4_tag:
+#if DEBUG_GC
  printf("DEBUG transport closure4 \n");
+#endif
         transp(((closure4) scanp)->elt1); transp(((closure4) scanp)->elt2);
         transp(((closure4) scanp)->elt3); transp(((closure4) scanp)->elt4);
         scanp += sizeof(closure4_type); break;
       case closureN_tag:
+#if DEBUG_GC
  printf("DEBUG transport closureN \n");
+#endif
        {int i; int n = ((closureN) scanp)->num_elt;
         for (i = 0; i < n; i++) {
           transp(((closureN) scanp)->elts[i]);
@@ -674,10 +697,14 @@ static void GC_loop(int major, closure cont, object *ans, int num_ans)
        }
        break;
       case string_tag:
+#if DEBUG_GC
  printf("DEBUG transport string \n");
+#endif
         scanp += sizeof(string_type); break;
       case integer_tag:
+#if DEBUG_GC
  printf("DEBUG transport integer \n");
+#endif
         scanp += sizeof(integer_type); break;
       case symbol_tag: default:
         printf("GC: bad tag scanp=%p scanp.tag=%ld\n",(void *)scanp,type_of(scanp));
