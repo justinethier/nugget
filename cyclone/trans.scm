@@ -202,6 +202,7 @@
 (define (const? exp)
   (or (integer? exp)
       (string? exp)
+      (char? exp)
       (boolean? exp)))
 
 ; ref? : exp -> boolean

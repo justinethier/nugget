@@ -315,6 +315,9 @@
     ((boolean? exp) 
       (c-code (string-append
                 (if exp "quote_t" "quote_f"))))
+    ((char? exp)
+     (c-code (string-append "obj_char2obj(" 
+               (number->string (char->integer exp)) ")")))
     ((string? exp)
       (let ((cvar-name (mangle (gensym 'c))))
         (c-code/vars
