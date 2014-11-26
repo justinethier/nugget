@@ -125,6 +125,8 @@ typedef struct {tag_type tag; double value;} double_type;
 typedef struct {tag_type tag; char *str;} string_type;
 #define make_string(cv,s) string_type cv; cv.tag = string_tag; \
 { int len = strlen(s); cv.str = dhallocp; \
+  if ((dhallocp + len + 1) >= dhbottom + global_heap_size) { \
+      printf("Fatal error: data heap overflow\n"); exit(1); } \
   memcpy(dhallocp, s, len + 1); dhallocp += len + 1; }
 
 /* Define cons type. */
