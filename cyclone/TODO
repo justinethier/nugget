@@ -21,8 +21,7 @@ Add stuff required for eval:
   COMPLICATION - only need to memcpy strings on data heap during a major collection. during a minor collection the strings are already where they need to be
   need to fully-implement this in the runtime by passing minor/major flag to transport
 
-  TODO: clean error upon make_string if data heap is exceeded
-  TODO: GC if data heap too low
+  TODO: trigger GC if data heap too low
   
 
   TODO: once this works but before moving all, consolidate all this in docs/strings.txt or such. would be useful to keep these notes
