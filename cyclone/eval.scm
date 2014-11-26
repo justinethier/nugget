@@ -15,7 +15,8 @@
 (define (self-evaluating? exp)
   (cond ((number? exp) #t)
         ((boolean? exp) #t)
-        ;((string? exp) true)
+        ((string? exp) #t)
+        ((char? exp) #t)
         (else #f)))
 
 (define (variable? exp) (symbol? exp))
