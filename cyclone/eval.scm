@@ -237,9 +237,18 @@
          ((definition? exp) (analyze-definition exp))
          ((if? exp) (analyze-if exp))
          ((lambda? exp) (analyze-lambda exp))
-       ; TODO: ideally, macro system would handle these next two
+      ;; TODO: ideally, macro system would handle these next three
+        ((tagged-list? exp 'let)
+         (let ((vars (map car  (cadr exp))) ;(let->bindings exp)))
+               (args (map cadr (cadr exp))) ;(let->bindings exp))))
+               (body (cddr exp)))
+           (analyze
+             (cons
+               (cons 'lambda (cons vars body))
+               args))))
         ((begin? exp) (analyze-sequence (begin-actions exp)))
         ((cond? exp) (analyze (cond->if exp)))
+      ;; END derived expression processing
         ((application? exp) (analyze-application exp))
         (else
          (error "Unknown expression type -- ANALYZE" exp))))

@@ -29,7 +29,7 @@ Add stuff required for eval:
 
  - Add error - tricky in a way because it takes a variable number of args, which has not been done yet
  - Other stuff required by eval.scm:
-   cond, let, map (issue with primitives as first-class functions)
+   map (issue with primitives as first-class functions)
 
 
 - Add native apply support for primitives
