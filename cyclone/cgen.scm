@@ -357,6 +357,7 @@
             ((eq? p '<=)      "__num_lte")
             ((eq? p 'apply)     "apply")
             ((eq? p '%halt)     "__halt")
+            ((eq? p 'error)     "Cyc_error")
             ((eq? p 'display)   "prin1")
             ((eq? p 'write)     "write")
             ((eq? p 'car)        "car")
@@ -437,6 +438,11 @@
     (and (prim? exp)
          (member exp '(+ - * / apply cons length cell))))
 
+;; Need to pass an integer arg count as the function's first parameter
+(define (prim/arg-count? exp)
+    (and (prim? exp)
+         (member exp '(error))))
+
 ; c-compile-ref : ref-exp -> string
 (define (c-compile-ref exp)
   (c-code (mangle exp)))
@@ -489,23 +495,31 @@
                   (c:body cgen) ");"))))
 
         ((prim? fun)
-         (let ((c-fun 
-                (c-compile-prim fun))
-               (c-args
-                (c-compile-args args append-preamble "" cont)))
+         (let* ((c-fun 
+                 (c-compile-prim fun))
+                (c-args
+                 (c-compile-args args append-preamble "" cont))
+                (num-args (length args))
+                (num-args-str
+                  (string-append 
+                    (number->string num-args)
+                    (if (> num-args 0) "," "")))
+                (c-args* (if (prim/arg-count? fun)
+                             (c:append (c-code num-args-str) c-args)
+                             c-args)))
             (if (prim/cvar? fun)
               ;; Args need to go with alloc function
               (c-code/vars
                 (c:body c-fun)
                 (append
-                  (c:allocs c-args) ;; fun alloc depends upon arg allocs
+                  (c:allocs c-args*) ;; fun alloc depends upon arg allocs
                   (list (string-append 
                     (car (c:allocs c-fun)) 
                          (if (prim/c-var-assign fun) "" ",") ; Allocating C var
-                         (c:body c-args) ");"))))
+                         (c:body c-args*) ");"))))
               ;; Args stay with body
               (c:append
-                (c:append c-fun c-args)
+                (c:append c-fun c-args*)
                 (c-code ")")))))
 
         ((equal? '%closure-ref fun)

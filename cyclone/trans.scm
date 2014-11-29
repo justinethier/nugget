@@ -307,6 +307,7 @@
      <=
      apply
      %halt
+     error
      cons
      cell-get
      set-cell!

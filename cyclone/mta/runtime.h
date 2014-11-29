@@ -31,7 +31,7 @@ typedef long tag_type;
 #include <stdio.h>
 #include <time.h>
 #include <setjmp.h>
-// #include <stdarg.h>
+#include <stdarg.h>
 #include <string.h>
 
 #ifndef CLOCKS_PER_SEC
@@ -460,6 +460,27 @@ static void my_exit(env) closure env; {
  printf("my_exit: ticks/second=%ld\n",(long) CLOCKS_PER_SEC);
 #endif
  exit(0);}
+
+static object Cyc_error(int count, object obj1, ...) {
+    va_list ap;
+    object tmp;
+    int i;
+    
+    va_start(ap, obj1);
+    printf("Error: ");
+    prin1(obj1);
+    printf("\n");
+
+    for (i = 0; i < count; i++) {
+        tmp = va_arg(ap, object);
+        prin1(tmp);
+        printf("\n");
+    }
+
+    va_end(ap);
+    exit(1);
+    return quote_f;
+}
 
 static void __halt(object obj) {
 #if DEBUG_SHOW_DIAG
