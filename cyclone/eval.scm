@@ -55,12 +55,20 @@
   (if (not (null? (cdddr exp))) ;; TODO: add (not) support
       (cadddr exp)
       #f))
+(define (make-if predicate consequent alternative)
+  (list 'if predicate consequent alternative))
 
 (define (begin? exp) (tagged-list? exp 'begin))
 (define (begin-actions exp) (cdr exp))
 (define (last-exp? seq) (null? (cdr seq)))
 (define (first-exp seq) (car seq))
 (define (rest-exps seq) (cdr seq))
+
+(define (sequence->exp seq)
+  (cond ((null? seq) seq)
+        ((last-exp? seq) (first-exp seq))
+        (else (make-begin seq))))
+(define (make-begin seq) (cons 'begin seq))
 
 (define (application? exp) (pair? exp))
 (define (operator exp) (car exp))
@@ -189,6 +197,32 @@
   (loop))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Derived expressions
+;; TODO: longer-term, this would be replaced by a macro system
+(define (cond? exp) (tagged-list? exp 'cond))
+(define (cond-clauses exp) (cdr exp))
+(define (cond-else-clause? clause)
+  (eq? (cond-predicate clause) 'else))
+(define (cond-predicate clause) (car clause))
+(define (cond-actions clause) (cdr clause))
+(define (cond->if exp)
+  (expand-clauses (cond-clauses exp)))
+
+(define (expand-clauses clauses)
+  (if (null? clauses)
+      #f                              ; no else clause
+      (let ((first (car clauses))
+            (rest (cdr clauses)))
+        (if (cond-else-clause? first)
+            (if (null? rest)
+                (sequence->exp (cond-actions first))
+                (error "ELSE clause isn't last -- COND->IF"
+                       clauses))
+            (make-if (cond-predicate first)
+                     (sequence->exp (cond-actions first))
+                     (expand-clauses rest))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Improvement from section 4.1.7 - Separate syntactic analysis from execution
 ;;
 ;; TODO: need to finish this section
@@ -203,9 +237,9 @@
          ((definition? exp) (analyze-definition exp))
          ((if? exp) (analyze-if exp))
          ((lambda? exp) (analyze-lambda exp))
-       ; TODO: ideally, macro system would handle these two
-       ;((begin? exp) (analyze-sequence (begin-actions exp)))
-       ;((cond? exp) (analyze (cond->if exp)))
+       ; TODO: ideally, macro system would handle these next two
+        ((begin? exp) (analyze-sequence (begin-actions exp)))
+        ((cond? exp) (analyze (cond->if exp)))
         ((application? exp) (analyze-application exp))
         (else
          (error "Unknown expression type -- ANALYZE" exp))))
