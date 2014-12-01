@@ -73,6 +73,7 @@ typedef long tag_type;
 #define integer_tag 9
 #define double_tag 10
 #define string_tag 11
+#define primitive_tag 12
 
 #define nil NULL
 #define eq(x,y) (x == y)
@@ -198,9 +199,6 @@ typedef closure0_type *closure;
    c.fn = f; c.elt1 = a1; c.elt2 = a2; c.elt3 = a3; c.elt4 = a4;
 #define setq(x,e) x = e
 
-// TODO: no portable way to pass variable args to a macro, so, may need to
-//       generate mclosureN code from scheme, instead of trying to have a
-//       generic C function. Just doing the below as exploratory research
 #define DEBUG_mclosure0(c, f) closureN_type c; c.tag = closureN_tag; c.fn = f; \
   c.num_elt = 0; c.elts = (object *)alloca(sizeof(object) * c.num_elt);
 #define DEBUG_mclosure1(c, f, a1) closureN_type c; c.tag = closureN_tag; c.fn = f; \
@@ -526,6 +524,16 @@ static common_type apply(object func, object args){
   return result;
 }
 // END apply
+
+/* Primitive types */
+//typedef common_type (*prim_function_type)();
+//typedef void (*prim_function_type)();
+typedef struct {tag_type tag; /*prim_function_type fn;*/} primitive_type;
+typedef primitive_type *primitive;
+
+#define defprimitive(name/*, fnc*/) \
+static primitive_type name##_primitive = {primitive_tag/*, &fnc*/}; \
+static const object primitive_##name = &name##_primitive
 
 
 static char *transport(x, gcgen) char *x; int gcgen;
@@ -861,4 +869,6 @@ static long long_arg(argc,argv,name,dval)
    if (strcmp(name,argv[j]) == 0)
      return(atol(argv[j+1]));
  return(dval);}
+
+defprimitive(length /*, Cyc_length*/);
 
