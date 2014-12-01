@@ -276,10 +276,8 @@ static jmp_buf jmp_main; /* Where to jump to. */
 
 defsymbol(f);
 defsymbol(t);
-defsymbol(cons);
-defsymbol(length);
-defsymbol(car);
-defsymbol(cdr);
+//defsymbol(car);
+//defsymbol(cdr);
 
 //static object quote_list_f;  /* Initialized by main to '(f) */
 //static object quote_list_t;  /* Initialized by main to '(t) */
@@ -301,6 +299,9 @@ static object prin1(x) object x;
     case closure4_tag:
     case closureN_tag:
       printf("<%p>",(void *)((closure) x)->fn);
+      break;
+    case primitive_tag:
+      printf("<primitive>");
       break;
     case symbol_tag:
       printf("%s",((symbol_type *) x)->pname);
@@ -494,6 +495,18 @@ static void __halt(object obj) {
 #define __sub(c,x,y) integer_type c; c.tag = integer_tag; c.value = (((integer_type *)(x))->value - ((integer_type *)(y))->value);
 #define __div(c,x,y) integer_type c; c.tag = integer_tag; c.value = (((integer_type *)(x))->value / ((integer_type *)(y))->value);
 
+/* Primitive types */
+//typedef common_type (*prim_function_type)();
+//typedef void (*prim_function_type)();
+typedef struct {tag_type tag; /*prim_function_type fn;*/} primitive_type;
+typedef primitive_type *primitive;
+
+#define defprimitive(name/*, fnc*/) \
+static primitive_type name##_primitive = {primitive_tag/*, &fnc*/}; \
+static const object primitive_##name = &name##_primitive
+
+defprimitive(cons /*, Cyc_length*/);
+defprimitive(length /*, Cyc_length*/);
 
 // TODO: experimental apply support
 typedef union {
@@ -506,12 +519,11 @@ typedef union {
 static common_type apply(object func, object args){
   common_type result;
   switch(type_of(func)) {
-// TODO: no, switch over to primitive_type
-    case symbol_tag:
-      if (func == quote_cons) {
+    case primitive_tag:
+      if (func == primitive_cons) {
           make_cons(c, car(args), cadr(args));
           result.cons_t = c;
-      } else if (func == quote_length) {
+      } else if (func == primitive_length) {
           result.integer_t = Cyc_length(car (args));
       } else {
           printf("Unrecognized primitive function %s\n", ((symbol_type *)func)->pname);
@@ -525,17 +537,6 @@ static common_type apply(object func, object args){
   return result;
 }
 // END apply
-
-/* Primitive types */
-//typedef common_type (*prim_function_type)();
-//typedef void (*prim_function_type)();
-typedef struct {tag_type tag; /*prim_function_type fn;*/} primitive_type;
-typedef primitive_type *primitive;
-
-#define defprimitive(name/*, fnc*/) \
-static primitive_type name##_primitive = {primitive_tag/*, &fnc*/}; \
-static const object primitive_##name = &name##_primitive
-
 
 static char *transport(x, gcgen) char *x; int gcgen;
 /* Transport one object.  WARNING: x cannot be nil!!! */
@@ -629,6 +630,7 @@ static char *transport(x, gcgen) char *x; int gcgen;
        return (char *) nx;}
     case forward_tag:
        return (char *) forward(x);
+    case primitive_tag: break;
     case symbol_tag: break; // JAE TODO: raise an error here? Should not be possible in real code, though (IE, without GC DEBUG flag)
     default:
       printf("transport: bad tag x=%p x.tag=%ld\n",(void *)x,type_of(x)); exit(0);}
@@ -761,7 +763,9 @@ static void GC_loop(int major, closure cont, object *ans, int num_ans)
  printf("DEBUG transport integer \n");
 #endif
         scanp += sizeof(integer_type); break;
-      case symbol_tag: default:
+      case primitive_tag:
+      case symbol_tag: 
+      default:
         printf("GC: bad tag scanp=%p scanp.tag=%ld\n",(void *)scanp,type_of(scanp));
         exit(0);}
 
@@ -870,6 +874,4 @@ static long long_arg(argc,argv,name,dval)
    if (strcmp(name,argv[j]) == 0)
      return(atol(argv[j+1]));
  return(dval);}
-
-defprimitive(length /*, Cyc_length*/);
 

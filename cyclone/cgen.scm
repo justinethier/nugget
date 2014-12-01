@@ -240,9 +240,8 @@
     ; Core forms:
     ((const? exp)       (c-compile-const exp))
     ((prim?  exp)       
-      ;; TODO: This is a hack for apply, the real code should
-      ;;       use some variable-based mechanism
-      (c-compile-const exp))
+     ;; TODO: this needs to be more refined, probably w/a lookup table
+     (c-code (string-append "primitive_" (mangle exp))))
     ((ref?   exp)       (c-compile-ref exp))
     ((quote? exp)       (c-compile-quote exp))
     ((if? exp)          (c-compile-if exp append-preamble cont))
