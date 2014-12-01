@@ -22,14 +22,19 @@ Add stuff required for eval:
   need to fully-implement this in the runtime by passing minor/major flag to transport
 
   TODO: trigger GC if data heap too low
-  
-
   TODO: once this works but before moving all, consolidate all this in docs/strings.txt or such. would be useful to keep these notes
 
-
- - Add error - tricky in a way because it takes a variable number of args, which has not been done yet
  - Other stuff required by eval.scm:
    map (issue with primitives as first-class functions)
+
+   Note example map.scm fails, because attempting to call primitive_type as a function:
+   Breakpoint 1, __lambda_2 (self_73797=0xb7a2e19c, _73_191_73776=0xb7a2e1b0) at map.c:448
+
+     448     return_funcall3(  cell_get(((closureN)self_73797)->elts[0]), &c_73825, &c_73829, &c_73830);;
+     (gdb) p  cell_get(((closureN)self_73797)->elts[0])
+     $1 = (void *) 0x804c060
+     (gdb) p  ((list)cell_get(((closureN)self_73797)->elts[0]))->tag
+     $2 = 12
 
 
 - Add native apply support for primitives
