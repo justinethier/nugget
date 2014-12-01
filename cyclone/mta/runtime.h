@@ -506,6 +506,7 @@ typedef union {
 static common_type apply(object func, object args){
   common_type result;
   switch(type_of(func)) {
+// TODO: no, switch over to primitive_type
     case symbol_tag:
       if (func == quote_cons) {
           make_cons(c, car(args), cadr(args));
