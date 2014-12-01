@@ -536,6 +536,44 @@ static common_type apply(object func, object args){
   }
   return result;
 }
+
+//#define funcall3(cfn,a1,a2,a3) ((cfn)->fn)(cfn,a1,a2,a3)
+//#define funcall3(cfn,a1,a2,a3) 
+//  if (primitive(cfn)) {apply_c(2, (closure)a1, cfn, a2, a3)}
+//  else { existing code }
+//
+// debug code from map.c:
+//apply_c(2, &c_73825, cell_get(((closureN)self_73797)->elts[0]), &c_73829, &c_73830);
+static void apply_c(int argc, closure cont, object prim, ...){
+    va_list ap;
+    object tmp;
+    int i;
+    list args = alloca(sizeof(cons_type) * argc);
+    
+    va_start(ap, prim);
+
+    // TODO: built up a list of args
+    for (i = 0; i < argc; i++) {
+        tmp = va_arg(ap, object);
+        args[i].tag = cons_tag;
+        args[i].cons_car = tmp;
+        args[i].cons_cdr = (i == (argc-1)) ? nil : &args[i + 1];
+    }
+    printf("DEBUG:\n");
+    prin1((object)&args[0]);
+    printf("\n");
+
+    va_end(ap);
+    {
+     common_type result = apply(prim, (object)&args[0]);
+     printf("RESULT = ");
+     prin1((object)&result);
+     printf("\n");
+//    TODO: call into cont, with result?
+//    OK to assume only a single result arg right now?
+//    IE: funcall => (cont)(cont, result)
+    }
+}
 // END apply
 
 static char *transport(x, gcgen) char *x; int gcgen;
