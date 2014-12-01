@@ -2,9 +2,11 @@
 
 ;; TODO: this is broken when using cons by itself. 
 ;; we do not handle primitives as first-class functions
-(define a cons)
-;(define a (lambda (x y) (cons x y)))
-(write (a 1 2))
+;(define a cons)
+;;(define a (lambda (x y) (cons x y)))
+;(write (a 1 2))
+(define a length)
+(write a)
 
 ;;(define (foldr func end lst)
 ;;  (if (null? lst)
