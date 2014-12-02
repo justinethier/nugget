@@ -505,6 +505,8 @@ typedef primitive_type *primitive;
 static primitive_type name##_primitive = {primitive_tag/*, &fnc*/}; \
 static const object primitive_##name = &name##_primitive
 
+#define prim(x) (x && ((primitive)x)->tag == primitive_tag)
+
 defprimitive(cons /*, Cyc_length*/);
 defprimitive(length /*, Cyc_length*/);
 

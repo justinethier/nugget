@@ -143,9 +143,16 @@
 
 (define (c-macro-funcall num-args)
   (let ((args (c-macro-n-prefix num-args ",a"))
-        (n (number->string num-args)))
+        (n (number->string num-args))
+        (n-1 (number->string (if (> num-args 0) (- num-args 1) 0)))
+        (wrap (lambda (s) (if (> num-args 0) s ""))))
     (string-append
-      "#define funcall" n "(cfn" args ") ((cfn)->fn)(cfn" args ")")))
+      "#define funcall" n "(cfn" args ") "
+        (wrap (string-append "if (prim(cfn)) { apply_c(" n-1 ", (closure)a1, cfn" (if (> num-args 1) (substring args 3 (string-length args)) "") "); }"))
+        (wrap " else { ")
+        "((cfn)->fn)(cfn" args ")"
+        (wrap ";}")
+        )))
 
 (define (c-macro-n-prefix n prefix)
   (if (> n 0)
