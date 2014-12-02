@@ -561,7 +561,7 @@ static void apply_c(int argc, closure cont, object prim, ...){
         args[i].cons_car = tmp;
         args[i].cons_cdr = (i == (argc-1)) ? nil : &args[i + 1];
     }
-    printf("DEBUG:\n");
+    printf("DEBUG = ");
     prin1((object)&args[0]);
     printf("\n");
 
@@ -571,6 +571,8 @@ static void apply_c(int argc, closure cont, object prim, ...){
      printf("RESULT = ");
      prin1((object)&result);
      printf("\n");
+
+     (cont->fn)(cont, (object)&result);
 //    TODO: call into cont, with result?
 //    OK to assume only a single result arg right now?
 //    IE: funcall => (cont)(cont, result)
