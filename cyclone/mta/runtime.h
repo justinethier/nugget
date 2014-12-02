@@ -276,8 +276,6 @@ static jmp_buf jmp_main; /* Where to jump to. */
 
 defsymbol(f);
 defsymbol(t);
-//defsymbol(car);
-//defsymbol(cdr);
 
 //static object quote_list_f;  /* Initialized by main to '(f) */
 //static object quote_list_t;  /* Initialized by main to '(t) */
@@ -509,6 +507,8 @@ static const object primitive_##name = &name##_primitive
 
 defprimitive(cons /*, Cyc_length*/);
 defprimitive(length /*, Cyc_length*/);
+defprimitive(car);
+defprimitive(cdr);
 
 // TODO: experimental apply support
 typedef union {
@@ -518,6 +518,31 @@ typedef union {
   double_type double_t;
   string_type string_t;
 } common_type;
+
+TODO: in order to support both value and object types, I think this is
+      going to have to return a pointer. that means apply is going to 
+      have to return a pointer as well. Perhaps we can still get this to
+      work by having the caller to apply allocate an object on the stack
+      for the result, and pass a pointer to that object into apply. That
+      way there is a place for the result to go. will require some rework
+      in cgen to support, though.
+      anyway, test cases are map.scm and tests/apply.scm
+static common_type *obj2common(object obj, common_type *result) {
+  common_type result;
+  // TODO: if (nullp(obj)) ???
+  if (obj_is_char(obj)){
+      return (long)obj;
+  }
+
+  switch(type_of(obj)){
+//  case cons_tag:
+//    comm.cons_t.tag 
+  default:
+    printf("obj2common - unhandled tag %ld\n", type_of(obj));
+    exit(1);
+  }
+  return result;
+}
 static common_type apply(object func, object args){
   common_type result;
   switch(type_of(func)) {
@@ -527,6 +552,13 @@ static common_type apply(object func, object args){
           result.cons_t = c;
       } else if (func == primitive_length) {
           result.integer_t = Cyc_length(car (args));
+      } else if (func == primitive_car) {
+          printf("DEBUG args = ");
+          prin1(args);
+          printf("\n");
+          return obj2common(car(car(args)));
+      } else if (func == primitive_cdr) {
+          //result.cons_t = cdr(car(args));
       } else {
           printf("Unrecognized primitive function %s\n", ((symbol_type *)func)->pname);
           exit(1);
@@ -539,13 +571,7 @@ static common_type apply(object func, object args){
   return result;
 }
 
-//#define funcall3(cfn,a1,a2,a3) ((cfn)->fn)(cfn,a1,a2,a3)
-//#define funcall3(cfn,a1,a2,a3) 
-//  if (primitive(cfn)) {apply_c(2, (closure)a1, cfn, a2, a3)}
-//  else { existing code }
-//
-// debug code from map.c:
-//apply_c(2, &c_73825, cell_get(((closureN)self_73797)->elts[0]), &c_73829, &c_73830);
+// Version of apply meant to be called from within compiled code
 static void apply_c(int argc, closure cont, object prim, ...){
     va_list ap;
     object tmp;
@@ -561,7 +587,7 @@ static void apply_c(int argc, closure cont, object prim, ...){
         args[i].cons_car = tmp;
         args[i].cons_cdr = (i == (argc-1)) ? nil : &args[i + 1];
     }
-    printf("DEBUG = ");
+    printf("DEBUG applying primitive to ");
     prin1((object)&args[0]);
     printf("\n");
 
@@ -569,13 +595,11 @@ static void apply_c(int argc, closure cont, object prim, ...){
     {
      common_type result = apply(prim, (object)&args[0]);
      printf("RESULT = ");
-     prin1((object)&result);
+     prin1((object)result);
      printf("\n");
 
+     // Call into cont with single result
      (cont->fn)(cont, (object)&result);
-//    TODO: call into cont, with result?
-//    OK to assume only a single result arg right now?
-//    IE: funcall => (cont)(cont, result)
     }
 }
 // END apply
