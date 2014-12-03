@@ -415,10 +415,12 @@
             (lambda (type)
               (let ((cv-name (mangle (gensym 'c))))
                 (c-code/vars 
-                  (string-append "&" cv-name)
+                  (string-append (if (eq? p 'apply) "" "&") cv-name)
                   (list
                     (string-append 
-                      type " " cv-name " = " c-func "(")))))))
+                      type " " cv-name " = " c-func "("
+                      (if (eq? p 'apply) "&c, " "") ;; TODO: shouldn't hardcode "c"
+                      )))))))
     (cond
      ((prim/c-var-assign p)
       (c-var-assign (prim/c-var-assign p)))
@@ -436,7 +438,7 @@
 (define (prim/c-var-assign p)
   (cond
     ((eq? p 'length) "integer_type")
-    ((eq? p 'apply)  "common_type")
+    ((eq? p 'apply)  "common_type c; object") ;; TODO: shouldn't hardcode "c", see above
     (else #f)))
 
 ; Does primitive create a c variable?
