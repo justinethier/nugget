@@ -5,7 +5,7 @@
 
 #define DEBUG_ALWAYS_GC 1
 #define DEBUG_GC 0
-#define DEBUG_SHOW_DIAG 1
+#define DEBUG_SHOW_DIAG 0
 #define NUM_GC_ANS 100
 
 /* STACK_GROWS_DOWNWARD is a machine-specific preprocessor switch. */
@@ -519,46 +519,50 @@ typedef union {
   string_type string_t;
 } common_type;
 
-TODO: in order to support both value and object types, I think this is
-      going to have to return a pointer. that means apply is going to 
-      have to return a pointer as well. Perhaps we can still get this to
-      work by having the caller to apply allocate an object on the stack
-      for the result, and pass a pointer to that object into apply. That
-      way there is a place for the result to go. will require some rework
-      in cgen to support, though.
-      anyway, test cases are map.scm and tests/apply.scm
-static common_type *obj2common(object obj, common_type *result) {
-  common_type result;
-  // TODO: if (nullp(obj)) ???
-  if (obj_is_char(obj)){
-      return (long)obj;
-  }
+// TODO: in order to support both value and object types, I think this is
+//       going to have to return a pointer. that means apply is going to 
+//       have to return a pointer as well. Perhaps we can still get this to
+//       work by having the caller to apply allocate an object on the stack
+//       for the result, and pass a pointer to that object into apply. That
+//       way there is a place for the result to go. will require some rework
+//       in cgen to support, though.
+//       anyway, test cases are map.scm and tests/apply.scm
+//static common_type *obj2common(object obj, common_type *result) {
+//  common_type result;
+//  // TODO: if (nullp(obj)) ???
+//  if (obj_is_char(obj)){
+//      return (long)obj;
+//  }
+//
+//  switch(type_of(obj)){
+////  case cons_tag:
+////    *result.comm.cons_t.tag = ...
+//  default:
+//    printf("obj2common - unhandled tag %ld\n", type_of(obj));
+//    exit(1);
+//  }
+//  return result;
+//}
 
-  switch(type_of(obj)){
-//  case cons_tag:
-//    comm.cons_t.tag 
-  default:
-    printf("obj2common - unhandled tag %ld\n", type_of(obj));
-    exit(1);
-  }
-  return result;
-}
-static common_type apply(object func, object args){
-  common_type result;
+/*
+ *
+ * @param alloced - A pre-allocated buffer used to store a new object
+ *                  created by the applied function 
+ * @param func - Function to execute
+ * @param args - A list of arguments to the function
+ */
+static object apply(common_type *alloced, object func, object args){
   switch(type_of(func)) {
     case primitive_tag:
       if (func == primitive_cons) {
           make_cons(c, car(args), cadr(args));
-          result.cons_t = c;
+          alloced->cons_t = c;
       } else if (func == primitive_length) {
-          result.integer_t = Cyc_length(car (args));
+          alloced->integer_t = Cyc_length(car (args));
       } else if (func == primitive_car) {
-          printf("DEBUG args = ");
-          prin1(args);
-          printf("\n");
-          return obj2common(car(car(args)));
+          return car(car(args));
       } else if (func == primitive_cdr) {
-          //result.cons_t = cdr(car(args));
+          return cdr(car(args));
       } else {
           printf("Unrecognized primitive function %s\n", ((symbol_type *)func)->pname);
           exit(1);
@@ -568,13 +572,14 @@ static common_type apply(object func, object args){
       printf("Invalid object type %ld\n", type_of(func));
       exit(1);
   }
-  return result;
+  return (object)alloced;
 }
 
 // Version of apply meant to be called from within compiled code
-static void apply_c(int argc, closure cont, object prim, ...){
+static void Cyc_apply(int argc, closure cont, object prim, ...){
     va_list ap;
     object tmp;
+    common_type buf;
     int i;
     list args = alloca(sizeof(cons_type) * argc);
     
@@ -593,13 +598,13 @@ static void apply_c(int argc, closure cont, object prim, ...){
 
     va_end(ap);
     {
-     common_type result = apply(prim, (object)&args[0]);
+     tmp = apply(&buf, prim, (object)&args[0]);
      printf("RESULT = ");
-     prin1((object)result);
+     prin1(tmp); //(object)result);
      printf("\n");
 
      // Call into cont with single result
-     (cont->fn)(cont, (object)&result);
+     (cont->fn)(cont, tmp); //(object)&result);
     }
 }
 // END apply

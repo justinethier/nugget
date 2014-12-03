@@ -18,6 +18,7 @@
 
 (write (map (lambda (x) (car x)) '((a . b) (1 . 2) (#\h #\w))))
 (write (map car '((a . b) (1 . 2) (#\h #\w))))
+(write (map cdr '((a . b) (1 . 2) (#\h #\w))))
 (write (map length '((1) (1 2) (1 2 3) (1 2 3 4))))
 
 ; TODO: looks like a parse problem with () below:
