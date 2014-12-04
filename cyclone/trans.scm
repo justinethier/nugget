@@ -280,7 +280,7 @@
 ;; if-else? : if-exp -> bool
 ;; Determines whether an if expression has an else clause
 (define (if-else? exp)
-  (and (tagged-list 'if exp)
+  (and (tagged-list? 'if exp)
        (> (length exp) 3)))
 
 ; if->else : if-exp -> exp
@@ -625,7 +625,12 @@
                               ,(expand (set!->exp exp))))
     ((if? exp)         `(if ,(expand (if->condition exp))
                             ,(expand (if->then exp))
-                            ,(expand (if->else exp))))
+                            ,(if (if-else? exp)
+                                 (expand (if->else exp))
+                                 ;; Insert default value for missing else clause
+                                 ;; FUTURE: append the empty (unprinted) value
+                                 ;; instead of #f
+                                 #f)))
     ((app? exp)
      (cond
 ;; TODO: could check for a define-syntax here and load into memory
@@ -895,7 +900,12 @@
          ;; the set will still work in either case, so no need to check
          `(set! ,@(map (lambda (a) (convert a renamed)) (cdr ast))))
       ((if? ast)
-       `(if ,@(map (lambda (a) (convert a renamed)) (cdr ast))))
+       ;; Add a failsafe here in case macro expansion added more
+       ;; incomplete if expressions.
+       ;; FUTURE: append the empty (unprinted) value instead of #f
+       (if (if-else? ast)
+          `(if ,@(map (lambda (a) (convert a renamed)) (cdr ast)))
+          (convert (append ast '(#f)) renamed)))
       ((prim-call? ast)
        (cons (car ast) (map 
                          (lambda (a) (convert a renamed))
