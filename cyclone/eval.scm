@@ -191,11 +191,6 @@
     initial-env))
 (define *global-environment* (setup-environment))
 
-(define (loop)
-  (display (eval (read) *global-environment*))
-  (display (newline))
-  (loop))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Derived expressions
 ;; TODO: longer-term, this would be replaced by a macro system
@@ -358,7 +353,11 @@
 (write (eval '(if #t 'test-ok 'test-fail) *global-environment*))
 (write (eval '(if 1 'test-ok) *global-environment*))
 (write (eval '(if #f 'test-fail 'test-ok) *global-environment*))
-(loop)
 ;(write (eval '(cons 1 2) *global-environment*)) ; TODO
 ;(write (eval '(+ 1 2) *global-environment*)) ; TODO
 
+;(define (loop)
+;  (display (eval (read) *global-environment*))
+;  (display (newline))
+;  (loop))
+;(loop)
