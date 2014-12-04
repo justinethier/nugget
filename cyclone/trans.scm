@@ -277,6 +277,12 @@
 (define (if->then exp)
   (caddr exp))
 
+;; if-else? : if-exp -> bool
+;; Determines whether an if expression has an else clause
+(define (if-else? exp)
+  (and (tagged-list 'if exp)
+       (> (length exp) 3)))
+
 ; if->else : if-exp -> exp
 (define (if->else exp)
   (cadddr exp))
