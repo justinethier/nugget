@@ -257,9 +257,24 @@
 (define (lambda? exp)
   (tagged-list? 'lambda exp))
 
+(define (lambda-varargs? exp)
+  (and (lambda? exp)
+       (or (symbol? (lambda->formals exp))
+           (and (pair? (lambda->formals exp))
+                (not (list? (lambda->formals exp)))))))
+
 ; lambda->formals : lambda-exp -> list[symbol]
 (define (lambda->formals exp)
   (cadr exp))
+
+(define (lambda->formals-as-list exp)
+  (if (lambda-varargs? exp)
+      (let ((args (lambda->formals exp)))
+        (if (symbol? args)
+            (list args)
+            ;; TODO: need to convert pair, EG: (a b . c) to a list
+            'TODO))
+      (lambda->formals exp)))
 
 ; lambda->exp : lambda-exp -> exp
 (define (lambda->exp exp)
@@ -357,9 +372,14 @@
 
 (define (define-lambda? exp)
   (let ((var (cadr exp)))
-    (and (list? var) 
-         (> (length var) 0)
-         (symbol? (car var)))))
+    (or
+      ;; Standard function
+      (and (list? var) 
+           (> (length var) 0)
+           (symbol? (car var)))
+      ;; Varargs function
+      (and (pair? var)
+           (symbol? (car var))))))
 
 (define (define->lambda exp)
   (cond
