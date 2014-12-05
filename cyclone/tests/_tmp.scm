@@ -31,4 +31,12 @@
 (display 'test)
 
 (define (list . objs)  objs)
+;; TODO: this could expand into (lambda objs objs)
+;; also possible (but not for above) - (lambda (a b . c) ...)
+;; a and b are required, c is optional.
+;;
+;; but, in order to call into a varargs func, num args must
+;; be provided... will need to provide that. this may eventually
+;; require passing numargs to all functions, like how Chicken
+;; structures its functions.
 (write (list 1 2 3))
