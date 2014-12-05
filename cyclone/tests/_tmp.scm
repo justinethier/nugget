@@ -29,3 +29,6 @@
 
 (display ''''test)
 (display 'test)
+
+(define (list . objs)  objs)
+(write (list 1 2 3))
