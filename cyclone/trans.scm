@@ -318,44 +318,24 @@
      cell-get
      set-cell!
      cell
+     eq?
+     eqv?
      equal?
      length
      set-car!
      set-cdr!
      car
      cdr
-     caar
-     cadr
-     cdar
-     cddr
-     caaar
-     caadr
-     cadar
-     caddr
-     cdaar
-     cdadr
-     cddar
-     cdddr
-     caaaar
-     caaadr
-     caadar
-     caaddr
-     cadaar
-     cadadr
-     caddar
-     cadddr
-     cdaaar
-     cdaadr
-     cdadar
-     cdaddr
-     cddaar
-     cddadr
-     cdddar
-     cddddr
+     caar cadr cdar cddr
+     caaar caadr cadar caddr cdaar cdadr cddar cdddr
+     caaaar caaadr caadar caaddr cadaar cadadr
+     caddar cadddr cdaaar cdaadr cdadar cdaddr cddaar cddadr cdddar cddddr
      boolean?
+     char?
      null?
      number?
      pair?
+     string?
      symbol?
      write
      display)))

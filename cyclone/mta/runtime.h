@@ -424,6 +424,22 @@ static object Cyc_is_symbol(object o){
         return quote_t;
     return quote_f;}
 
+static object Cyc_is_string(object o){
+    if (!nullp(o) && ((list)o)->tag == string_tag)
+        return quote_t;
+    return quote_f;}
+
+static object Cyc_is_char(object o){
+    if (obj_is_char(o))
+        return quote_t;
+    return quote_f;}
+
+static object Cyc_eq(object x, object y) {
+    if (eq(x, y))
+        return quote_t;
+    return quote_f;
+}
+
 static object Cyc_set_car(object l, object val) {
     ((list)l)->cons_car = val;
     return l;

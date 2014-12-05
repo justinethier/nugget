@@ -50,6 +50,7 @@ Add stuff required for eval:
   for example, how to store the + symbol, how to differentiate #t and 't etc.
   perhaps could use a malloc'd table for this? do want the lookups to be fast - IE, integer (pointer) comparisons and NOT string comparisons (those are unacceptable for symbols)
 - Improvements to symbol handling, including printing of symbols with invalid C chars, like 'hello-world
+- Consoldate list of primitives in (prim?) and (c-compile-prim?). should also include other information such as number of args (or variable args), for error handling
 
 - Notes on implementing variables
 
