@@ -95,7 +95,11 @@ Original notes: Will probably also require apply, read, etc. will probably be ne
 - may be necessary to specify arity of functions in call to apply
 - GC - notes from: http://www.more-magic.net/posts/internals-gc.html
 
- JAE - Good notes here about mutations (use write barrier to keep track of changes, EG: vector-set!). remember changes so they can be handled properly during next GC
+ JAE - Good notes here about mutations (use write barrier to keep track of changes, EG: vector-set!). remember changes so they can be handled properly during next GC:
+
+ Another major oversight is the assumption that objects can only point from the stack into the heap. If Scheme was a purely functional language, this would be entirely accurate: new objects can refer to old objects, but there is no way that a preexisting object can be made to refer to a newly created object. For that, you need to support mutation.
+ But Scheme does support mutation! So what happens when you use vector-set! to store a newly created, stack-allocated value in an old, heap-allocated vector? If we used the above algorithm, the newly created element would either be part of the live set and get copied, but the vector's pointer would not be updated, or it wouldn't be part of the live set and the object would be lost in the stack reset.
+ The answer to this problem is also pretty simple: we add a so-called write barrier. Whenever a value is written to an object, it is remembered. Then, when performing a GC, these remembered values are considered to be part of the live set, just like the addresses in the saved call. This is also the reason CHICKEN always shows the number of mutations when you're asking for GC statistics: mutation may slow down a program because GCs might take longer.
 
  JAE - worth considering having immediate values, which take advantage of fact that lowest bit is 0 for pointers (EG: boxed values)?
 
