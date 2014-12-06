@@ -267,6 +267,12 @@
 (define (lambda->formals exp)
   (cadr exp))
 
+;; Convert arg to a list (if improper)
+;(define (pair->list p)
+;; if (not pair? p) (cons p '()) ; ensure proper list
+;; create lst - (cons (car p) (pair->lst (cdr p)))
+;)
+
 (define (lambda->formals-as-list exp)
   (if (lambda-varargs? exp)
       (let ((args (lambda->formals exp)))
@@ -746,7 +752,7 @@
       ((ref? exp)      (if bound-only? '() (list exp)))
       ((lambda? exp)   
         (difference (reduce union (map search (lambda->exp exp)) '())
-                    (lambda->formals exp)))
+                    (lambda->formals-as-list exp)))
       ((if? exp)       (union (search (if->condition exp))
                               (union (search (if->then exp))
                                      (search (if->else exp)))))
@@ -1121,10 +1127,10 @@
     ((lambda? exp)
      (let* ((new-self-var (gensym 'self))
             (body  (lambda->exp exp))
-            (new-free-vars (difference (free-vars body) (lambda->formals exp))))
+            (new-free-vars (difference (free-vars body) (lambda->formals-as-list exp))))
        `(%closure
           (lambda
-            ,(cons new-self-var (lambda->formals exp))
+            ,(cons new-self-var (lambda->formals-as-list exp))
             ,(convert (car body) new-self-var new-free-vars)) ;; TODO: should this be a map??? was a list in 90-min-scc.
           ,@(map (lambda (v) ;; TODO: splice here?
                     (cc v))
@@ -1139,14 +1145,14 @@
            (args (map cc (cdr exp))))
        (if (lambda? fn)
            (let* ((body  (lambda->exp fn))
-                  (new-free-vars (difference (free-vars body) (lambda->formals fn)))
+                  (new-free-vars (difference (free-vars body) (lambda->formals-as-list fn)))
                   (new-free-vars? (> (length new-free-vars) 0)))
                (if new-free-vars?
                  ; Free vars, create a closure for them
                  (let* ((new-self-var (gensym 'self)))
                    `((%closure 
                         (lambda
-                          ,(cons new-self-var (lambda->formals fn))
+                          ,(cons new-self-var (lambda->formals-as-list fn))
                           ,(convert (car body) new-self-var new-free-vars))
                         ,@(map (lambda (v) (cc v))
                                new-free-vars))
