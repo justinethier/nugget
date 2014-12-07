@@ -276,19 +276,43 @@
      (else
        (error `(Unexpected formals list in lambda-formals-type: ,args))))))
 
-;; Convert arg to a list (if improper)
-;(define (pair->list p)
-;; if (not pair? p) (cons p '()) ; ensure proper list
-;; create lst - (cons (car p) (pair->lst (cdr p)))
-;)
+;; Repack a list of args (symbols) into lambda formals, by type
+;; assumes args is a proper list
+(define (list->lambda-formals args type)
+  (cond 
+    ((eq? type 'args:fixed) args)
+    ((eq? type 'args:fixed-with-varargs) (list->pair args))
+    ((eq? type 'args:varargs) 
+     (if (> (length args) 1)
+         (error `(Too many args for varargs ,args))
+         (car args)))
+    (else (error `(Unexpected type ,type)))))
+
+;; Create a proper copy of an improper list
+;; EG: (1 2 . 3) ==> (1 2 3)
+(define (pair->list p)
+  (let loop ((lst p))
+    (if (not (pair? lst))
+        (cons lst '())
+        (cons (car lst) (loop (cdr lst))))))
+
+;; Create an improper copy of a proper list
+(define (list->pair l)
+  (let loop ((lst l))
+    (cond
+    ((not (pair? lst)) 
+     lst)
+    ((null? (cdr lst))
+     (car lst))
+    (else
+     (cons (car lst) (loop (cdr lst)))))))
 
 (define (lambda->formals-as-list exp)
   (if (lambda-varargs? exp)
       (let ((args (lambda->formals exp)))
         (if (symbol? args)
             (list args)
-            ;; TODO: need to convert pair, EG: (a b . c) to a list
-            'TODO))
+            (pair->list args)))
       (lambda->formals exp)))
 
 ; lambda->exp : lambda-exp -> exp
