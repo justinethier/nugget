@@ -267,6 +267,15 @@
 (define (lambda->formals exp)
   (cadr exp))
 
+(define (lambda-formals-type exp)
+ (let ((args (lambda->formals exp)))
+   (cond
+     ((symbol? args) 'args:varargs)
+     ((list? args)   'args:fixed)
+     ((pair? args)   'args:fixed-with-varargs)
+     (else
+       (error `(Unexpected formals list in lambda-formals-type: ,args))))))
+
 ;; Convert arg to a list (if improper)
 ;(define (pair->list p)
 ;; if (not pair? p) (cons p '()) ; ensure proper list
