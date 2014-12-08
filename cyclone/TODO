@@ -1,4 +1,7 @@
 Add stuff required for eval:
+ - varargs
+   TODO: define support. EG: (define (list . objs) ...)
+
  - String support
    issue is how to support strings themselves in memory. can add them directly to the string_type, but then apply won't work 
    because it could return an unknown number of bytes. on the other hand could use a separate data heap that is mirrored during GC.
