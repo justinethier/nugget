@@ -31,7 +31,8 @@
 ;; (display 'test)
 
 ;(define (list objs)  objs)
-(define (list . objs)  objs)
+;(define (list . objs)  objs)
+(define list (lambda objs  objs))
 ;; Equivalent to:
 ;;  (define <variable>
 ;;    (lambda <formal> <body>))
