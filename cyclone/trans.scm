@@ -276,6 +276,14 @@
      (else
        (error `(Unexpected formals list in lambda-formals-type: ,args))))))
 
+(define (lambda-formals->list exp)
+  (if (lambda-varargs? exp)
+      (let ((args (lambda->formals exp)))
+        (if (symbol? args)
+            (list args)
+            (pair->list args)))
+      (lambda->formals exp)))
+
 ;; Repack a list of args (symbols) into lambda formals, by type
 ;; assumes args is a proper list
 (define (list->lambda-formals args type)
@@ -306,14 +314,6 @@
      (car lst))
     (else
      (cons (car lst) (loop (cdr lst)))))))
-
-(define (lambda->formals-as-list exp)
-  (if (lambda-varargs? exp)
-      (let ((args (lambda->formals exp)))
-        (if (symbol? args)
-            (list args)
-            (pair->list args)))
-      (lambda->formals exp)))
 
 ; lambda->exp : lambda-exp -> exp
 (define (lambda->exp exp)
@@ -532,72 +532,72 @@
 
 ;; Syntax manipulation.
 
-; substitute-var : alist[var,exp] ref-exp -> exp
-(define (substitute-var env var)
-  (let ((sub (assq var env)))
-    (if sub
-        (cadr sub)
-        var)))
-
-; substitute : alist[var,exp] exp -> exp
-(define (substitute env exp)
-  
-  (define (substitute-with env)
-    (lambda (exp)
-      (substitute env exp)))
-
-  (cond
-    ; Core forms:    
-    ((null? env)        exp)
-    ((const? exp)       exp)
-    ((prim? exp)        exp)
-    ((ref? exp)         (substitute-var env exp))
-    ((lambda? exp)      `(lambda ,(lambda->formals exp)
-                           ,@(map (lambda (body-exp) 
-                                    ;; TODO: could be more efficient
-                                    (substitute 
-                                        (assq-remove-keys env (lambda->formals exp)) 
-                                        body-exp))
-                                 (lambda->exp exp))))
-    ((set!? exp)        `(set! ,(substitute-var env (set!->var exp))
-                               ,(substitute env (set!->exp exp))))
-    ((if? exp)          `(if ,(substitute env (if->condition exp))
-                             ,(substitute env (if->then exp))
-                             ,(substitute env (if->else exp))))
-    
-    ; Sugar:
-    ((let? exp)         `(let ,(azip (let->bound-vars exp)
-                                     (map (substitute-with env) (let->args exp)))
-                           ,(substitute (assq-remove-keys env (let->bound-vars exp))
-                                        (car (let->exp exp)))))
-    ((letrec? exp)      (let ((new-env (assq-remove-keys env (letrec->bound-vars exp))))
-                          `(letrec ,(azip (letrec->bound-vars exp) 
-                                          (map (substitute-with new-env) 
-                                               (letrec->args exp)))
-                             ,(substitute new-env (car (letrec->exp exp))))))
-    ((begin? exp)       (cons 'begin (map (substitute-with env) (begin->exps exp))))
-
-    ; IR (1):
-    ((cell? exp)        `(cell ,(substitute env (cell->value exp))))
-    ((cell-get? exp)    `(cell-get ,(substitute env (cell-get->cell exp))))
-    ((set-cell!? exp)   `(set-cell! ,(substitute env (set-cell!->cell exp))
-                                    ,(substitute env (set-cell!->value exp))))
-    
-    ; IR (2):
-    ((closure? exp)     `(closure ,(substitute env (closure->lam exp))
-                                  ,(substitute env (closure->env exp))))
-    ((env-make? exp)    `(env-make ,(env-make->id exp) 
-                                   ,@(azip (env-make->fields exp)
-                                           (map (substitute-with env)
-                                                (env-make->values exp)))))
-    ((env-get? exp)     `(env-get ,(env-get->id exp)
-                                  ,(env-get->field exp)
-                                  ,(substitute env (env-get->env exp))))
-    
-    ; Application:
-    ((app? exp)         (map (substitute-with env) exp))
-    (else               (error "unhandled expression type in substitution: " exp))))
-
+;; ; substitute-var : alist[var,exp] ref-exp -> exp
+;; (define (substitute-var env var)
+;;   (let ((sub (assq var env)))
+;;     (if sub
+;;         (cadr sub)
+;;         var)))
+;; 
+;; ; substitute : alist[var,exp] exp -> exp
+;; (define (substitute env exp)
+;;   
+;;   (define (substitute-with env)
+;;     (lambda (exp)
+;;       (substitute env exp)))
+;; 
+;;   (cond
+;;     ; Core forms:    
+;;     ((null? env)        exp)
+;;     ((const? exp)       exp)
+;;     ((prim? exp)        exp)
+;;     ((ref? exp)         (substitute-var env exp))
+;;     ((lambda? exp)      `(lambda ,(lambda->formals exp)
+;;                            ,@(map (lambda (body-exp) 
+;;                                     ;; TODO: could be more efficient
+;;                                     (substitute 
+;;                                         (assq-remove-keys env (lambda->formals exp)) 
+;;                                         body-exp))
+;;                                  (lambda->exp exp))))
+;;     ((set!? exp)        `(set! ,(substitute-var env (set!->var exp))
+;;                                ,(substitute env (set!->exp exp))))
+;;     ((if? exp)          `(if ,(substitute env (if->condition exp))
+;;                              ,(substitute env (if->then exp))
+;;                              ,(substitute env (if->else exp))))
+;;     
+;;     ; Sugar:
+;;     ((let? exp)         `(let ,(azip (let->bound-vars exp)
+;;                                      (map (substitute-with env) (let->args exp)))
+;;                            ,(substitute (assq-remove-keys env (let->bound-vars exp))
+;;                                         (car (let->exp exp)))))
+;;     ((letrec? exp)      (let ((new-env (assq-remove-keys env (letrec->bound-vars exp))))
+;;                           `(letrec ,(azip (letrec->bound-vars exp) 
+;;                                           (map (substitute-with new-env) 
+;;                                                (letrec->args exp)))
+;;                              ,(substitute new-env (car (letrec->exp exp))))))
+;;     ((begin? exp)       (cons 'begin (map (substitute-with env) (begin->exps exp))))
+;; 
+;;     ; IR (1):
+;;     ((cell? exp)        `(cell ,(substitute env (cell->value exp))))
+;;     ((cell-get? exp)    `(cell-get ,(substitute env (cell-get->cell exp))))
+;;     ((set-cell!? exp)   `(set-cell! ,(substitute env (set-cell!->cell exp))
+;;                                     ,(substitute env (set-cell!->value exp))))
+;;     
+;;     ; IR (2):
+;;     ((closure? exp)     `(closure ,(substitute env (closure->lam exp))
+;;                                   ,(substitute env (closure->env exp))))
+;;     ((env-make? exp)    `(env-make ,(env-make->id exp) 
+;;                                    ,@(azip (env-make->fields exp)
+;;                                            (map (substitute-with env)
+;;                                                 (env-make->values exp)))))
+;;     ((env-get? exp)     `(env-get ,(env-get->id exp)
+;;                                   ,(env-get->field exp)
+;;                                   ,(substitute env (env-get->env exp))))
+;;     
+;;     ; Application:
+;;     ((app? exp)         (map (substitute-with env) exp))
+;;     (else               (error "unhandled expression type in substitution: " exp))))
+;; 
 
 ;; Macro expansion
 
@@ -785,7 +785,7 @@
       ((ref? exp)      (if bound-only? '() (list exp)))
       ((lambda? exp)   
         (difference (reduce union (map search (lambda->exp exp)) '())
-                    (lambda->formals-as-list exp)))
+                    (lambda-formals->list exp)))
       ((if? exp)       (union (search (if->condition exp))
                               (union (search (if->then exp))
                                      (search (if->else exp)))))
@@ -896,7 +896,7 @@
     ((prim? exp)     exp)
     ((quote? exp)    exp)
     ((lambda? exp)   `(lambda ,(lambda->formals exp)
-                        ,(wrap-mutable-formals (lambda->formals exp)
+                        ,(wrap-mutable-formals (lambda-formals->list exp)
                                                (wrap-mutables (car (lambda->exp exp)))))) ;; Assume single expr in lambda body, since after CPS phase
     ((set!? exp)     `(set-cell! ,(set!->var exp) ,(wrap-mutables (set!->exp exp))))
     ((if? exp)       `(if ,(wrap-mutables (if->condition exp))
@@ -950,11 +950,14 @@
                          (lambda (a) (convert a renamed))
                          (cdr ast))))
       ((lambda? ast)
-       (let* ((args (lambda->formals ast))
+       (let* ((args (lambda-formals->list ast))
+              (ltype (lambda-formals-type ast))
               (a-lookup (map (lambda (a) (cons a (gensym a))) args))
               (body (lambda->exp ast)))
          `(lambda 
-            ,(map (lambda (p) (cdr p)) a-lookup)  
+            ,(list->lambda-formals
+                (map (lambda (p) (cdr p)) a-lookup)  
+                ltype)
             ,@(convert body (append a-lookup renamed)))))
       ((app? ast)
        (map (lambda (a) (convert a renamed)) ast))
@@ -1032,10 +1035,15 @@
                               ,@args)))))
 
           ((lambda? ast)
-           (let ((k (gensym 'k)))
+           (let ((k (gensym 'k))
+                 (ltype (lambda-formals-type ast)))
              (list cont-ast
                    `(lambda
-                      ,(cons k (cadr ast)) ; lam params
+                      ,(list->lambda-formals
+                         (cons k (cadr ast)) ; lam params
+                         (if (equal? ltype 'args:varargs)
+                             'args:fixed-with-varargs ;; OK? promote due to k
+                             ltype))
                       ,(cps-seq (cddr ast) k)))))
 
 ;
@@ -1160,10 +1168,12 @@
     ((lambda? exp)
      (let* ((new-self-var (gensym 'self))
             (body  (lambda->exp exp))
-            (new-free-vars (difference (free-vars body) (lambda->formals-as-list exp))))
+            (new-free-vars (difference (free-vars body) (lambda-formals->list exp))))
        `(%closure
           (lambda
-            ,(cons new-self-var (lambda->formals-as-list exp))
+            ,(list->lambda-formals
+               (cons new-self-var (lambda-formals->list exp))
+               (lambda-formals-type exp))
             ,(convert (car body) new-self-var new-free-vars)) ;; TODO: should this be a map??? was a list in 90-min-scc.
           ,@(map (lambda (v) ;; TODO: splice here?
                     (cc v))
@@ -1178,14 +1188,16 @@
            (args (map cc (cdr exp))))
        (if (lambda? fn)
            (let* ((body  (lambda->exp fn))
-                  (new-free-vars (difference (free-vars body) (lambda->formals-as-list fn)))
+                  (new-free-vars (difference (free-vars body) (lambda-formals->list fn)))
                   (new-free-vars? (> (length new-free-vars) 0)))
                (if new-free-vars?
                  ; Free vars, create a closure for them
                  (let* ((new-self-var (gensym 'self)))
                    `((%closure 
                         (lambda
-                          ,(cons new-self-var (lambda->formals-as-list fn))
+                          ,(list->lambda-formals
+                             (cons new-self-var (lambda-formals->list fn))
+                             (lambda-formals-type fn))
                           ,(convert (car body) new-self-var new-free-vars))
                         ,@(map (lambda (v) (cc v))
                                new-free-vars))
