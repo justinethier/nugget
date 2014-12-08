@@ -634,7 +634,7 @@
   (cdr (assv id lambdas)))
 
 (define (lambda->env exp)
-    (let ((formals (lambda->formals exp)))
+    (let ((formals (lambda-formals->list exp)))
         (car formals)))
 
 ;; c-compile-closure : closure-exp (string -> void) -> string
