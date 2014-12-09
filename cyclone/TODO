@@ -2,6 +2,29 @@ Add stuff required for eval:
  - varargs
    TODO: define support. EG: (define (list . objs) ...)
 
+Working version of _tmp.scm with varargs. need to get this working,
+create a generalized macro or such for it, and modifiy cgen to emit
+suitable code:
+
+    static void __lambda_8(object self_73805, object k_73796, object objs_73787, ...) {
+      /* TODO: create macro to handle varargs?? */
+      int count = 2, i;
+      object tmp;
+      list args = alloca(sizeof(cons_type)*count);
+      va_list va;
+      va_start(va, objs_73787);
+      tmp = objs_73787;
+      for (i = 0; i < count; i++) {
+        args[i].tag = cons_tag;
+        args[i].cons_car = tmp;
+        args[i].cons_cdr = (i == (count-1)) ? nil : &args[i + 1];
+        tmp = va_arg(va, object);
+      }
+      va_end(va);
+      /* END varargs */
+      return_funcall1(  k_73796, args); //objs_73787);; 
+    }
+
  - String support
    issue is how to support strings themselves in memory. can add them directly to the string_type, but then apply won't work 
    because it could return an unknown number of bytes. on the other hand could use a separate data heap that is mirrored during GC.
