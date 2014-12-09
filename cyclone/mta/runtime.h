@@ -228,6 +228,43 @@ static object cell_set(object cell, object value){
     return cell;
 }
 
+/* Variable argument count support 
+
+   This macro is intended to be executed at the top of a function that
+   is passed 'var' as a variable-length argument. 'count' is the number
+   of varargs that were passed. EG: 
+   - C definition: f(object a, ...)
+   - C call: f(1, 2, 3)
+   - var: a
+   - count: 3
+
+   Argument count would need to be passed by the caller of f. Presumably
+   our compiler will compute the difference between the number of required
+   args and the number of provided ones, and pass the difference as 'count'
+ */
+#define load_varargs(var, count) { \
+  int i; \
+  object tmp; \
+  list args = nil; \
+  va_list va; \
+  if (count > 0) { \
+    args = alloca(sizeof(cons_type)*count); \
+    va_start(va, var); \
+    for (i = 0; i < count; i++) { \
+      if (i) { \
+          tmp = va_arg(va, object); \
+      } else { \
+          tmp = var; \
+      } \
+      args[i].tag = cons_tag; \
+      args[i].cons_car = tmp; \
+      args[i].cons_cdr = (i == (count-1)) ? nil : &args[i + 1]; \
+    } \
+    va_end(va); \
+  } \
+  var = args; \
+}
+
 /* Prototypes for Lisp built-in functions. */
 
 static list mcons(object,object);
