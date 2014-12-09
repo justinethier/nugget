@@ -696,22 +696,31 @@
         (create-mclosure))))))
 
 ; c-compile-formals : list[symbol] -> string
-(define (c-compile-formals formals)
+(define (c-compile-formals formals type)
   (if (not (pair? formals))
       ""
       (string-append
        "object "
        (mangle (car formals))
-       (if (pair? (cdr formals))
-           (string-append ", " (c-compile-formals (cdr formals)))
-           ""))))
+       (cond
+         ((pair? (cdr formals))
+          (string-append ", " (c-compile-formals (cdr formals) type)))
+         ((not (equal? 'args:fixed type)) 
+          (string-append ", object " (mangle (cdr formals)) ", ..."))
+         (else
+          "")))))
+;;       (if (pair? (cdr formals))
+;;           (string-append ", " (c-compile-formals (cdr formals) type))
+;;           ""))))
 
 ; c-compile-lambda : lamda-exp (string -> void) -> (string -> string)
 (define (c-compile-lambda exp)
   (let* ((preamble "")
          (append-preamble (lambda (s)
                             (set! preamble (string-append preamble "  " s "\n")))))
-    (let* ((formals (c-compile-formals (lambda->formals exp)))
+    (let* ((formals (c-compile-formals 
+                      (lambda->formals exp)
+                      (lambda-formals-type exp)))
            (tmp-ident (mangle (car (lambda->formals exp))))
            (has-closure? 
              (and

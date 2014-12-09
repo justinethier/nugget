@@ -56,6 +56,7 @@
 ;; require passing numargs to all functions, like how Chicken
 ;; structures its functions.
 (write (list 1))
+(write (list 1 2))
 ;(write (list 1 2 3))
 ;(write (list))
 ;(write (list 'a '((b)) 'c))
