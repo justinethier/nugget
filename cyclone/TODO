@@ -1,29 +1,16 @@
 Add stuff required for eval:
- - varargs
-   TODO: define support. EG: (define (list . objs) ...)
-
-Working version of _tmp.scm with varargs. need to get this working,
-create a generalized macro or such for it, and modifiy cgen to emit
-suitable code:
-
-    static void __lambda_8(object self_73805, object k_73796, object objs_73787, ...) {
-      /* TODO: create macro to handle varargs?? */
-      int count = 2, i;
-      object tmp;
-      list args = alloca(sizeof(cons_type)*count);
-      va_list va;
-      va_start(va, objs_73787);
-      tmp = objs_73787;
-      for (i = 0; i < count; i++) {
-        args[i].tag = cons_tag;
-        args[i].cons_car = tmp;
-        args[i].cons_cdr = (i == (count-1)) ? nil : &args[i + 1];
-        tmp = va_arg(va, object);
-      }
-      va_end(va);
-      /* END varargs */
-      return_funcall1(  k_73796, args); //objs_73787);; 
-    }
+ - varargs TODO:
+   - emit load_varargs in compiled code
+   - compute 'count' for use in load_varargs
+     will require adding argc to each generated function, passing it in
+     calls to generated functions, and having code in varargs functions 
+     that computes the difference between the fixed arg count and the 
+     number of actual args passed. EG:
+       - f(int a, int b, ...)
+       - f(1, 2, 3)
+     argc is 3 but count would be 2 (we need to read b and 1 more obj
+     using va_arg)
+   - define support. EG: (define (list . objs) ...)
 
  - String support
    issue is how to support strings themselves in memory. can add them directly to the string_type, but then apply won't work 
