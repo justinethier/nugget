@@ -726,21 +726,25 @@
              (and
                (> (string-length tmp-ident) 3)
                (equal? "self" (substring tmp-ident 0 4))))
+           (formals*
+             (string-append
+                (if has-closure? "" "closure _,") ;; TODO: seems wrong, will GC be too aggressive due to missing refs?
+                formals))
            (env-closure (lambda->env exp))
            (body    (c-compile-exp     
                         (car (lambda->exp exp)) ;; car ==> assume single expr in lambda body after CPS
                         append-preamble
                         (mangle env-closure))))
+     (cons 
       (lambda (name)
         (string-append "static void " name 
                        "(" 
-                       (if has-closure? "" "closure _,") ;; TODO: seems wrong, will GC be too aggressive due to missing refs?
-                        formals 
+                        formals*
                        ") {\n"
                        preamble
-                       ;"  " body "; \n"
                        (c:serialize body "  ") "; \n"
-                       "}\n")))))
+                       "}\n"))
+      formals*))))
   
 (define (mta:code-gen input-program)
   (let ((compiled-program (c-compile-program input-program)))
@@ -757,7 +761,11 @@
     ; Print the prototypes:
     (for-each
      (lambda (l)
-       (emit (string-append "static void __lambda_" (number->string (car l)) "() ;")))
+       (emit (string-append 
+               "static void __lambda_" 
+               (number->string (car l)) "("
+               (cdadr l)
+               ") ;")))
      lambdas)
     
     (emit "")
@@ -765,7 +773,7 @@
     ; Print the definitions:
     (for-each
      (lambda (l)
-       (emit ((cadr l) (string-append "__lambda_" (number->string (car l))))))
+       (emit ((caadr l) (string-append "__lambda_" (number->string (car l))))))
      lambdas)
   
     (emit "
