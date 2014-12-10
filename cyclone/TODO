@@ -1,6 +1,5 @@
 Add stuff required for eval:
  - varargs TODO:
-   - add test cases to unit tests
    - anything else???
 
  - String support
@@ -40,6 +39,12 @@ Add stuff required for eval:
      (gdb) p  ((list)cell_get(((closureN)self_73797)->elts[0]))->tag
      $2 = 12
 
+
+- Unit test improvements
+  - concatenate all into one file when compiling / running
+  - add assert functions, and actually test for equality
+    otherwise it is too easy to miss failing test cases, unless they
+    blow up the runtime
 
 - Add native apply support for primitives
   - do we need to create a table of primitives, like husk?
