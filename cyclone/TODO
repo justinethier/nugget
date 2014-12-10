@@ -1,6 +1,8 @@
 Add stuff required for eval:
- - varargs TODO:
-   - anything else???
+ - Optimizations
+   it might be better for (define) statements to create GC roots, rather than attempting to pass
+   all defines around in closures. that should minimize closure size and the amount of data each function
+   needs to pass around (IE: funcall80)
 
  - String support
    issue is how to support strings themselves in memory. can add them directly to the string_type, but then apply won't work 
@@ -27,18 +29,6 @@ Add stuff required for eval:
   TODO: trigger GC if data heap too low
   TODO: once this works but before moving all, consolidate all this in docs/strings.txt or such. would be useful to keep these notes
 
- - Other stuff required by eval.scm:
-   map (issue with primitives as first-class functions)
-
-   Note example map.scm fails, because attempting to call primitive_type as a function:
-   Breakpoint 1, __lambda_2 (self_73797=0xb7a2e19c, _73_191_73776=0xb7a2e1b0) at map.c:448
-
-     448     return_funcall3(  cell_get(((closureN)self_73797)->elts[0]), &c_73825, &c_73829, &c_73830);;
-     (gdb) p  cell_get(((closureN)self_73797)->elts[0])
-     $1 = (void *) 0x804c060
-     (gdb) p  ((list)cell_get(((closureN)self_73797)->elts[0]))->tag
-     $2 = 12
-
 
 - Unit test improvements
   - concatenate all into one file when compiling / running
@@ -46,13 +36,11 @@ Add stuff required for eval:
     otherwise it is too easy to miss failing test cases, unless they
     blow up the runtime
 
-- Add native apply support for primitives
+- in regard to native apply support for primitives
   - do we need to create a table of primitives, like husk?
     might allow for more efficient comparisons than the stupid string cmp's
     that are required if we use symbols to denote primitives (which also 
     breaks lexical scoping)
-  - what else to figure out before continuing with eval, since apply is
-    critical for the interpreter (otherwise how to call primitives?)
 
 - Improved symbol storage
   as part of above, probably will need a more dynamic and accurate way to store symbols.
@@ -80,8 +68,6 @@ Original notes: Will probably also require apply, read, etc. will probably be ne
 
 - Implement ER-macros using eval, in scheme. with this in place, could implement basic macros using ER and replace "desugar". presumably syntax rules could be implemented this way as well, but that can wait for a later time
 - Pass port along with emit procedures, to allow the scheme code to write to an output file (IE, c file)?? Or is with-output-file good enough? unfortunately that is not in husk yet so it makes boostrapping harder
-- Test with nested variables of the same name (EG: 'x'). does it work, or do we need alpha conversion to prevent
-  collisions? I suspect without changes, that lexical scoping will not be preserved.
 - Add more numeric support, and doubles 
 - WRT set! support, and mutable variables:
   - set aggressive GC, and see if there are any problems with data being lost
@@ -109,8 +95,6 @@ Original notes: Will probably also require apply, read, etc. will probably be ne
  Another major oversight is the assumption that objects can only point from the stack into the heap. If Scheme was a purely functional language, this would be entirely accurate: new objects can refer to old objects, but there is no way that a preexisting object can be made to refer to a newly created object. For that, you need to support mutation.
  But Scheme does support mutation! So what happens when you use vector-set! to store a newly created, stack-allocated value in an old, heap-allocated vector? If we used the above algorithm, the newly created element would either be part of the live set and get copied, but the vector's pointer would not be updated, or it wouldn't be part of the live set and the object would be lost in the stack reset.
  The answer to this problem is also pretty simple: we add a so-called write barrier. Whenever a value is written to an object, it is remembered. Then, when performing a GC, these remembered values are considered to be part of the live set, just like the addresses in the saved call. This is also the reason CHICKEN always shows the number of mutations when you're asking for GC statistics: mutation may slow down a program because GCs might take longer.
-
- JAE - worth considering having immediate values, which take advantage of fact that lowest bit is 0 for pointers (EG: boxed values)?
 
  JAE - Important point, that the heap must be reallocated during a major GC if there is too much data in the stack / old heap. Considered this but not sure if cyclone's GC does that right now:
 
