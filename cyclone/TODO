@@ -1,15 +1,7 @@
 Add stuff required for eval:
  - varargs TODO:
-   - compute 'count' for use in load_varargs
-     will require adding argc to each generated function, passing it in
-     calls to generated functions, and having code in varargs functions 
-     that computes the difference between the fixed arg count and the 
-     number of actual args passed. EG:
-       - f(int a, int b, ...)
-       - f(1, 2, 3)
-     argc is 3 but count would be 2 (we need to read b and 1 more obj
-     using va_arg)
-   - define support. EG: (define (list . objs) ...)
+   - add test cases to unit tests
+   - anything else???
 
  - String support
    issue is how to support strings themselves in memory. can add them directly to the string_type, but then apply won't work 

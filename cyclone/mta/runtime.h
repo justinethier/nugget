@@ -928,7 +928,7 @@ static list mcons(a,d) object a,d;
  c->tag = cons_tag; c->cons_car = a; c->cons_cdr = d;
  return c;}
 
-static void c_entry_pt(closure,closure);
+static void c_entry_pt(int,closure,closure);
 static void main_main (stack_size,heap_size,stack_base)
      long stack_size,heap_size; char *stack_base;
 {char in_my_frame;

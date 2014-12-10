@@ -139,7 +139,7 @@
       "     object buf[" n "]; " arry-assign " \\\n"
       "     mclosure0(c1, _fn); \\\n"
       "     GC(&c1, buf, " n "); return; \\\n"
-      " } else { (_fn)((closure)_fn" args "); }}\n")))
+      " } else { (_fn)(" n ",(closure)_fn" args "); }}\n")))
 
 (define (c-macro-funcall num-args)
   (let ((args (c-macro-n-prefix num-args ",a"))
@@ -150,7 +150,7 @@
       "#define funcall" n "(cfn" args ") "
         (wrap (string-append "if (prim(cfn)) { Cyc_apply(" n-1 ", (closure)a1, cfn" (if (> num-args 1) (substring args 3 (string-length args)) "") "); }"))
         (wrap " else { ")
-        "((cfn)->fn)(cfn" args ")"
+        "((cfn)->fn)(" n ",cfn" args ")"
         (wrap ";}")
         )))
 
@@ -735,16 +735,23 @@
      (cons 
       (lambda (name)
         (string-append "static void " name 
-                       "(" 
+                       "(int argc, " 
                         formals*
                        ") {\n"
                        preamble
                        (if (lambda-varargs? exp)
                          ;; Load varargs from C stack into Scheme list
                          (string-append 
+                           ; DEBUGGING:
+                           ;"printf(\"%d %d\\n\", argc, " 
+                           ;  (number->string (length (lambda-formals->list exp))) ");"
                            "load_varargs(" 
                            (mangle (lambda-varargs-var exp))
-                           ", 1);\n");
+                           ", argc - " (number->string 
+                                         (- (length (lambda-formals->list exp)) 
+                                            1
+                                            (if has-closure? 1 0)))
+                           ");\n");
                          "") ; No varargs, skip
                        (c:serialize body "  ") "; \n"
                        "}\n"))
@@ -767,7 +774,7 @@
      (lambda (l)
        (emit (string-append 
                "static void __lambda_" 
-               (number->string (car l)) "("
+               (number->string (car l)) "(int argc, "
                (cdadr l)
                ") ;")))
      lambdas)
@@ -781,7 +788,7 @@
      lambdas)
   
     (emit "
-  static void c_entry_pt(env,cont) closure env,cont; { ")
+  static void c_entry_pt(argc, env,cont) int argc; closure env,cont; { ")
     (emit compiled-program)
     (emit "}")
     (emit *c-main-function*)))

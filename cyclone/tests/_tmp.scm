@@ -31,8 +31,10 @@
 ;; (display 'test)
 
 ;(define (list objs)  objs)
-;(define (list . objs)  objs)
-(define list (lambda objs  objs))
+(define (list . objs)  objs)
+(define (list2 a b . objs) objs)
+;(define list (lambda objs  objs))
+;(define list2 (lambda (a b . objs)  objs))
 ;; Equivalent to:
 ;;  (define <variable>
 ;;    (lambda <formal> <body>))
@@ -57,6 +59,8 @@
 ;; structures its functions.
 (write (list 42 1))
 (write (list 42 1 2))
+(write (list2 42 1))
+(write (list2 42 1 2))
 ;(write (list 1 2 3))
 ;(write (list))
 ;(write (list 'a '((b)) 'c))
