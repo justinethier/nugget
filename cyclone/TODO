@@ -1,6 +1,5 @@
 Add stuff required for eval:
  - varargs TODO:
-   - emit load_varargs in compiled code
    - compute 'count' for use in load_varargs
      will require adding argc to each generated function, passing it in
      calls to generated functions, and having code in varargs functions 

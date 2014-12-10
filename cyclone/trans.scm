@@ -267,6 +267,18 @@
 (define (lambda->formals exp)
   (cadr exp))
 
+(define (lambda-varargs? exp)
+  (let ((type (lambda-formals-type exp)))
+    (or (equal? type 'args:varargs)
+        (equal? type 'args:fixed-with-varargs))))
+
+(define (lambda-varargs-var exp)
+  (if (lambda-varargs? exp)
+    (if (equal? (lambda-formals-type exp) 'args:varargs)
+        (lambda-formals exp) ; take symbol directly
+        (car (reverse (lambda-formals->list exp)))) ; Last arg is varargs
+    #f))
+
 (define (lambda-formals-type exp)
  (let ((args (lambda->formals exp)))
    (cond

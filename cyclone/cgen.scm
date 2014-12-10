@@ -709,9 +709,6 @@
           (string-append ", object " (mangle (cdr formals)) ", ..."))
          (else
           "")))))
-;;       (if (pair? (cdr formals))
-;;           (string-append ", " (c-compile-formals (cdr formals) type))
-;;           ""))))
 
 ; c-compile-lambda : lamda-exp (string -> void) -> (string -> string)
 (define (c-compile-lambda exp)
@@ -742,6 +739,13 @@
                         formals*
                        ") {\n"
                        preamble
+                       (if (lambda-varargs? exp)
+                         ;; Load varargs from C stack into Scheme list
+                         (string-append 
+                           "load_varargs(" 
+                           (mangle (lambda-varargs-var exp))
+                           ", 1);\n");
+                         "") ; No varargs, skip
                        (c:serialize body "  ") "; \n"
                        "}\n"))
       formals*))))
