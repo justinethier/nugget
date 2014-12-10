@@ -684,6 +684,10 @@
          (create-mclosure (lambda () 
            (string-append
             "mclosure" (number->string (length free-vars)) "(" cv-name ", "
+            ;; NOTE:
+            ;; Hopefully will not cause issues with varargs when casting to
+            ;; generic function type below. Works fine in gcc, not sure if 
+            ;; this is portable to other compilers though
             "(function_type)__lambda_" (number->string lid)
             (if (> (length free-vars) 0) "," "")
             (string-join free-vars ", ")
