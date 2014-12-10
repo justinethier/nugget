@@ -1,6 +1,5 @@
 Add stuff required for eval:
  - varargs TODO:
-   - fix compilation warnings when compiling code with varargs
    - add test cases to unit tests
    - anything else???
 

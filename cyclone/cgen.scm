@@ -684,7 +684,7 @@
          (create-mclosure (lambda () 
            (string-append
             "mclosure" (number->string (length free-vars)) "(" cv-name ", "
-            "__lambda_" (number->string lid)
+            "(function_type)__lambda_" (number->string lid)
             (if (> (length free-vars) 0) "," "")
             (string-join free-vars ", ")
             ");"))))
