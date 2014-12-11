@@ -17,6 +17,13 @@ C   61652   29743   31909   51.76%
 should compare times in each phase. but this still avoids WHY the last two phases are taking so long.
 is it just the sheer amount of code that is being generated?
 
+notes about globals:
+would have to occur after expand, since that could introduce more defines
+want to take each top-level define and create a global for it
+could filter top level into two categories - (define) expressions and other expressions, to be enclosed within a (begin)
+could create a single list of these, eg: (define, define, ..., begin) and then map over it for the other phases
+TBD: how to store defined functions? Do they become closures? how does that work?
+
  - C compiler errors:
 
 eval.c: In function âlambda_240âeval.c:55232:1: error: âote_carândeclared (first use in this function)
