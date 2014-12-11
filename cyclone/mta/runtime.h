@@ -608,6 +608,11 @@ typedef union {
  * @param args - A list of arguments to the function
  */
 static object apply(common_type *alloced, object func, object args){
+  if (nullp(args)) {
+      printf("Error: no arguments passed to apply\n");
+      exit(1);
+  }
+
   switch(type_of(func)) {
     case primitive_tag:
       if (func == primitive_cons) {
@@ -615,10 +620,42 @@ static object apply(common_type *alloced, object func, object args){
           alloced->cons_t = c;
       } else if (func == primitive_length) {
           alloced->integer_t = Cyc_length(car (args));
+      } else if (func == primitive_null_127) {
+          object tmp = car(args);
+          return Cyc_is_null(tmp);
       } else if (func == primitive_car) {
           return car(car(args));
       } else if (func == primitive_cdr) {
           return cdr(car(args));
+      } else if (func == primitive_cadr) {
+          return cadr(car(args));
+// caar(x) (car(car(x)))
+// cdar(x) (cdr(car(x)))
+// cddr(x) (cdr(cdr(x)))
+// caaar(x) (car(car(car(x))))
+// caadr(x) (car(car(cdr(x))))
+// cadar(x) (car(cdr(car(x))))
+// caddr(x) (car(cdr(cdr(x))))
+// cdaar(x) (cdr(car(car(x))))
+// cdadr(x) (cdr(car(cdr(x))))
+// cddar(x) (cdr(cdr(car(x))))
+// cdddr(x) (cdr(cdr(cdr(x))))
+// caaaar(x) (car(car(car(car(x)))))
+// caaadr(x) (car(car(car(cdr(x)))))
+// caadar(x) (car(car(cdr(car(x)))))
+// caaddr(x) (car(car(cdr(cdr(x)))))
+// cadaar(x) (car(cdr(car(car(x)))))
+// cadadr(x) (car(cdr(car(cdr(x)))))
+// caddar(x) (car(cdr(cdr(car(x)))))
+// cadddr(x) (car(cdr(cdr(cdr(x)))))
+// cdaaar(x) (cdr(car(car(car(x)))))
+// cdaadr(x) (cdr(car(car(cdr(x)))))
+// cdadar(x) (cdr(car(cdr(car(x)))))
+// cdaddr(x) (cdr(car(cdr(cdr(x)))))
+// cddaar(x) (cdr(cdr(car(car(x)))))
+// cddadr(x) (cdr(cdr(car(cdr(x)))))
+// cdddar(x) (cdr(cdr(cdr(car(x)))))
+// cddddr(x) (cdr(cdr(cdr(cdr(x)))))
       } else {
           printf("Unrecognized primitive function: %s\n", ((symbol_type *)func)->pname);
           exit(1);
@@ -641,26 +678,25 @@ static void Cyc_apply(int argc, closure cont, object prim, ...){
     
     va_start(ap, prim);
 
-    // TODO: built up a list of args
     for (i = 0; i < argc; i++) {
         tmp = va_arg(ap, object);
         args[i].tag = cons_tag;
         args[i].cons_car = tmp;
         args[i].cons_cdr = (i == (argc-1)) ? nil : &args[i + 1];
     }
-    printf("DEBUG applying primitive to ");
-    prin1((object)&args[0]);
-    printf("\n");
+    //printf("DEBUG applying primitive to ");
+    //prin1((object)&args[0]);
+    //printf("\n");
 
     va_end(ap);
     {
      tmp = apply(&buf, prim, (object)&args[0]);
-     printf("RESULT = ");
-     prin1(tmp); //(object)result);
-     printf("\n");
+     //printf("RESULT = ");
+     //prin1(tmp); //(object)result);
+     //printf("\n");
 
      // Call into cont with single result
-     (cont->fn)(cont, tmp); //(object)&result);
+     (cont->fn)(cont, tmp);
     }
 }
 // END apply

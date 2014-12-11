@@ -1,7 +1,7 @@
 (write (apply length '((#t #f))))
 (write (apply cons '(#t #f)))
 (apply cadr (list (list 1 2 3 4)))
-(apply null? (list))
+(write (apply null? (list '())))
 ;(write (apply + '(10 20))) ; may need to change representation of symbols to make this work
 
 ;; Varargs
