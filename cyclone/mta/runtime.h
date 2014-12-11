@@ -696,7 +696,7 @@ static void Cyc_apply(int argc, closure cont, object prim, ...){
      //printf("\n");
 
      // Call into cont with single result
-     (cont->fn)(cont, tmp);
+     (cont->fn)(1, cont, tmp);
     }
 }
 // END apply
