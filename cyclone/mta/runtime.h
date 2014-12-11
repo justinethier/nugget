@@ -549,11 +549,11 @@ static void __halt(object obj) {
 /* Primitive types */
 //typedef common_type (*prim_function_type)();
 //typedef void (*prim_function_type)();
-typedef struct {tag_type tag; /*prim_function_type fn;*/} primitive_type;
+typedef struct {tag_type tag; const char *pname; /*prim_function_type fn;*/} primitive_type;
 typedef primitive_type *primitive;
 
 #define defprimitive(name/*, fnc*/) \
-static primitive_type name##_primitive = {primitive_tag/*, &fnc*/}; \
+static primitive_type name##_primitive = {primitive_tag, #name /*, &fnc*/}; \
 static const object primitive_##name = &name##_primitive
 
 #define prim(x) (x && ((primitive)x)->tag == primitive_tag)
@@ -562,6 +562,8 @@ defprimitive(cons /*, Cyc_length*/);
 defprimitive(length /*, Cyc_length*/);
 defprimitive(car);
 defprimitive(cdr);
+defprimitive(cadr);
+defprimitive(null_127);
 
 // TODO: experimental apply support
 typedef union {
@@ -617,7 +619,7 @@ static object apply(common_type *alloced, object func, object args){
       } else if (func == primitive_cdr) {
           return cdr(car(args));
       } else {
-          printf("Unrecognized primitive function %s\n", ((symbol_type *)func)->pname);
+          printf("Unrecognized primitive function: %s\n", ((symbol_type *)func)->pname);
           exit(1);
       }
       break;
