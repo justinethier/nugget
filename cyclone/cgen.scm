@@ -598,7 +598,7 @@
 (define *symbols* '())
 
 ; These are (at least for now) preallocated by the runtime
-(define *reserved-symbols* '(t f cons length car cdr))
+(define *reserved-symbols* '(t f))
 
 (define (allocate-symbol sym)
   (if (and (not (member sym *symbols*))
