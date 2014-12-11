@@ -569,6 +569,7 @@ defprimitive(null_127);
 typedef union {
   cons_type cons_t;
   symbol_type symbol_t;
+  primitive_type primitive_t;
   integer_type integer_t;
   double_type double_t;
   string_type string_t;
