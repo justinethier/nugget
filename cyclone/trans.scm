@@ -739,75 +739,19 @@
     (cond
       ((singlet? exps)  (car exps))
       
-      ((pair? exps)     `(let (($_ ,(car exps)))
-                          ,(dummy-bind (cdr exps))))))
+      ; JAE - should be fine until CPS phase
+      ((pair? exps)
+       `((lambda ()
+         ,@exps)))))
+      ;((pair? exps)     `(let (($_ ,(car exps)))
+      ;                    ,(dummy-bind (cdr exps))))))
   (dummy-bind (begin->exps exp)))
-
-;; desugar : exp -> exp
-;(define (desugar exp)
-;  (cond
-;    ; Core forms:
-;    ((const? exp)      exp)
-;    ((prim? exp)       exp)
-;    ((ref? exp)        exp)
-;    ((quote? exp)      exp)
-;    ((lambda? exp)     `(lambda ,(lambda->formals exp)
-;                          ,@(map desugar (lambda->exp exp))))
-;    ((set!? exp)       `(set! ,(desugar (set!->var exp))
-;                              ,(desugar (set!->exp exp))))
-;    ((if? exp)         `(if ,(desugar (if->condition exp))
-;                            ,(desugar (if->then exp))
-;                            ,(desugar (if->else exp))))
-;    
-;    ; Sugar:
-;    ((let? exp)        (desugar (let=>lambda exp)))
-;    ((letrec? exp)     (desugar (letrec=>lets+sets exp)))
-;    ((begin? exp)      (desugar (begin=>let exp)))
-;    
-;;    ; IR (1):
-;;    ((cell? exp)       `(cell ,(desugar (cell->value exp))))
-;;    ((cell-get? exp)   `(cell-get ,(desugar (cell-get->cell exp))))
-;;    ((set-cell!? exp)  `(set-cell! ,(desugar (set-cell!->cell exp)) 
-;;                                   ,(desugar (set-cell!->value exp))))
-;;    
-;;    ; IR (2): 
-;;    ((closure? exp)    `(closure ,(desugar (closure->lam exp))
-;;                                 ,(desugar (closure->env exp))))
-;;    ((env-make? exp)   `(env-make ,(env-make->id exp)
-;;                                  ,@(azip (env-make->fields exp)
-;;                                          (map desugar (env-make->values exp)))))
-;;    ((env-get? exp)    `(env-get ,(env-get->id exp)
-;;                                 ,(env-get->field exp)
-;;                                 ,(env-get->env exp)))
-;    
-;    ; Applications:
-;    ((app? exp)        (map desugar exp))    
-;    (else              (error "unknown exp: " exp))))
-;    
 
 
 ;; Top-level analysis
 
 ; Separate top-level defines (globals) from other expressions
 (define (isolate-globals exp)
-; Simplest possible algorith, but does not handle this case:
-;   > (define a length)
-;   > (write a)
-;   > (define a cons)
-;   > (write (a 1 2))
-; One solution it to change the second define to:
-;   > (set! a cons)
-; and leave it in the top-level non-define expressions
-;
-;  (let ((global-defs (filter define? exp))
-;        (other-top-lvl 
-;          (filter
-;            (lambda (e) (not (define? e)))
-;            exp)))
-;    (append
-;      global-defs 
-;      (expand 
-;       `(begin ,@other-top-lvl)))))
   (let loop ((top-lvl exp)
              (globals '())
              (exprs '()))
@@ -816,15 +760,17 @@
        (append
          (reverse globals)
          (expand 
-          `(begin ,@(reverse exprs)))))
+          `((begin ,@(reverse exprs))))))
       (else
        (cond
          ((define? (car top-lvl))
           (if (has-global? globals (define->var (car top-lvl)))
+              ;; Global is redefined, add a (set!) at top-level
               (loop (cdr top-lvl)
                     globals
                     (cons
-              ;; TODO: convert to set! in exprs
+                     `(set! ,(define->var (car top-lvl))
+                            ,(define->exp (car top-lvl)))
                       exprs))
               (loop (cdr top-lvl)
                     (cons (car top-lvl) globals)
@@ -834,6 +780,12 @@
                  globals
                  (cons (car top-lvl) exprs))))))))
 
+; Has global already been found?
+;
+; NOTE:
+; Linear search may get expensive (n^2), but with a modest set of
+; define statements hopefully it will be acceptable. If not, will need
+; to use a faster data structure (EG: map or hashtable)
 (define (has-global? exp var)
   (call/cc
     (lambda (return)
@@ -845,6 +797,8 @@
        exp)
       #f)))
 
+; Compute list of global variables based on expression in top-level form
+; EG: (def, def, expr, ...)
 (define (global-vars exp)
   (let ((globals '()))
     (for-each
