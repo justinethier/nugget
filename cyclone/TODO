@@ -29,7 +29,18 @@ Add stuff required for eval:
 
 of course, fn is changed upon new closure, so it is not exactly the same object...
 
+Could make this happen by separating the continuation (which contains next fn) from the environment (closure vars). Even just doing this conceptually (in CC phase) may allow CC to detect unchanged environments. Also, can the existing code just reassign fn? I think that would work since closures are newly-allocated upon function invocation, though maybe it would break loops?
+
+just brainstorming this at the moment.
+
 3) important to see if optimizations can be made independent of adding globals, since even with globals there could be performance problems if there were to be large closures for whatever reason.
+
+4) does sequencing (IE, begin) have to create a new lambda for each expr?
+   might not make a difference, but seems like it should just create a lambda
+   body, and let CPS worry about extracting the lambdas. may end up with the
+   same result, though
+
+   by the same token, are there ever cases where it would make sense to pass a sequence all the way to the compiler? probably not, but just a thought
 
  - C compiler errors:
 

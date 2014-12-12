@@ -786,7 +786,73 @@
 ;    
 
 
+;; Top-level analysis
 
+; Separate top-level defines (globals) from other expressions
+(define (isolate-globals exp)
+; Simplest possible algorith, but does not handle this case:
+;   > (define a length)
+;   > (write a)
+;   > (define a cons)
+;   > (write (a 1 2))
+; One solution it to change the second define to:
+;   > (set! a cons)
+; and leave it in the top-level non-define expressions
+;
+;  (let ((global-defs (filter define? exp))
+;        (other-top-lvl 
+;          (filter
+;            (lambda (e) (not (define? e)))
+;            exp)))
+;    (append
+;      global-defs 
+;      (expand 
+;       `(begin ,@other-top-lvl)))))
+  (let loop ((top-lvl exp)
+             (globals '())
+             (exprs '()))
+    (cond 
+      ((null? top-lvl)
+       (append
+         (reverse globals)
+         (expand 
+          `(begin ,@(reverse exprs)))))
+      (else
+       (cond
+         ((define? (car top-lvl))
+          (if (has-global? globals (define->var (car top-lvl)))
+              (loop (cdr top-lvl)
+                    globals
+                    (cons
+              ;; TODO: convert to set! in exprs
+                      exprs))
+              (loop (cdr top-lvl)
+                    (cons (car top-lvl) globals)
+                    exprs)))
+         (else
+           (loop (cdr top-lvl)
+                 globals
+                 (cons (car top-lvl) exprs))))))))
+
+(define (has-global? exp var)
+  (call/cc
+    (lambda (return)
+      (for-each 
+        (lambda (e)
+          (if (and (define? e)
+                   (equal? (define->var e) var))
+            (return #t)))
+       exp)
+      #f)))
+
+(define (global-vars exp)
+  (let ((globals '()))
+    (for-each
+      (lambda (e)
+        (if (define? e)
+            (set! globals (cons (define->var e) globals))))
+      exp)
+    globals))
 
 ;; Syntactic analysis.
 

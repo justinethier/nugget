@@ -53,6 +53,10 @@
   (set! input-program (expand input-program))
   (trace:info "---------------- after macro expansion:")
   (trace:info input-program) ;pretty-print
+
+  (set! input-program (isolate-globals input-program))
+  (trace:info "---------------- after isolate globals")
+  (trace:info input-program) ;pretty-print
 )
 
 ; TODO: extract out non-define statements, and add them to 
