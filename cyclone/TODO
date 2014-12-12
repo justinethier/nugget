@@ -27,6 +27,8 @@ Add stuff required for eval:
 
 2) it looked like there were cases where a closure had a copy created of it, and the copy was passed along. it would be nice if the closure conversion phase could detect this and just pass the original closure along instead of building a new one. that saves a lot of work downstream, and seems like it might save work in cc as well (depending upon how complex the check is, of course!)
 
+of course, fn is changed upon new closure, so it is not exactly the same object...
+
 3) important to see if optimizations can be made independent of adding globals, since even with globals there could be performance problems if there were to be large closures for whatever reason.
 
  - C compiler errors:
