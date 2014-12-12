@@ -27,9 +27,8 @@
 
 (define (add-libs ast)
   (cond
-    ((begin? ast)
-     `(begin 
-        ,@(append *built-ins* (cdr ast))))
+    ((list? ast)
+     (append *built-ins* ast))
     (else
       (error "Unexpected input program:" ast))))
 
@@ -679,7 +678,7 @@
                           ,@(map expand (lambda->exp exp))))
     ((define? exp)     (if (define-lambda? exp)
                            (expand (define->lambda exp))
-                          `(set! ,(expand (define->var exp))
+                          `(define ,(expand (define->var exp))
                                 ,@(expand (define->exp exp)))))
     ((set!? exp)       `(set! ,(expand (set!->var exp))
                               ,(expand (set!->exp exp))))

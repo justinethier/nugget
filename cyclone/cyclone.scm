@@ -53,36 +53,44 @@
   (set! input-program (expand input-program))
   (trace:info "---------------- after macro expansion:")
   (trace:info input-program) ;pretty-print
+)
 
-  (set! input-program 
-    (alpha-convert
-        input-program))
-  (trace:info "---------------- after alpha conversion:")
-  (trace:info input-program) ;pretty-print
-
-  (set! input-program (cps-convert input-program))
-  (trace:info "---------------- after CPS:")
-  (trace:info input-program) ;pretty-print
-
-  (analyze-mutable-variables input-program)
-
-  (set! input-program (wrap-mutables input-program))
-  (trace:info "---------------- after wrap-mutables:")
-  (trace:info input-program) ;pretty-print
-
-  (set! input-program 
-    (caddr ;; Strip off superfluous lambda
-      (closure-convert input-program)))
-  (trace:info "---------------- after closure-convert:")
-  (trace:info input-program) ;pretty-print
-  
-  (if (not *do-code-gen*)
-    (begin
-      (trace:error "DEBUG, existing program")
-      (exit)))
-
-  (trace:info "---------------- C code:")
-  (mta:code-gen input-program))
+; TODO: extract out non-define statements, and add them to 
+;       a "main" after the defines
+; r5rs (and r7rs??) require all defines at the top of a block, but that's only internal defines
+;
+; TODO: need to convert internal defines to (set!)'s below, since all remaining phases
+;       operate on set!, not define
+;
+;  (set! input-program 
+;    (alpha-convert
+;        input-program))
+;  (trace:info "---------------- after alpha conversion:")
+;  (trace:info input-program) ;pretty-print
+;
+;  (set! input-program (cps-convert input-program))
+;  (trace:info "---------------- after CPS:")
+;  (trace:info input-program) ;pretty-print
+;
+;  (analyze-mutable-variables input-program)
+;
+;  (set! input-program (wrap-mutables input-program))
+;  (trace:info "---------------- after wrap-mutables:")
+;  (trace:info input-program) ;pretty-print
+;
+;  (set! input-program 
+;    (caddr ;; Strip off superfluous lambda
+;      (closure-convert input-program)))
+;  (trace:info "---------------- after closure-convert:")
+;  (trace:info input-program) ;pretty-print
+;  
+;  (if (not *do-code-gen*)
+;    (begin
+;      (trace:error "DEBUG, existing program")
+;      (exit)))
+;
+;  (trace:info "---------------- C code:")
+;  (mta:code-gen input-program))
 
 ;; Compile and emit:
 (define (run-compiler args cc?)
@@ -97,8 +105,7 @@
           (with-output-to-file 
             src-file 
             (lambda ()
-              (c-compile-and-emit 
-                (cons 'begin program))))
+              (c-compile-and-emit program)))
           (if cc?
             (system 
               ;; -I is a hack, real answer is to use 'make install' to place .h file
