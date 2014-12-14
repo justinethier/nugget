@@ -10,7 +10,8 @@
 (write (a 1 2))
 
 ;; Testing internal defines
-(define (test 1)
+;; TODO: the aa should be turned into a (set!)
+(define (test)
   (define aa 1)
   aa)
 ; need to be able to shadow globals, too

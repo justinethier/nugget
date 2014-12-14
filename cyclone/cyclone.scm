@@ -43,6 +43,7 @@
   
 ; c-compile-and-emit : (string -> A) exp -> void
 (define (c-compile-and-emit input-program)
+  (define globals '())
   (emit *c-file-header-comment*) ; Guarantee placement at top of C file
 
   (trace:info "---------------- input program:")
@@ -57,7 +58,6 @@
   (set! input-program (isolate-globals input-program))
   (trace:info "---------------- after isolate globals")
   (trace:info input-program) ;pretty-print
-)
 
 ; TODO: extract out non-define statements, and add them to 
 ;       a "main" after the defines
@@ -65,13 +65,17 @@
 ;
 ; TODO: need to convert internal defines to (set!)'s below, since all remaining phases
 ;       operate on set!, not define
-;
-;  (set! input-program 
-;    (alpha-convert
-;        input-program))
-;  (trace:info "---------------- after alpha conversion:")
-;  (trace:info input-program) ;pretty-print
-;
+
+  (set! globals (global-vars input-program))
+  (set! input-program 
+    (map
+      (lambda (expr)
+        (alpha-convert expr globals))
+      input-program))
+  (trace:info "---------------- after alpha conversion:")
+  (trace:info input-program) ;pretty-print
+)
+
 ;  (set! input-program (cps-convert input-program))
 ;  (trace:info "---------------- after CPS:")
 ;  (trace:info input-program) ;pretty-print
