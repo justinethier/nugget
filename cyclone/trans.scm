@@ -23,7 +23,7 @@
 ))
 
 (define (built-in-syms)
-  '(call/cc))
+  '(call/cc define))
 
 (define (add-libs ast)
   (cond
@@ -829,6 +829,8 @@
       ((if? exp)       (union (search (if->condition exp))
                               (union (search (if->then exp))
                                      (search (if->else exp)))))
+      ((define? exp)     (union (list (define->var exp))
+                              (search (define->exp exp))))
       ((set!? exp)     (union (list (set!->var exp)) 
                               (search (set!->exp exp))))
       ; Application:
@@ -954,13 +956,24 @@
 ;;
 ;; TODO: does not properly handle renaming builtin functions, would probably need to
 ;; pass that renaming information downstream
-(define (alpha-convert ast)
+(define (alpha-convert ast globals)
   ;; Initialize top-level variables
   (define (initialize-top-level-vars ast fv)
     (if (> (length fv) 0)
-       ;; Free variables found, set initial values
-       `((lambda ,fv ,ast)
-          ,@(map (lambda (_) #f) fv))
+       (cond
+   TODO:  instead of doing the same code in two places below, might want to think about
+          doing alpha convert of define->exp. that way, the conversion can also
+          take any internal defines and convert them to set!'s. Note issues with "aa"
+          in map.scm example (in map.c)
+
+         ((define? ast)
+          `(define ,(define->var ast)
+                   ((lambda ,fv ,(define->exp ast))
+                   ,@(map (lambda (_) #f) fv))))
+         (else
+          ;; Free variables found, set initial values
+          `((lambda ,fv ,ast)
+             ,@(map (lambda (_) #f) fv))))
         ast))
 
   (define (convert ast renamed)
@@ -973,6 +986,9 @@
           (renamed 
             (cdr renamed))
           (else ast))))
+      ((define? ast)
+       `(define ,(define->var ast)
+                ,(convert (define->exp ast) renamed)))
       ((set!? ast)
          ;; Without define, we have no way of knowing if this was a
          ;; define or a set prior to this phase. But no big deal, since
@@ -1004,9 +1020,9 @@
       (else
         (error "unhandled expression: " ast))))
 
-  (let* ((fv (free-vars ast))
+  (let* ((fv (difference (free-vars ast) globals))
          ;; Only find set! and lambda vars
-         (bound-vars (free-vars ast #t))
+         (bound-vars (union globals (free-vars ast #t)))
          ;; vars never bound in prog, but could be built-in
          (unbound-vars (difference fv bound-vars))
          ;; vars we know nothing about - error!
