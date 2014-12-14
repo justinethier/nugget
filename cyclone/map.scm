@@ -9,6 +9,14 @@
 ;(define a (lambda (x y) (cons x y)))
 (write (a 1 2))
 
+;; Testing internal defines
+(define (test 1)
+  (define aa 1)
+  aa)
+; need to be able to shadow globals, too
+; (define a 1)
+; a)
+
 (define (foldr func end lst)
   (if (null? lst)
       end
