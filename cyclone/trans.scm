@@ -1033,10 +1033,10 @@
       ;; Deconstruct define so underlying code can assume internal defines
       `(define 
          ,(define->var ast)
-         ,(convert (initialize-top-level-vars 
-                     (define->exp ast)
-                     (difference fv (built-in-syms)))
-                   (list))))
+         ,@(convert (initialize-top-level-vars 
+                      (define->exp ast)
+                      (difference fv (built-in-syms)))
+                    (list))))
      (else
       (convert (initialize-top-level-vars 
                  ast 
@@ -1164,7 +1164,12 @@
   (let* ((global-def? (define? ast)) ;; No internal defines by this phase
          (ast-cps
           (if global-def?
-            'TODO
+;; TODO: just a start, not quite sure what these should look like
+;; TODO: probably fails for a simple (define a 1), with no lambda
+            `(define ,(define->var ast)
+              ,@(let ((k (gensym 'k))
+                      (r (gensym 'r)))
+                 (cps (define->exp ast) `(lambda (,k ,r) (,k ,r)))))
             (cps ast
                (let ((r (gensym 'r)))
                    `(lambda (,r) (%halt ,r)))))))
