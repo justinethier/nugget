@@ -10,14 +10,18 @@
 (write (a 1 2))
 
 ;; Testing internal defines
-;; TODO: the aa should be turned into a (set!)
+;; The aa should be turned into a (set!)
 (define (test)
   (define aa 1)
   aa)
 (define (test2)
 ; TODO: need to be able to shadow globals, too
+;       using an internal define
  (define a 1)
  a)
+;; lambda var able to shadow global
+(define (test3)
+  ((lambda (a) a) 1))
 
 (define (foldr func end lst)
   (if (null? lst)
