@@ -14,9 +14,10 @@
 (define (test)
   (define aa 1)
   aa)
-; need to be able to shadow globals, too
-; (define a 1)
-; a)
+(define (test2)
+; TODO: need to be able to shadow globals, too
+ (define a 1)
+ a)
 
 (define (foldr func end lst)
   (if (null? lst)

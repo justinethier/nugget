@@ -960,20 +960,9 @@
   ;; Initialize top-level variables
   (define (initialize-top-level-vars ast fv)
     (if (> (length fv) 0)
-       (cond
-   TODO:  instead of doing the same code in two places below, might want to think about
-          doing alpha convert of define->exp. that way, the conversion can also
-          take any internal defines and convert them to set!'s. Note issues with "aa"
-          in map.scm example (in map.c)
-
-         ((define? ast)
-          `(define ,(define->var ast)
-                   ((lambda ,fv ,(define->exp ast))
-                   ,@(map (lambda (_) #f) fv))))
-         (else
-          ;; Free variables found, set initial values
-          `((lambda ,fv ,ast)
-             ,@(map (lambda (_) #f) fv))))
+       ;; Free variables found, set initial values
+       `((lambda ,fv ,ast)
+          ,@(map (lambda (_) #f) fv))
         ast))
 
   (define (convert ast renamed)
@@ -987,8 +976,8 @@
             (cdr renamed))
           (else ast))))
       ((define? ast)
-       `(define ,(define->var ast)
-                ,(convert (define->exp ast) renamed)))
+       ;; Only internal defines at this point, treat same as set
+       `(set! ,@(map (lambda (a) (convert a renamed)) (cdr ast))))
       ((set!? ast)
          ;; Without define, we have no way of knowing if this was a
          ;; define or a set prior to this phase. But no big deal, since
@@ -1031,6 +1020,14 @@
     (cond
      ((> (length unknown-vars) 0)
       (error "Unbound variable(s)" unknown-vars))
+     ((define? ast)
+      ;; Deconstruct define so underlying code can assume internal defines
+      `(define 
+         ,(define->var ast)
+         ,(convert (initialize-top-level-vars 
+                     (define->exp ast)
+                     (difference fv (built-in-syms)))
+                     (list))))
      (else
       (convert (initialize-top-level-vars 
                  ast 
