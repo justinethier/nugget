@@ -74,12 +74,16 @@
       input-program))
   (trace:info "---------------- after alpha conversion:")
   (trace:info input-program) ;pretty-print
+
+  (set! input-program 
+    (map 
+      (lambda (expr)
+        (cps-convert expr))
+      input-program))
+  (trace:info "---------------- after CPS:")
+  (trace:info input-program) ;pretty-print
 )
 
-;  (set! input-program (cps-convert input-program))
-;  (trace:info "---------------- after CPS:")
-;  (trace:info input-program) ;pretty-print
-;
 ;  (analyze-mutable-variables input-program)
 ;
 ;  (set! input-program (wrap-mutables input-program))

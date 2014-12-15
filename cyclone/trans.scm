@@ -1161,10 +1161,16 @@
                      (,r)
                     ,(cps-seq (cdr asts) cont-ast)))))))
 
-  (let ((ast-cps
-         (cps ast
-            (let ((r (gensym 'r)))
-                `(lambda (,r) (%halt ,r))))))
+  (let* ((global-def? (define? ast)) ;; No internal defines by this phase
+         (ast-cps
+          (if global-def?
+            'TODO
+            (cps ast
+               (let ((r (gensym 'r)))
+                   `(lambda (,r) (%halt ,r)))))))
+;; TODO: this is very broken if call/cc is used by a global function!!!
+;; TODO: if needed, should call/cc be added as a global?
+;; may need a separate scanning phase to detect call/cc and add the def
     (if (member 'call/cc (free-vars ast))
         ; add this definition for call/cc if call/cc is needed
         (list 
@@ -1175,18 +1181,6 @@
            '(lambda (k f)
                 (f k (lambda (_ result) (k result)))))
         ast-cps)
-
-;    (if (lookup 'call/cc (fv ast))
-;        ; add this definition for call/cc if call/cc is needed
-;        (make-app
-;         (list (make-lam
-;                (list ast-cps)
-;                (list (new-var '_)))
-;               (xe '(set! call/cc
-;                          (lambda (k f)
-;                            (f k (lambda (_ result) (k result)))))
-;                   '())))
-;        ast-cps)
     ))
 
 
