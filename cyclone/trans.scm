@@ -976,7 +976,16 @@
             (cdr renamed))
           (else ast))))
       ((define? ast)
-       ;; Only internal defines at this point, treat same as set
+       ;; TODO: does not quite work right because any vars introduced using
+       ;;       internal defines are not able to shadow a global of the same
+       ;;       name, and are not initialized properly to #f. 
+       ;;
+       ;;(let ((var (define->var ast))
+       ;;      (var* (gensym (define->var ast))))
+       ;;  ;; Only internal defines at this point, and no longer in lambda form
+       ;;  `(set! ,var*
+       ;;     ,@(convert (define->exp ast)
+       ;;               (cons (cons var var*) renamed)))))
        `(set! ,@(map (lambda (a) (convert a renamed)) (cdr ast))))
       ((set!? ast)
          ;; Without define, we have no way of knowing if this was a
@@ -1027,7 +1036,7 @@
          ,(convert (initialize-top-level-vars 
                      (define->exp ast)
                      (difference fv (built-in-syms)))
-                     (list))))
+                   (list))))
      (else
       (convert (initialize-top-level-vars 
                  ast 

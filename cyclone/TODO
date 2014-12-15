@@ -42,14 +42,14 @@ just brainstorming this at the moment.
 
    by the same token, are there ever cases where it would make sense to pass a sequence all the way to the compiler? probably not, but just a thought
 
- - C compiler errors:
+ - lexical scoping issue - local does not shadow a global in this case:
 
-eval.c: In function âlambda_240âeval.c:55232:1: error: âote_carândeclared (first use in this function)
-eval.c:55232:1: note: each undeclared identifier is reported only once for each function it appears in
-eval.c: In function âlambda_238âeval.c:55385:1: error: âote_cdrândeclared (first use in this function)
-eval.c: In function âlambda_236âeval.c:55540:1: error: âote_consândeclared (first use in this function)
-eval.c: In function âlambda_233âeval.c:55776:1: error: âimitive_null_127ândeclared (first use in this function)
-eval.c: In function âlambda_140âeval.c:59542:1: error: âimitive_cadrândeclared (first use in this function)
+    (define a 2) ; global
+    (define (test2)
+    ; TODO: need to be able to shadow globals, too
+    ;       using an internal define
+     (define a 1)
+     a)
 
  - String support
    issue is how to support strings themselves in memory. can add them directly to the string_type, but then apply won't work 
