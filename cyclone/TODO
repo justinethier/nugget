@@ -1,3 +1,29 @@
+;;;;;;;;;;;;;;;;;;
+;; Example code for cgen of globals:
+(define a (lambda (x) "0123456789"))
+(define b "0123456789")
+(write a)
+
+((define a (lambda (k$849 x$846) ((%closure-ref k$849 0) k$849 "0123456789")))
+ (define b (%closure-ref "0123456789" 0) "0123456789")
+ ((lambda (r$852) (%halt r$852)) (write a)))
+;;;;;;;;;;;;;;;;;;
+(define x 1)
+(define (add y) (+ x y))
+(add 2)
+
+((define x (%closure-ref 1 0) 1)
+ (define add
+   (%closure
+     (lambda (self$853 k$851 y$846)
+       ((%closure-ref k$851 0) k$851 (+ (%closure-ref self$853 1) y$846)))
+     x))
+ ((%closure-ref add 0)
+  add
+  (%closure (lambda (self$854 r$852) (%halt r$852)))
+  2))
+;;;;;;;;;;;;;;;;;;
+
 Add stuff required for eval:
  - Optimizations - there are massive performance problems in compiling eval.scm!!!
 
