@@ -82,13 +82,20 @@
       input-program))
   (trace:info "---------------- after CPS:")
   (trace:info input-program) ;pretty-print
-)
 
+  (set! input-program
+    (map
+      (lambda (expr)
+        (clear-mutables)
+        (analyze-mutable-variables expr)
+        (wrap-mutables expr))
+      input-program))
 ;  (analyze-mutable-variables input-program)
 ;
 ;  (set! input-program (wrap-mutables input-program))
-;  (trace:info "---------------- after wrap-mutables:")
-;  (trace:info input-program) ;pretty-print
+  (trace:info "---------------- after wrap-mutables:")
+  (trace:info input-program) ;pretty-print
+)
 ;
 ;  (set! input-program 
 ;    (caddr ;; Strip off superfluous lambda

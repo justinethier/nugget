@@ -865,6 +865,9 @@
 ; mutable-variables : list[symbol]
 (define mutable-variables '())
 
+(define (clear-mutables)
+  (set! mutable-variables '()))
+
 ; mark-mutable : symbol -> void
 (define (mark-mutable symbol)
   (set! mutable-variables (cons symbol mutable-variables)))
@@ -1161,15 +1164,18 @@
                      (,r)
                     ,(cps-seq (cdr asts) cont-ast)))))))
 
+  ;; Remove dummy symbol inserted into define forms converted to CPS
+  (define (remove-unused ast)
+    (list (car ast) (cadr ast) (cadddr ast)))
+
   (let* ((global-def? (define? ast)) ;; No internal defines by this phase
          (ast-cps
           (if global-def?
-;; TODO: just a start, not quite sure what these should look like
-;; TODO: probably fails for a simple (define a 1), with no lambda
-            `(define ,(define->var ast)
-              ,@(let ((k (gensym 'k))
-                      (r (gensym 'r)))
-                 (cps (define->exp ast) `(lambda (,k ,r) (,k ,r)))))
+            (remove-unused
+              `(define ,(define->var ast)
+                ,@(let ((k (gensym 'k))
+                        (r (gensym 'r)))
+                   (cps (car (define->exp ast)) 'unused))))
             (cps ast
                (let ((r (gensym 'r)))
                    `(lambda (,r) (%halt ,r)))))))

@@ -25,6 +25,10 @@ Add stuff required for eval:
    could create a single list of these, eg: (define, define, ..., begin) and then map over it for the other phases
    TBD: how to store defined functions? Do they become closures? how does that work?
 
+Issue list
+ - alpha conversion broken for internal define shadowing global (see below)
+ - call/cc probably broken for global define's
+
 2) it looked like there were cases where a closure had a copy created of it, and the copy was passed along. it would be nice if the closure conversion phase could detect this and just pass the original closure along instead of building a new one. that saves a lot of work downstream, and seems like it might save work in cc as well (depending upon how complex the check is, of course!)
 
 of course, fn is changed upon new closure, so it is not exactly the same object...
