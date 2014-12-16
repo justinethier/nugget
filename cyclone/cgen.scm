@@ -253,6 +253,9 @@
     ((quote? exp)       (c-compile-quote exp))
     ((if? exp)          (c-compile-if exp append-preamble cont))
 
+    ; Global definition
+    ((define? exp)
+     (c-compile-global exp))
     ; IR (2):
     ((tagged-list? '%closure exp)
      (c-compile-closure exp append-preamble cont))
@@ -592,6 +595,15 @@
    "\n} else { \n"
    (c:serialize els "  ")
    "}\n"))))
+
+;; Global compilation
+(define *globals* '())
+(define (add-global var value)
+  (set! *globals* (cons (cons var value) *globals*)))
+(define (c-compile-global exp)
+ (let ((var (define->var exp))
+       (body (car (define->exp exp))))
+   (error `(TODO compile-global ,var ,body))))
 
 ;; Symbol compilation
 
