@@ -95,13 +95,22 @@
 ;  (set! input-program (wrap-mutables input-program))
   (trace:info "---------------- after wrap-mutables:")
   (trace:info input-program) ;pretty-print
-)
-;
-;  (set! input-program 
+
+  (set! input-program 
+    (map
+      (lambda (expr)
+        (if (define? expr)
+          ;; Global
+         `(define ,(define->var expr)
+            ,@(caddr (closure-convert (define->exp expr))))
+          (caddr ;; Strip off superfluous lambda
+            (closure-convert expr))))
+      input-program))
 ;    (caddr ;; Strip off superfluous lambda
 ;      (closure-convert input-program)))
-;  (trace:info "---------------- after closure-convert:")
-;  (trace:info input-program) ;pretty-print
+  (trace:info "---------------- after closure-convert:")
+  (trace:info input-program) ;pretty-print
+)
 ;  
 ;  (if (not *do-code-gen*)
 ;    (begin
