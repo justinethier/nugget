@@ -762,7 +762,9 @@
       formals*))))
   
 (define (mta:code-gen input-program)
-  (let ((compiled-program (c-compile-program input-program)))
+  (let ((compiled-program 
+          (apply append
+            (map c-compile-program input-program))))
     (emit-c-macros)
     (emit "#include \"mta/runtime.h\"")
     

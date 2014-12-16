@@ -59,13 +59,10 @@
   (trace:info "---------------- after isolate globals")
   (trace:info input-program) ;pretty-print
 
-; TODO: extract out non-define statements, and add them to 
-;       a "main" after the defines
-; r5rs (and r7rs??) require all defines at the top of a block, but that's only internal defines
-;
-; TODO: need to convert internal defines to (set!)'s below, since all remaining phases
-;       operate on set!, not define
-
+  ; Note alpha-conversion is overloaded to convert internal defines to 
+  ; set!'s below, since all remaining phases operate on set!, not define.
+  ;
+  ; TODO: consider moving some of this alpha-conv logic below back into trans?
   (set! globals (global-vars input-program))
   (set! input-program 
     (map
@@ -110,15 +107,14 @@
 ;      (closure-convert input-program)))
   (trace:info "---------------- after closure-convert:")
   (trace:info input-program) ;pretty-print
-)
-;  
-;  (if (not *do-code-gen*)
-;    (begin
-;      (trace:error "DEBUG, existing program")
-;      (exit)))
-;
-;  (trace:info "---------------- C code:")
-;  (mta:code-gen input-program))
+  
+  (if (not *do-code-gen*)
+    (begin
+      (trace:error "DEBUG, existing program")
+      (exit)))
+
+  (trace:info "---------------- C code:")
+  (mta:code-gen input-program))
 
 ;; Compile and emit:
 (define (run-compiler args cc?)
