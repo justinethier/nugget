@@ -1,3 +1,8 @@
+;; Broken with globals, assume this has something to do with GCing the string
+;; perhaps var pointing to string does not move, but string needs to????
+(define a (+ 1 1))
+(define b "0123456789")
+(write "a")
 ;;;;;;;;;;;;;;;;;;
 ;; Example code for cgen of globals:
 (define a (lambda (x) "0123456789"))
@@ -50,6 +55,8 @@ Add stuff required for eval:
    could filter top level into two categories - (define) expressions and other expressions, to be enclosed within a (begin)
    could create a single list of these, eg: (define, define, ..., begin) and then map over it for the other phases
    TBD: how to store defined functions? Do they become closures? how does that work?
+
+a global function can reference other globals, but I do not believe it needs to be a closure, because a global function can only reference other globals. 
 
 Issue list
  - alpha conversion broken for internal define shadowing global (see below)

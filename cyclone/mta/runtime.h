@@ -318,6 +318,7 @@ defsymbol(t);
 //static object quote_list_t;  /* Initialized by main to '(t) */
 
 //static volatile object unify_subst = nil; /* This is a global Lisp variable. */
+DECLARE_GLOBALS
 
 /* These (crufty) printing functions are used for debugging. */
 static object terpri() {printf("\n"); return nil;}
@@ -864,8 +865,9 @@ static void GC_loop(int major, closure cont, object *ans, int num_ans)
  printf("DEBUG done transporting gc_ans\n");
 #endif
 
- /* Transport global variable. */
+ /* Transport global variables. */
  //transp(unify_subst);
+ GC_GLOBALS
  while (scanp<allocp)       /* Scan the newspace. */
    switch (type_of(scanp))
      {case cons_tag:
@@ -996,6 +998,8 @@ static void main_main (stack_size,heap_size,stack_base)
 #endif
  /* Do initializations of Lisp objects and rewrite rules.
  quote_list_f = mlist1(quote_f); quote_list_t = mlist1(quote_t); */
+ INIT_GLOBALS
+
  /* Make temporary short names for certain atoms. */
  {
 

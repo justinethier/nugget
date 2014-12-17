@@ -10,6 +10,12 @@
   (display line)
   (newline))
 
+(define (emits str)
+  (display str))
+
+(define (emit-newline)
+  (newline))
+
 (define (string-join lst delim)
   (cond
     ((null? lst) 
@@ -71,6 +77,9 @@
           (set! *c-call-arity* arity)))))
 
 (define (emit-c-macros)
+  (c-macro-declare-globals)
+  (c-macro-GC-globals)
+  (c-macro-init-globals)
   (emit (c-macro-after-longjmp))
   (emit-c-arity-macros 0))
 
@@ -169,6 +178,49 @@
       assign (number->string n) ";")
     ""))
 
+(define (c-macro-GC-globals)
+  ; emit directly to be more efficient
+  ; TODO: convert all c-macro functions to direct emit???
+  (emit "#define GC_GLOBALS \\")
+  (emits "{")
+  (for-each
+    (lambda (global)
+      (emits " \\\n  transp(")
+      (emits (symbol->string (car global)))
+      (emits ");"))
+    *globals*)
+  (emit "}")
+  (emit ""))
+
+(define (c-macro-declare-globals)
+  (emits "#define DECLARE_GLOBALS ")
+  (for-each
+      (lambda (global)
+        (emit " \\")
+        (emits "  static volatile object ")
+        (emits (symbol->string (car global)))
+        (emits " = nil;"))
+      *globals*)
+  (emit "")
+  (emit ""))
+
+(define (c-macro-init-globals)
+  (let ((prefix "  "))
+    (emit "#define INIT_GLOBALS \\")
+    (emits "{")
+    (for-each
+      (lambda (global)
+        (emits (c:allocs->str2 (c:allocs (cdr global)) prefix " \\\n"))
+        (emits prefix)
+        (emits (symbol->string (car global)))
+        (emits " = ")
+        (emits (c:body (cdr global)))
+        (emit "; \\"))
+      *globals*)
+    (emits "}")
+    (emit "")
+    (emit "")))
+
 ;;; Compilation routines.
 
 ;; Return generated code that also requests allocation of C variables on stack
@@ -204,6 +256,14 @@
                 (car prefix))
             c 
             "\n"))
+        c-allocs)))
+
+(define (c:allocs->str2 c-allocs prefix suffix)
+  (apply
+    string-append
+    (map
+        (lambda (c)
+           (string-append prefix c suffix))
         c-allocs)))
 
 (define (c:append cp1 cp2)
@@ -784,7 +844,7 @@
             (map c-compile-program input-program))))
     (emit-c-macros)
     (emit "#include \"mta/runtime.h\"")
-    
+
     ;; Emit symbols
     (for-each
         (lambda (sym)
