@@ -780,7 +780,7 @@
   
 (define (mta:code-gen input-program)
   (let ((compiled-program 
-          (apply append
+          (apply string-append
             (map c-compile-program input-program))))
     (emit-c-macros)
     (emit "#include \"mta/runtime.h\"")
