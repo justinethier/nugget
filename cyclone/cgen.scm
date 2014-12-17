@@ -228,6 +228,7 @@
          (append-preamble (lambda (s)
                             (set! preamble (string-append preamble "  " s "\n"))))
          (body (c-compile-exp exp append-preamble "cont")))
+    ;(write `(DEBUG ,body))
     (string-append 
      preamble 
      (c:serialize body "  ") ;" ;\n"
@@ -255,7 +256,7 @@
 
     ; Global definition
     ((define? exp)
-     (c-compile-global exp))
+     (c-compile-global exp append-preamble cont))
     ; IR (2):
     ((tagged-list? '%closure exp)
      (c-compile-closure exp append-preamble cont))
@@ -598,12 +599,16 @@
 
 ;; Global compilation
 (define *globals* '())
-(define (add-global var value)
-  (set! *globals* (cons (cons var value) *globals*)))
-(define (c-compile-global exp)
+(define (add-global var-sym code)
+  ;(write `(add-global ,var-sym ,code))
+  (set! *globals* (cons (cons var-sym code) *globals*)))
+(define (c-compile-global exp append-preamble cont)
  (let ((var (define->var exp))
-       (body (car (define->exp exp))))
-   (error `(TODO compile-global ,var ,body))))
+       (body (if (equal? 4 (length exp)) ; Simple var assignment contains superfluous %closure-ref
+                 (cadddr exp)
+                 (car (define->exp exp)))))
+   (add-global var (c-compile-exp body append-preamble cont))
+   (c-code/vars "" (list ""))))
 
 ;; Symbol compilation
 
