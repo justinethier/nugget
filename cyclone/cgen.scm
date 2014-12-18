@@ -79,7 +79,6 @@
 (define (emit-c-macros)
   (c-macro-declare-globals)
   (c-macro-GC-globals)
-  (c-macro-init-globals)
   (emit (c-macro-after-longjmp))
   (emit-c-arity-macros 0))
 
@@ -203,21 +202,6 @@
       *globals*)
   (emit "")
   (emit ""))
-
-(define (c-macro-init-globals)
-  (let ((prefix "  "))
-    (emit "#define INIT_GLOBALS \\")
-    (for-each
-      (lambda (global)
-        (emits (c:allocs->str2 (c:allocs (cdr global)) prefix " \\\n"))
-        (emits prefix)
-        (emits (mangle (car global)))
-        (emits " = ")
-        (emits (c:body (cdr global)))
-        (emit "; "))
-      *globals*)
-    (emit "")
-    (emit "")))
 
 ;;; Compilation routines.
 
@@ -874,8 +858,20 @@
      lambdas)
   
     (emit "
-  static void c_entry_pt(argc, env,cont) int argc; closure env,cont; { 
-    INIT_GLOBALS ")
+  static void c_entry_pt(argc, env,cont) int argc; closure env,cont; { ")
+
+    ;; Initialize globals
+    (let ((prefix "  "))
+      (for-each
+        (lambda (global)
+          (emits (c:allocs->str2 (c:allocs (cdr global)) prefix " \n"))
+          (emits prefix)
+          (emits (mangle (car global)))
+          (emits " = ")
+          (emits (c:body (cdr global)))
+          (emit "; "))
+        *globals*)
+      (emit ""))
     (emit compiled-program)
     (emit "}")
     (emit *c-main-function*)))
