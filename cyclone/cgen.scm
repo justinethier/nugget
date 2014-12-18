@@ -312,12 +312,17 @@
     ((quote? exp)       (c-compile-quote exp))
     ((if? exp)          (c-compile-if exp append-preamble cont))
 
-    ; Global definition
-    ((define? exp)
-     (c-compile-global exp append-preamble cont))
     ; IR (2):
     ((tagged-list? '%closure exp)
      (c-compile-closure exp append-preamble cont))
+    ; Global definition
+    ((define? exp)
+     (c-compile-global exp append-preamble cont))
+    ; Special case - global function w/out a closure. Create an empty closure
+    ((tagged-list? 'lambda exp)
+     (c-compile-exp
+      `(%closure ,exp)
+       append-preamble cont))
     
     ; Application:      
     ((app? exp)         (c-compile-app exp append-preamble cont))
