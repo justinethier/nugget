@@ -874,7 +874,8 @@
      lambdas)
   
     (emit "
-  static void c_entry_pt(argc, env,cont) int argc; closure env,cont; { ")
+  static void c_entry_pt(argc, env,cont) int argc; closure env,cont; { 
+    INIT_GLOBALS ")
     (emit compiled-program)
     (emit "}")
     (emit *c-main-function*)))
