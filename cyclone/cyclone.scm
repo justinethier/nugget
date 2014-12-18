@@ -99,9 +99,9 @@
         (if (define? expr)
           ;; Global
          `(define ,(define->var expr)
-            ,@(caddr (closure-convert (define->exp expr))))
+            ,@(caddr (closure-convert (define->exp expr) globals)))
           (caddr ;; Strip off superfluous lambda
-            (closure-convert expr))))
+            (closure-convert expr globals))))
       input-program))
 ;    (caddr ;; Strip off superfluous lambda
 ;      (closure-convert input-program)))

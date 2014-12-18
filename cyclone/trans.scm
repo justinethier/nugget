@@ -1215,7 +1215,7 @@
           (else 
             (loop (cdr lst) (+ i 1))))))
 
-(define (closure-convert exp)
+(define (closure-convert exp globals)
  (define (convert exp self-var free-var-lst)
   (define (cc exp)
    (cond
@@ -1239,7 +1239,10 @@
     ((lambda? exp)
      (let* ((new-self-var (gensym 'self))
             (body  (lambda->exp exp))
-            (new-free-vars (difference (free-vars body) (lambda-formals->list exp))))
+            (new-free-vars 
+              (difference 
+                (difference (free-vars body) (lambda-formals->list exp))
+                '()))) ;globals)))
        `(%closure
           (lambda
             ,(list->lambda-formals
@@ -1259,7 +1262,10 @@
            (args (map cc (cdr exp))))
        (if (lambda? fn)
            (let* ((body  (lambda->exp fn))
-                  (new-free-vars (difference (free-vars body) (lambda-formals->list fn)))
+                  (new-free-vars 
+                    (difference
+                      (difference (free-vars body) (lambda-formals->list fn))
+                      '())) ;globals))
                   (new-free-vars? (> (length new-free-vars) 0)))
                (if new-free-vars?
                  ; Free vars, create a closure for them
