@@ -998,7 +998,6 @@ static void main_main (stack_size,heap_size,stack_base)
 #endif
  /* Do initializations of Lisp objects and rewrite rules.
  quote_list_f = mlist1(quote_f); quote_list_t = mlist1(quote_t); */
- INIT_GLOBALS
 
  /* Make temporary short names for certain atoms. */
  {
@@ -1027,6 +1026,7 @@ static void main_main (stack_size,heap_size,stack_base)
   printf("main: Try a larger heap_size if program bombs.\n");
   printf("Starting...\n");
 #endif
+  INIT_GLOBALS
   start = clock(); /* Start the timing clock. */
   /* These two statements form the most obscure loop in the history of C! */
   setjmp(jmp_main);
