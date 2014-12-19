@@ -5,7 +5,12 @@
 ;(define make-adder
 ;    (lambda (x)
 ;        (lambda (y) (+ x  y))))
+
+;; You know, one hack for this is, if define introduces a list
+;; that is not a lambda, split it up into a (define x #f) and a set!
 (define test (if #t (make-adder 1 1) (make-adder 2 2))) ;; This line demonstrates issues with define and CPS
+
+
 (define increment (make-adder +1))
 (display (increment 41)) ; => 42
 (define decrement (make-adder -1))
