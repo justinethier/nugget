@@ -5,6 +5,7 @@
 ;(define make-adder
 ;    (lambda (x)
 ;        (lambda (y) (+ x  y))))
+(define test (if #t (make-adder 1 1) (make-adder 2 2))) ;; This line demonstrates issues with define and CPS
 (define increment (make-adder +1))
 (display (increment 41)) ; => 42
 (define decrement (make-adder -1))
