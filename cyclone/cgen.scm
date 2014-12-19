@@ -54,7 +54,9 @@
  '(auto _Bool break case char _Complex const continue default do double else
    enum extern float for goto if _Imaginary inline int long register restrict
    return short signed sizeof static struct switch typedef union unsigned
-   void volatile while))
+   void volatile while
+   list  ;; Not a keyword but reserved type
+   ))
 
 (define *c-main-function*
 "main(int argc,char **argv)
@@ -788,7 +790,7 @@
     (let* ((formals (c-compile-formals 
                       (lambda->formals exp)
                       (lambda-formals-type exp)))
-           (tmp-ident (if (> (length (lambda->formals exp)) 0) 
+           (tmp-ident (if (> (length (lambda-formals->list exp)) 0) 
                           (mangle (car (lambda->formals exp)))
                           ""))
            (has-closure? 
