@@ -351,7 +351,7 @@ static object prin1(x) object x;
       printf("%lf", ((double_type *) x)->value);
       break;
     case string_tag:
-      printf("%s", ((string_type *) x)->str);
+      printf("\"%s\"", ((string_type *) x)->str);
       break;
     case cons_tag:
       printf("("); 
