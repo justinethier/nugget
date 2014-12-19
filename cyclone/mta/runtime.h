@@ -228,6 +228,8 @@ static object cell_set(object cell, object value){
     return cell;
 }
 
+#define global_set(glo,value) (glo=value)
+
 /* Variable argument count support 
 
    This macro is intended to be executed at the top of a function that

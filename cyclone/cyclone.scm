@@ -85,11 +85,8 @@
       (lambda (expr)
         (clear-mutables)
         (analyze-mutable-variables expr)
-        (wrap-mutables expr))
+        (wrap-mutables expr globals))
       input-program))
-;  (analyze-mutable-variables input-program)
-;
-;  (set! input-program (wrap-mutables input-program))
   (trace:info "---------------- after wrap-mutables:")
   (trace:info input-program) ;pretty-print
 
