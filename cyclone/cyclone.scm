@@ -114,7 +114,7 @@
       (exit)))
 
   (trace:info "---------------- C code:")
-  (mta:code-gen input-program))
+  (mta:code-gen input-program globals))
 
 ;; Compile and emit:
 (define (run-compiler args cc?)

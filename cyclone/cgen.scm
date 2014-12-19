@@ -50,6 +50,9 @@
      (string-append "_" ident)
      ident)))
 
+(define (mangle-global symbol)
+  (string-append "__glo_" (mangle symbol)))
+
 (define *c-keywords* 
  '(auto _Bool break case char _Complex const continue default do double else
    enum extern float for goto if _Imaginary inline int long register restrict
@@ -187,7 +190,7 @@
   (for-each
     (lambda (global)
       (emits " \\\n  transp(")
-      (emits (mangle (car global)))
+      (emits (mangle-global (car global)))
       (emits ");"))
     *globals*)
   (emit "}")
@@ -199,7 +202,7 @@
       (lambda (global)
         (emit " \\")
         (emits "  static volatile object ")
-        (emits (mangle (car global)))
+        (emits (mangle-global (car global)))
         (emits " = nil;"))
       *globals*)
   (emit "")
@@ -510,7 +513,10 @@
 
 ; c-compile-ref : ref-exp -> string
 (define (c-compile-ref exp)
-  (c-code (mangle exp)))
+  (c-code 
+    (if (member exp *global-syms*)
+      (mangle-global exp)
+      (mangle exp))))
 
 ; c-compile-args : list[exp] (string -> void) -> string
 (define (c-compile-args args append-preamble prefix cont)
@@ -648,6 +654,7 @@
 
 ;; Global compilation
 (define *globals* '())
+(define *global-syms* '())
 (define (add-global var-sym code)
   ;(write `(add-global ,var-sym ,code))
   (set! *globals* (cons (cons var-sym code) *globals*)))
@@ -835,7 +842,8 @@
                        "}\n"))
       formals*))))
   
-(define (mta:code-gen input-program)
+(define (mta:code-gen input-program globals)
+  (set! *global-syms* globals)
   (let ((compiled-program 
           (apply string-append
             (map c-compile-program input-program))))
@@ -876,7 +884,7 @@
         (lambda (global)
           (emits (c:allocs->str2 (c:allocs (cdr global)) prefix " \n"))
           (emits prefix)
-          (emits (mangle (car global)))
+          (emits (mangle-global (car global)))
           (emits " = ")
           (emits (c:body (cdr global)))
           (emit "; "))
