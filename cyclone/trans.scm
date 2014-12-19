@@ -1242,7 +1242,7 @@
             (new-free-vars 
               (difference 
                 (difference (free-vars body) (lambda-formals->list exp))
-                '()))) ;globals)))
+                globals)))
        `(%closure
           (lambda
             ,(list->lambda-formals
@@ -1265,7 +1265,7 @@
                   (new-free-vars 
                     (difference
                       (difference (free-vars body) (lambda-formals->list fn))
-                      '())) ;globals))
+                      globals))
                   (new-free-vars? (> (length new-free-vars) 0)))
                (if new-free-vars?
                  ; Free vars, create a closure for them

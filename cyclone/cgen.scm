@@ -699,7 +699,9 @@
 
 (define (lambda->env exp)
     (let ((formals (lambda-formals->list exp)))
-        (car formals)))
+        (if (pair? formals)
+            (car formals)
+            'unused)))
 
 ;; c-compile-closure : closure-exp (string -> void) -> string
 ;;
@@ -786,14 +788,20 @@
     (let* ((formals (c-compile-formals 
                       (lambda->formals exp)
                       (lambda-formals-type exp)))
-           (tmp-ident (mangle (car (lambda->formals exp))))
+           (tmp-ident (if (> (length (lambda->formals exp)) 0) 
+                          (mangle (car (lambda->formals exp)))
+                          ""))
            (has-closure? 
              (and
                (> (string-length tmp-ident) 3)
                (equal? "self" (substring tmp-ident 0 4))))
            (formals*
              (string-append
-                (if has-closure? "" "closure _,") ;; TODO: seems wrong, will GC be too aggressive due to missing refs?
+                (if has-closure? 
+                    "" 
+                    (if (equal? "" formals) 
+                        "closure _"    ;; TODO: seems wrong, will GC be too aggressive 
+                        "closure _,")) ;; due to missing refs, with ignored closure?
                 formals))
            (env-closure (lambda->env exp))
            (body    (c-compile-exp     
