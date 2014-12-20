@@ -353,6 +353,8 @@
 (write (eval '(if #t 'test-ok 'test-fail) *global-environment*))
 (write (eval '(if 1 'test-ok) *global-environment*))
 (write (eval '(if #f 'test-fail 'test-ok) *global-environment*))
+(write (eval '((lambda (x) (cons x 2) (cons #t x)) 1) *global-environment*))
+;(write (eval '((lambda () (cons 1 2) (cons #t #f))) *global-environment*))
 ;(write (eval '(cons 1 2) *global-environment*)) ; TODO
 ;(write (eval '(+ 1 2) *global-environment*)) ; TODO
 
