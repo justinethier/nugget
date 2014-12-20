@@ -769,17 +769,34 @@
       (else
        (cond
          ((define? (car top-lvl))
-          (if (has-global? globals (define->var (car top-lvl)))
-              ;; Global is redefined, add a (set!) at top-level
-              (loop (cdr top-lvl)
-                    globals
-                    (cons
-                     `(set! ,(define->var (car top-lvl))
-                            ,(define->exp (car top-lvl)))
-                      exprs))
-              (loop (cdr top-lvl)
-                    (cons (car top-lvl) globals)
+          (cond
+            ;; Global is redefined, convert it to a (set!) at top-level
+            ((has-global? globals (define->var (car top-lvl)))
+             (loop (cdr top-lvl)
+                   globals
+                   (cons
+                    `(set! ,(define->var (car top-lvl))
+                           ,@(define->exp (car top-lvl)))
+                     exprs)))
+            ;; Form cannot be properly converted to CPS later on, so split it up
+            ;; into two parts - use the define to initialize it to false (CPS is fine),
+            ;; and place the expression into a top-level (set!), which can be
+            ;; handled by the existing CPS conversion.
+            ((and (list? (car (define->exp (car top-lvl))))
+                  (not (lambda? (car (define->exp (car top-lvl))))))
+             (loop (cdr top-lvl)
+                   (cons
+                    `(define ,(define->var (car top-lvl)) #f)
+                    globals)
+                   (cons
+                    `(set! ,(define->var (car top-lvl))
+                           ,@(define->exp (car top-lvl)))
                     exprs)))
+            ;; First time we've seen this define, add it and keep going
+            (else
+             (loop (cdr top-lvl)
+                   (cons (car top-lvl) globals)
+                   exprs))))
          (else
            (loop (cdr top-lvl)
                  globals
