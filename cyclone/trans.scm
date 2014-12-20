@@ -12,14 +12,14 @@
 ;; TODO: update code to only insert built-ins that are used in the code,
 ;;       similar to call/cc logic
 (define *built-ins* '(
-;  (define (not x) (if x #f #t))
-;  (define (list . objs)  objs)
-;  (define (foldr func end lst)
-;    (if (null? lst)
-;      end
-;      (func (car lst) (foldr func end (cdr lst)))))
-;  (define (map func lst)
-;    (foldr (lambda (x y) (cons (func x) y)) '() lst))
+  (define (not x) (if x #f #t))
+  (define (list . objs)  objs)
+  (define (foldr func end lst)
+    (if (null? lst)
+      end
+      (func (car lst) (foldr func end (cdr lst)))))
+  (define (map func lst)
+    (foldr (lambda (x y) (cons (func x) y)) '() lst))
 ))
 
 (define (built-in-syms)
