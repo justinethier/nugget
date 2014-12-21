@@ -7,12 +7,13 @@
 
 ;; Helper functions
 (define (add-tok tok toks quotes)
+  (define (loop i)
+    (if (= quotes i)
+      tok
+      (cons 'quote (cons (loop (+ i 1)) '()))))
   (if quotes
      (cons
-       (let loop ((i 0))
-         (if (= quotes i)
-           tok
-           (cons 'quote (cons (loop (+ i 1)) '()))))
+       (loop 0)
        toks)
      (cons tok toks)))
 
