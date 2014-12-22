@@ -141,6 +141,16 @@
           (loop (cons c tok) toks #f quotes parens)))))))
    (loop '() '() #f #f parens)))
 
+;; Read chars past a leading #\
+(define (read-pound fp)
+  (define (loop buf)
+    ; peek char
+    ; if terminator (space, paren, what else??), quit w/buf
+    ;    or could convert buf to char, and then this could return to (cons (read-pound fp) toks)
+    ; if EOF, error?
+  )
+  (loop fp '()))
+
 (define (read-str fp buf)
   (let ((c (read-char fp)))
     ;; TODO: for now, end on raw double-quote. real scheme
