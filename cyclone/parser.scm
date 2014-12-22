@@ -130,6 +130,8 @@
                 ((eq? #\f next-c) (loop '() (cons #f toks) #f #f parens))
                 ((eq? #\\ next-c)
                  ;; TODO: error handling, read could return EOF
+                 ;; TODO: not this simple, could be more than one char, IE:
+                 ;;       #\space, #\newline, etc...
                  (loop '() (cons (read-char fp) toks) #f #f parens))
                 (else
                   (parse-error "Unhandled input sequence" *line-num* *char-num*))))
