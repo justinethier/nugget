@@ -379,7 +379,7 @@ static object write(x) object x;
 
 static object memberp(x,l) object x; list l;
 {for (; !nullp(l); l = cdr(l)) if (quote_f != equalp(x,car(l))) return quote_t;
- return nil;}
+ return quote_f;}
 
 static object get(x,i) object x,i;
 {register object plist; register object plistd;

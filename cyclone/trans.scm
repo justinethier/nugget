@@ -396,6 +396,7 @@
      eq?
      eqv?
      equal?
+     member
      length
      set-car!
      set-cdr!
