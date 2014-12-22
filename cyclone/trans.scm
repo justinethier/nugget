@@ -406,6 +406,7 @@
      equal?
      member
      length
+     reverse
      set-car!
      set-cdr!
      car

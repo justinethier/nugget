@@ -454,6 +454,7 @@
             ((eq? p 'cddddr)        "cddddr")
             ((eq? p 'member)        "memberp")
             ((eq? p 'length)        "Cyc_length")
+            ((eq? p 'reverse)       "Cyc_reverse")
             ((eq? p 'set-car!)      "Cyc_set_car")
             ((eq? p 'set-cdr!)      "Cyc_set_cdr")
             ((eq? p 'eq?)           "Cyc_eq")
