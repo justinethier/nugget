@@ -129,10 +129,7 @@
                 ((eq? #\t next-c) (loop '() (cons #t toks) #f #f parens))
                 ((eq? #\f next-c) (loop '() (cons #f toks) #f #f parens))
                 ((eq? #\\ next-c)
-                 ;; TODO: error handling, read could return EOF
-                 ;; TODO: not this simple, could be more than one char, IE:
-                 ;;       #\space, #\newline, etc...
-                 (loop '() (cons (read-char fp) toks) #f #f parens))
+                 (loop '() (cons (read-pound fp) toks) #f #f parens))
                 (else
                   (parse-error "Unhandled input sequence" *line-num* *char-num*))))
            ;; just another char...
@@ -143,13 +140,44 @@
 
 ;; Read chars past a leading #\
 (define (read-pound fp)
+  (define (done raw-buf)
+    (let ((buf (reverse raw-buf)))
+      (cond 
+        ((= 0 (length buf))
+         (parse-error "missing character" *line-num* *char-num*))
+        ((= 1 (length buf))
+         (car buf))
+        ((equal? buf '(#\a #\l #\a #\r #\m))
+         (integer->char 7))
+        ((equal? buf '(#\b #\a #\c #\k #\s #\p #\a #\c #\e))
+         (integer->char 8))
+        ((equal? buf '(#\d #\e #\l #\e #\t #\e))
+         (integer->char 127))
+        ((equal? buf '(#\e #\s #\c #\a #\p #\e))
+         (integer->char 27))
+        ((equal? buf '(#\n #\e #\w #\l #\i #\n #\e))
+         (integer->char 10))
+        ((equal? buf '(#\n #\u #\l #\l))
+         (integer->char 0))
+        ((equal? buf '(#\r #\e #\t #\u #\r #\n))
+         (integer->char 13))
+        ((equal? buf '(#\s #\p #\a #\c #\e))
+         (integer->char 32))
+        ((equal? buf '(#\t #\a #\b))
+         (integer->char 9))
+        (else
+         (parse-error (string-append 
+                        "unable to parse character: "
+                        (list->string buf))
+                      *line-num* *char-num*)))))
   (define (loop buf)
-    ; peek char
-    ; if terminator (space, paren, what else??), quit w/buf
-    ;    or could convert buf to char, and then this could return to (cons (read-pound fp) toks)
-    ; if EOF, error?
-  )
-  (loop fp '()))
+    (let ((c (peek-char fp)))
+      (if (or (eof-object? c)
+              (char-whitespace? c)
+              (equal? c #\)))
+         (done buf)
+         (loop (cons (read-char fp) buf)))))
+  (loop '()))
 
 (define (read-str fp buf)
   (let ((c (read-char fp)))
@@ -186,6 +214,7 @@
 
 ;(let ((fp (open-input-file "tests/begin.scm")))
 ;(let ((fp (open-input-file "tests/strings.scm")))
+;(let ((fp (open-input-file "dev.scm")))
 ;  (write (cyc-read-all fp)))
 
 ;(define (display-file filename)
