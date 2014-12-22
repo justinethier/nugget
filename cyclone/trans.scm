@@ -9,8 +9,13 @@
 
 ;; Built-in functions
 ;; TODO: relocate these somewhere else, like a lib.scm!!!
-;; TODO: update code to only insert built-ins that are used in the code,
-;;       similar to call/cc logic
+;; TODO: Longer-term, we will want to insert all these but then have an 
+;;   algorithm in place to remove the definitions that are not used.
+;;   Basically, after the expansion phase but before alpha conversion,
+;;   there should be enough information to figure out what is unused, and
+;;   discard it. Obviously this may be a no-go in certain situations, such
+;;   as if a (read (eval)) REPL is present. Although maybe not, since that
+;;   would use the interpreter.
 (define *built-ins* '(
   ;; TODO: The whitespace characters are space, tab, line feed, form feed, and carriage return.
   ;(define (char-whitespace? c) (member c '(#\tab #\space #\newline)))
