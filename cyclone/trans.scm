@@ -12,6 +12,9 @@
 ;; TODO: update code to only insert built-ins that are used in the code,
 ;;       similar to call/cc logic
 (define *built-ins* '(
+  ;; TODO: The whitespace characters are space, tab, line feed, form feed, and carriage return.
+  ;(define (char-whitespace? c) (member c '(#\tab #\space #\newline)))
+  (define (char-numeric? c) (member c '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9)))
   (define (not x) (if x #f #t))
   (define (list . objs)  objs)
   (define (foldr func end lst)
