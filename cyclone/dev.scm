@@ -1,20 +1,17 @@
 ;; This file is a staging/integration area for functionality that is not 
 ;; supported yet by cyclone
 ;;
-
-;; TODO: write these char functions as lisp built-ins
-;;       BUT, let's change that code to scan for built-ins, and
-;;       only include those that are actually used. may want to just
-;;       make a single scan across the program for all fv's, and then
-;;       reconcile that list with built-ins, and only include those that
-;;       might be used. IE, any fv == map, include the map built-in.
-
-(char-whitespace? #\space)
-(char-whitespace? #\a)
-(char-numeric? #\1)
-(char-numeric? #\newline)
+(write 
+ (list
+  (char-whitespace? #\space)
+  (char-whitespace? #\a)
+  (char-numeric? #\1)
+  (char-numeric? #\newline)))
 ;(eof-object?)
 ;(read-char fp)
+; (char->integer char) 
+; (integer->char n) 
+; or
 ;list->string
 ; reverse
 ;string-append
