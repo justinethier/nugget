@@ -524,7 +524,7 @@ static object Cyc_error(int count, object obj1, ...) {
     prin1(obj1);
     printf("\n");
 
-    for (i = 0; i < count; i++) {
+    for (i = 1; i < count; i++) {
         tmp = va_arg(ap, object);
         prin1(tmp);
         printf("\n");
