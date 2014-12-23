@@ -20,14 +20,19 @@
   ;; TODO: The whitespace characters are space, tab, line feed, form feed (not in parser yet), and carriage return.
   (define (char-whitespace? c) (member c '(#\tab #\space #\return #\newline)))
   (define (char-numeric? c) (member c '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9)))
-  (define (not x) (if x #f #t))
-  (define (list . objs)  objs)
+  (define (foldl func accum lst)
+    (if (null? lst)
+      accum
+      (foldl func (func (car lst) accum) (cdr lst))))
   (define (foldr func end lst)
     (if (null? lst)
       end
       (func (car lst) (foldr func end (cdr lst)))))
+  (define (list . objs)  objs)
   (define (map func lst)
     (foldr (lambda (x y) (cons (func x) y)) '() lst))
+  (define (not x) (if x #f #t))
+  (define (reverse lst)   (foldl cons '() lst))
 ))
 
 (define (built-in-syms)
@@ -406,7 +411,6 @@
      equal?
      member
      length
-     reverse
      set-car!
      set-cdr!
      car

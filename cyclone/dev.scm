@@ -8,7 +8,7 @@
  (list
   (reverse '(1 2))
   (reverse '(a b c))
-  ;(reverse '(1 2 3 4 5 6 7 8 9 10))
+  (reverse '(1 2 3 4 5 6 7 8 9 10))
   ;TODO: improper list, this is an error: (reverse '(1 . 2))
   (char-whitespace? #\space)
   (char-whitespace? #\a)

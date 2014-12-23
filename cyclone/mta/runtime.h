@@ -490,32 +490,6 @@ static object Cyc_set_cdr(object l, object val) {
     return l;
 }
 
-/*
-(a (b _)) ==> (b (a _))
-(a (b (c _))) ==> (c (b (a _)))
-(a (b (c (d _)))) ==> (d (c (b (a _))))
-
-cars never change, but cdrs do
-a becomes b's cdr, b becomes c's cdr, etc
-but a's cdr is not c... it is NULL. but what about b's CDR??
-*/
-static object Cyc_reverse(object l){
-    object tmp, next;
-    if (nullp(l)) return l;
-    
-    next = cdr(l);
-
-    while(next) {        // (b (c _))
-        tmp = cdr(next); // (c _)
-        cdr(next) = l;   // (c (a ...
-        cdr(l) = tmp;    // 
-        l = next;        //
-        next = tmp;      //
-    }
-
-    return l;
-}
-
 static integer_type Cyc_length(object l){
     make_int(len, 0);
     while(!nullp(l)){
