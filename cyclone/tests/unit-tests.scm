@@ -1,6 +1,8 @@
 (define (assert msg actual expected)
   (if (not (equal? actual expected))
-      (error "Unit test failed [" msg "] actual [" actual "] expected [" expected "]")))
+      (error "Unit test failed " msg " actual " actual " expected " expected "")))
+      ; Parser issues here:
+      ;(error "Unit test failed [" msg "] actual [" actual "] expected [" expected "]")))
 
 (assert "small reverse" (reverse '(a b)) '(b a))
 (assert "" #t #f)
