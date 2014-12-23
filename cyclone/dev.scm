@@ -4,16 +4,6 @@
 
 
 ;TODO: should move working functions below into a unit-test file
-(write 
- (list
-  (reverse '(1 2))
-  (reverse '(a b c))
-  (reverse '(1 2 3 4 5 6 7 8 9 10))
-  ;TODO: improper list, this is an error: (reverse '(1 . 2))
-  (char-whitespace? #\space)
-  (char-whitespace? #\a)
-  (char-numeric? #\1)
-  (char-numeric? #\newline)))
 ;(eof-object?)
 ;(read-char fp)
 ; (char->integer char) 
