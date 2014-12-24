@@ -10,7 +10,6 @@
 ; (integer->char n) 
 ; or
 ;list->string
-; reverse
 ;string-append
 ;string->number
 ;string->symbol - TODO: can runtime allow dynamically-created symbols?
