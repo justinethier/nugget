@@ -844,6 +844,27 @@
       exp)
     globals))
 
+;; Remove global variables that are not used by the rest of the program.
+;; This is just a rough cut to get the ball rolling...
+;;
+;; TODO: remove unused locals
+;; TODO: do not keep defines that are only used by removed defines
+;; TODO: do not keep defines that call themselves recursively
+(define (filter-unused-variables asts)
+  (let ((all-fv (apply      ;; More efficient way to do this?
+                  append    ;; Could use delete-duplicates
+                  (map 
+                    (lambda (ast)
+                      (if (define? ast)
+                          (free-vars (define->exp ast))
+                          (free-vars ast)))
+                    asts))))
+    (filter
+      (lambda (ast)
+        (or (not (define? ast))
+            (member (define->var ast) all-fv)))
+      asts)))
+
 ;; Syntactic analysis.
 
 ; free-vars : exp -> sorted-set[var]

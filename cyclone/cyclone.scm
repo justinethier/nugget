@@ -55,8 +55,10 @@
   (trace:info "---------------- after macro expansion:")
   (trace:info input-program) ;pretty-print
 
-  (set! input-program (isolate-globals input-program))
-  (trace:info "---------------- after isolate globals")
+  (set! input-program 
+    (filter-unused-variables
+      (isolate-globals input-program)))
+  (trace:info "---------------- after processing globals")
   (trace:info input-program) ;pretty-print
 
   ; Note alpha-conversion is overloaded to convert internal defines to 
