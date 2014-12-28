@@ -845,25 +845,32 @@
     globals))
 
 ;; Remove global variables that are not used by the rest of the program.
-;; This is just a rough cut to get the ball rolling...
+;; Many improvements can be made, including:
 ;;
 ;; TODO: remove unused locals
-;; TODO: do not keep defines that are only used by removed defines
 ;; TODO: do not keep defines that call themselves recursively
 (define (filter-unused-variables asts)
-  (let ((all-fv (apply      ;; More efficient way to do this?
-                  append    ;; Could use delete-duplicates
-                  (map 
-                    (lambda (ast)
-                      (if (define? ast)
-                          (free-vars (define->exp ast))
-                          (free-vars ast)))
-                    asts))))
-    (filter
-      (lambda (ast)
-        (or (not (define? ast))
-            (member (define->var ast) all-fv)))
-      asts)))
+  (define (do-filter code)
+    (let ((all-fv (apply      ;; More efficient way to do this?
+                    append    ;; Could use delete-duplicates
+                    (map 
+                      (lambda (ast)
+                        (if (define? ast)
+                            (free-vars (define->exp ast))
+                            (free-vars ast)))
+                      code))))
+      (filter
+        (lambda (ast)
+          (or (not (define? ast))
+              (member (define->var ast) all-fv)))
+        code)))
+  ;; Keep filtering until no more vars are removed
+  (define (loop code)
+    (let ((new-code (do-filter code)))
+      (if (> (length code) (length new-code))
+          (loop new-code)
+          new-code)))
+  (loop asts))
 
 ;; Syntactic analysis.
 
