@@ -530,32 +530,41 @@ static integer_type Cyc_string2number(object str){
 }
 
 // TODO:
-//static string_type Cyc_string_append(int count, object str1, ...) {
+static string_type Cyc_string_append(int argc, object str1, ...) {
     // TODO: one way to do this, perhaps not the most efficient:
     //   compute lengths of the strings,
     //   store lens and str ptrs
     //   allocate buffer, memcpy each str to buffer
     //   make_string using buffer
 
-    /*va_list ap;
+    va_list ap;
     object tmp;
-    int i;
+    int i = 0;
+    int total_len = 1; // null char
+    char *buffer;
+    char *strs = alloca(sizeof(char *) * argc);
+    int lens = alloca(sizeof(int) * argc);
     
-    va_start(ap, obj1);
-    printf("Error: ");
-    prin1(obj1);
-    printf("\n");
+    va_start(ap, str1);
+    strs[i] = ((string_type *)str1)->str;
+    lens[i] = strlen(strs[i]);
+    total_len += lens[i];
 
-    for (i = 1; i < count; i++) {
+    for (i = 1; i < argc; i++) {
         tmp = va_arg(ap, object);
-        prin1(tmp);
-        printf("\n");
+        strs[i] = ((string_type *)tmp)->str;
+        lens[i] = strlen(strs[i]);
+        total_len += lens[i];
     }
 
     va_end(ap);
-    exit(1);
-    return quote_f;*/
-//}
+
+    buffer = alloca(sizeof(char) * total_len);
+    for (i = 0; i < argc; i++) {
+        // TODO: memcpy();
+    }
+    return make_string from buffer
+}
 
 static integer_type Cyc_char2integer(object chr){
     make_int(n, obj_obj2char(chr));
