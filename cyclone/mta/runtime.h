@@ -490,6 +490,21 @@ static object Cyc_set_cdr(object l, object val) {
     return l;
 }
 
+static integer_type Cyc_char2integer(object chr){
+    make_int(n, obj_obj2char(chr));
+    return n;
+}
+
+static object Cyc_integer2char(object n){
+    int val = 0;
+
+    if (!nullp(n)) {
+        val = ((integer_type *) n)->value;
+    }
+
+    return obj_char2obj(val);
+}
+
 static integer_type Cyc_length(object l){
     make_int(len, 0);
     while(!nullp(l)){

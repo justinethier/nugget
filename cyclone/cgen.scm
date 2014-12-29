@@ -452,6 +452,8 @@
             ((eq? p 'cddadr)        "cddadr")
             ((eq? p 'cdddar)        "cdddar")
             ((eq? p 'cddddr)        "cddddr")
+            ((eq? p 'char->integer) "Cyc_char2integer")
+            ((eq? p 'integer->char) "Cyc_integer2char")
             ((eq? p 'member)        "memberp")
             ((eq? p 'length)        "Cyc_length")
             ((eq? p 'set-car!)      "Cyc_set_car")
@@ -500,13 +502,14 @@
 (define (prim/c-var-assign p)
   (cond
     ((eq? p 'length) "integer_type")
+    ((eq? p 'char->integer) "integer_type")
     ((eq? p 'apply)  "common_type c; object") ;; TODO: shouldn't hardcode "c", see above
     (else #f)))
 
 ; Does primitive create a c variable?
 (define (prim/cvar? exp)
     (and (prim? exp)
-         (member exp '(+ - * / apply cons length cell))))
+         (member exp '(+ - * / apply cons length cell char->integer))))
 
 ;; Need to pass an integer arg count as the function's first parameter
 (define (prim/arg-count? exp)
