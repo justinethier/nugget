@@ -421,6 +421,8 @@
      caddar cadddr cdaaar cdaadr cdadar cdaddr cddaar cddadr cdddar cddddr
      char->integer
      integer->char
+     string->number
+     list->string
      boolean?
      char?
      null?

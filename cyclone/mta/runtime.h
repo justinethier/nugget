@@ -490,6 +490,45 @@ static object Cyc_set_cdr(object l, object val) {
     return l;
 }
 
+static integer_type Cyc_length(object l){
+    make_int(len, 0);
+    while(!nullp(l)){
+        if (((list)l)->tag != cons_tag){
+            printf("length - invalid parameter, expected list\n");
+            exit(1);
+        }
+        l = cdr(l);
+        len.value++;
+    }
+    return len;
+}
+
+static string_type Cyc_list2string(object lst){
+    char *buf;
+    int i = 0;
+    integer_type len = Cyc_length(lst); // Inefficient, walks whole list
+    buf = alloca(sizeof(char) * (len.value + 1));
+
+    while(!nullp(lst)){
+        buf[i++] = obj_obj2char(car(lst));
+        lst = cdr(lst);
+    }
+    buf[i] = '\0';
+
+    make_string(str, buf);
+    return str;
+}
+
+static integer_type Cyc_string2number(object str){
+    make_int(n, 0);
+    if (type_of(str) == string_tag &&
+        ((string_type *) str)->str){
+        // TODO: not good enough long-term since it doesn't parse floats
+        n.value = atoi(((string_type *) str)->str);
+    }
+    return n;
+}
+
 static integer_type Cyc_char2integer(object chr){
     make_int(n, obj_obj2char(chr));
     return n;
@@ -505,18 +544,6 @@ static object Cyc_integer2char(object n){
     return obj_char2obj(val);
 }
 
-static integer_type Cyc_length(object l){
-    make_int(len, 0);
-    while(!nullp(l)){
-        if (((list)l)->tag != cons_tag){
-            printf("length - invalid parameter, expected list\n");
-            exit(1);
-        }
-        l = cdr(l);
-        len.value++;
-    }
-    return len;
-}
 /*static object sum(object x, object y) {}*/
 
 static void my_exit(closure) never_returns;

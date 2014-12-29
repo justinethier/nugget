@@ -454,6 +454,8 @@
             ((eq? p 'cddddr)        "cddddr")
             ((eq? p 'char->integer) "Cyc_char2integer")
             ((eq? p 'integer->char) "Cyc_integer2char")
+            ((eq? p 'string->number)"Cyc_string2number")
+            ((eq? p 'list->string)  "Cyc_list2string")
             ((eq? p 'member)        "memberp")
             ((eq? p 'length)        "Cyc_length")
             ((eq? p 'set-car!)      "Cyc_set_car")
@@ -497,19 +499,23 @@
      (else
         (c-code (string-append c-func "("))))))
 
-;; Determine if primitive assigns (allocates) a c variable
+;; Determine if primitive assigns (allocates) a C variable
 ;; EG: int v = prim();
 (define (prim/c-var-assign p)
   (cond
     ((eq? p 'length) "integer_type")
     ((eq? p 'char->integer) "integer_type")
+    ((eq? p 'string->number) "integer_type")
+    ((eq? p 'list->string) "string_type")
     ((eq? p 'apply)  "common_type c; object") ;; TODO: shouldn't hardcode "c", see above
     (else #f)))
 
-; Does primitive create a c variable?
+; Does primitive create a C variable?
 (define (prim/cvar? exp)
     (and (prim? exp)
-         (member exp '(+ - * / apply cons length cell char->integer))))
+         (member exp '(
+             + - * / apply cons length cell 
+             char->integer string->number list->string))))
 
 ;; Need to pass an integer arg count as the function's first parameter
 (define (prim/arg-count? exp)
