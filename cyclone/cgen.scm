@@ -456,6 +456,7 @@
             ((eq? p 'integer->char) "Cyc_integer2char")
             ((eq? p 'string->number)"Cyc_string2number")
             ((eq? p 'list->string)  "Cyc_list2string")
+            ((eq? p 'string-append) "Cyc_string_append")
             ((eq? p 'member)        "memberp")
             ((eq? p 'length)        "Cyc_length")
             ((eq? p 'set-car!)      "Cyc_set_car")
@@ -507,6 +508,7 @@
     ((eq? p 'char->integer) "integer_type")
     ((eq? p 'string->number) "integer_type")
     ((eq? p 'list->string) "string_type")
+    ((eq? p 'string-append) "string_type")
     ((eq? p 'apply)  "common_type c; object") ;; TODO: shouldn't hardcode "c", see above
     (else #f)))
 
@@ -514,13 +516,13 @@
 (define (prim/cvar? exp)
     (and (prim? exp)
          (member exp '(
-             + - * / apply cons length cell 
-             char->integer string->number list->string))))
+             char->integer string->number string-append list->string
+             + - * / apply cons length cell))))
 
 ;; Need to pass an integer arg count as the function's first parameter
 (define (prim/arg-count? exp)
     (and (prim? exp)
-         (member exp '(error))))
+         (member exp '(error string-append))))
 
 ; c-compile-ref : ref-exp -> string
 (define (c-compile-ref exp)

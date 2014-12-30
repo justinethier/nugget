@@ -4,7 +4,10 @@
 
 (write
   (list
-;     (string-append "test")
+     (string-append "")
+     ;error - (string-append 1)
+     (string-append "test")
+     (string-append "ab" "cdefgh ij" "klmno" "p" "q" "rs  " "tuv" "w" " x " "yz")
 ;    (string->number "0")
 ;    (string->number "42")
 ;    (string->number "343243243232") ;; Note no bignum support
