@@ -538,32 +538,33 @@ static string_type Cyc_string_append(int argc, object str1, ...) {
     //   make_string using buffer
 
     va_list ap;
+    int i = 0, total_len = 1; // for null char
+    int *len = alloca(sizeof(int) * argc);
+    char *buffer, *bufferp, **str = alloca(sizeof(char *) * argc);
     object tmp;
-    int i = 0;
-    int total_len = 1; // null char
-    char *buffer;
-    char *strs = alloca(sizeof(char *) * argc);
-    int lens = alloca(sizeof(int) * argc);
     
     va_start(ap, str1);
-    strs[i] = ((string_type *)str1)->str;
-    lens[i] = strlen(strs[i]);
-    total_len += lens[i];
+    str[i] = ((string_type *)str1)->str;
+    len[i] = strlen(str[i]);
+    total_len += len[i];
 
     for (i = 1; i < argc; i++) {
         tmp = va_arg(ap, object);
-        strs[i] = ((string_type *)tmp)->str;
-        lens[i] = strlen(strs[i]);
-        total_len += lens[i];
+        str[i] = ((string_type *)tmp)->str;
+        len[i] = strlen(str[i]);
+        total_len += len[i];
     }
 
     va_end(ap);
 
-    buffer = alloca(sizeof(char) * total_len);
+    buffer = bufferp = alloca(sizeof(char) * total_len);
     for (i = 0; i < argc; i++) {
-        // TODO: memcpy();
+        memcpy(bufferp, str[i], len[i]);
+        bufferp += len[i];
     }
-    return make_string from buffer
+    *bufferp = '\0';
+    make_string(result, buffer);
+    return result;
 }
 
 static integer_type Cyc_char2integer(object chr){
