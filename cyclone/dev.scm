@@ -4,6 +4,8 @@
 
 (write
   (list
+     (and 1 2 3)
+     (and #t #f 'a 'b 'c)
      (string-append "")
      ;error - (string-append 1)
      (string-append "test")
@@ -20,12 +22,18 @@
 ;    (char->integer #\a)
   ))
 
-;TODO: should move working functions below into a unit-test file
+;TODO: should move working functions above into the unit-test file
+;
+; equality testing is all messed up - EG: (equal? 1 1)
+; need to improve this area
+;
 ; port type (see below):
+; consider http://stackoverflow.com/questions/6206893/how-to-implement-char-ready-in-c
+; FILE* may not be good enough
+;
 ;(eof-object?)
 ;(read-char fp)
 ;
-;string-append
 ;string->symbol - TODO: can runtime allow dynamically-created symbols?
 ;and
 ;or

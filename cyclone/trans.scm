@@ -35,6 +35,65 @@
   (define (reverse lst)   (foldl cons '() lst))
 ))
 
+;; Built-in macros
+;; TODO: just a stub, real code would read (define-syntax) 
+;;       from a lib file or such
+(define *defined-macros* 
+  (list 
+;(define-syntax or
+;  (er-macro-transformer
+;   (lambda (expr rename compare)
+;     (cond ((null? (cdr expr)) #f)
+;           ((null? (cddr expr)) (cadr expr))
+;           (else
+;            (list (rename 'let) (list (list (rename 'tmp) (cadr expr)))
+;                  (list (rename 'if) (rename 'tmp)
+;                        (rename 'tmp)
+;                        (cons (rename 'or) (cddr expr)))))))))
+;
+;(define-syntax and
+;  (er-macro-transformer
+;   (lambda (expr rename compare)
+;     (cond ((null? (cdr expr)))
+;           ((null? (cddr expr)) (cadr expr))
+;           (else (list (rename 'if) (cadr expr)
+;                       (cons (rename 'and) (cddr expr))
+;                       #f))))))
+    (cons 'and 
+     (lambda (expr rename compare)
+       (cond ((null? (cdr expr)))
+             ((null? (cddr expr)) (cadr expr))
+             (else (list (rename 'if) (cadr expr)
+                         (cons (rename 'and) (cddr expr))
+                         #f)))))
+    (cons 'let (lambda (exp rename compare) (let=>lambda exp)))
+    (cons 'begin (lambda (exp rename compare) (begin=>let exp)))
+    (cons 'letrec (lambda (exp rename compare) (letrec=>lets+sets exp)))
+    (cons 'cond
+          (lambda (expr rename compare)
+            (if (null? (cdr expr))
+                (if #f #f)
+                ((lambda (cl)
+                   (if (compare (rename 'else) (car cl))
+                       (if (pair? (cddr expr))
+                           (error "non-final else in cond" expr)
+                           (cons (rename 'begin) (cdr cl)))
+                       (if (if (null? (cdr cl)) #t (compare (rename '=>) (cadr cl)))
+                           (list (list (rename 'lambda) (list (rename 'tmp))
+                                       (list (rename 'if) (rename 'tmp)
+                                             (if (null? (cdr cl))
+                                                 (rename 'tmp)
+                                                 (list (car (cddr cl)) (rename 'tmp)))
+                                             (cons (rename 'cond) (cddr expr))))
+                                 (car cl))
+                           (list (rename 'if)
+                                 (car cl)
+                                 (cons (rename 'begin) (cdr cl))
+                                 (cons (rename 'cond) (cddr expr))))))
+                 (cadr expr)))))
+  ))
+
+
 (define (built-in-syms)
   '(call/cc define))
 
@@ -640,40 +699,6 @@
 ;; 
 
 ;; Macro expansion
-
-;TODO: loading of (define-syntax) forms
-
-(define *defined-macros* 
-  (list 
-    ;; TODO: just a stub, real code would read (define-syntax) 
-    ;;       from a lib file or such
-    (cons 'let (lambda (exp rename compare) (let=>lambda exp)))
-    (cons 'begin (lambda (exp rename compare) (begin=>let exp)))
-    (cons 'letrec (lambda (exp rename compare) (letrec=>lets+sets exp)))
-    (cons 'cond
-          (lambda (expr rename compare)
-            (if (null? (cdr expr))
-                (if #f #f)
-                ((lambda (cl)
-                   (if (compare (rename 'else) (car cl))
-                       (if (pair? (cddr expr))
-                           (error "non-final else in cond" expr)
-                           (cons (rename 'begin) (cdr cl)))
-                       (if (if (null? (cdr cl)) #t (compare (rename '=>) (cadr cl)))
-                           (list (list (rename 'lambda) (list (rename 'tmp))
-                                       (list (rename 'if) (rename 'tmp)
-                                             (if (null? (cdr cl))
-                                                 (rename 'tmp)
-                                                 (list (car (cddr cl)) (rename 'tmp)))
-                                             (cons (rename 'cond) (cddr expr))))
-                                 (car cl))
-                           (list (rename 'if)
-                                 (car cl)
-                                 (cons (rename 'begin) (cdr cl))
-                                 (cons (rename 'cond) (cddr expr))))))
-                 (cadr expr)))))
-  ))
-
 (define (macro? exp) (assoc (car exp) *defined-macros*))
 (define (macro-expand exp)
   (let ((macro (assoc (car exp) *defined-macros*)))
