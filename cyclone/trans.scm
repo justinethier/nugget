@@ -40,25 +40,6 @@
 ;;       from a lib file or such
 (define *defined-macros* 
   (list 
-;(define-syntax or
-;  (er-macro-transformer
-;   (lambda (expr rename compare)
-;     (cond ((null? (cdr expr)) #f)
-;           ((null? (cddr expr)) (cadr expr))
-;           (else
-;            (list (rename 'let) (list (list (rename 'tmp) (cadr expr)))
-;                  (list (rename 'if) (rename 'tmp)
-;                        (rename 'tmp)
-;                        (cons (rename 'or) (cddr expr)))))))))
-;
-;(define-syntax and
-;  (er-macro-transformer
-;   (lambda (expr rename compare)
-;     (cond ((null? (cdr expr)))
-;           ((null? (cddr expr)) (cadr expr))
-;           (else (list (rename 'if) (cadr expr)
-;                       (cons (rename 'and) (cddr expr))
-;                       #f))))))
     (cons 'and 
      (lambda (expr rename compare)
        (cond ((null? (cdr expr)))
@@ -66,6 +47,15 @@
              (else (list (rename 'if) (cadr expr)
                          (cons (rename 'and) (cddr expr))
                          #f)))))
+    (cons 'or
+     (lambda (expr rename compare)
+       (cond ((null? (cdr expr)) #f)
+             ((null? (cddr expr)) (cadr expr))
+             (else
+              (list (rename 'let) (list (list (rename 'tmp) (cadr expr)))
+                    (list (rename 'if) (rename 'tmp)
+                          (rename 'tmp)
+                          (cons (rename 'or) (cddr expr))))))))
     (cons 'let (lambda (exp rename compare) (let=>lambda exp)))
     (cons 'begin (lambda (exp rename compare) (begin=>let exp)))
     (cons 'letrec (lambda (exp rename compare) (letrec=>lets+sets exp)))

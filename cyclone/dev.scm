@@ -6,6 +6,8 @@
   (list
      (and 1 2 3)
      (and #t #f 'a 'b 'c)
+     (or 1 2 3)
+     (or #f 'a 'b 'c)
      (string-append "")
      ;error - (string-append 1)
      (string-append "test")
