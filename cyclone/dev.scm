@@ -29,3 +29,4 @@
 ; farther off but along the same lines, how to support compilation of
 ; multiple scheme files into multiple C modules?
 ;
+; also, there is a TON of stuff in the TODO file. need to get back to that
