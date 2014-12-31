@@ -11,6 +11,25 @@
 (assert "char whitespace" (char-whitespace? #\a) #f)
 (assert "char numeric" (char-numeric? #\1) #t)
 (assert "char numeric" (char-numeric? #\newline) #f)
+(assert "" (and 1 2 3) 3)
+(assert "" (and #t #f 'a 'b 'c) #f)
+(assert "" (or 1 2 3) 1)
+(assert "" (or #f 'a 'b 'c) 'a)
+(assert "" (string-append "") "")
+;error - (string-append 1)
+(assert "" (string-append "test") "test")
+(assert "" (string-append "ab" "cdefgh ij" "klmno" "p" "q" "rs  " "tuv" "w" " x " "yz")
+  "abcdefgh ijklmnopqrs  tuvw x yz")
+(assert "" (string->number "0") 0)
+(assert "" (string->number "42") 42)
+;(assert "" (string->number "343243243232") ;; Note no bignum support
+(assert "" (string->number "3.14159") 3) ;; Currently no float support
+(assert "" (list->string (list #\A #\B #\C)) "ABC")
+(assert "" (list->string (list #\A)) "A")
+(assert "" (list->string (list)) "") 
+(assert "" (integer->char 65) #\A)
+(assert "" (char->integer #\a) 97)
+
 ; TODO: use display, output without surrounding quotes
 (write "All test passed")
 ;;

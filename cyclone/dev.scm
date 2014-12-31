@@ -4,24 +4,7 @@
 
 (write
   (list
-     (and 1 2 3)
-     (and #t #f 'a 'b 'c)
-     (or 1 2 3)
-     (or #f 'a 'b 'c)
-     (string-append "")
-     ;error - (string-append 1)
-     (string-append "test")
-     (string-append "ab" "cdefgh ij" "klmno" "p" "q" "rs  " "tuv" "w" " x " "yz")
-;    (string->number "0")
-;    (string->number "42")
-;    (string->number "343243243232") ;; Note no bignum support
-;    (string->number "3.14159")
-;    (list->string (list #\A #\B #\C))
-;    (list->string (list #\A))
-;    (list->string (list))
 ;;TODO: string->list
-;    (integer->char 65)
-;    (char->integer #\a)
   ))
 
 ;TODO: should move working functions above into the unit-test file
@@ -37,8 +20,6 @@
 ;(read-char fp)
 ;
 ;string->symbol - TODO: can runtime allow dynamically-created symbols?
-;and
-;or
 ; letrec - TBD, may just restructure parser code to use defines
 ;open-input-file (and closing too, I suppose)
 ; read - can this be derived from parser.scm implementation???
