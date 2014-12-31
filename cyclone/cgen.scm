@@ -657,8 +657,9 @@
          (then (compile (if->then exp)))
          (els (compile (if->else exp))))
   (c-code (string-append
+   (c:allocs->str (c:allocs test) "  ")
    "if( !eq(quote_f, "
-   (c:serialize test "  ")
+   (c:body test)
    ") ){ \n"
    (c:serialize then "  ")
    "\n} else { \n"
