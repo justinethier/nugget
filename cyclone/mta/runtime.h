@@ -272,6 +272,7 @@ static object cell_set(object cell, object value){
 static list mcons(object,object);
 static object terpri(void);
 static object prin1(object);
+static int equal(object,object);
 static list assq(object,list);
 static object get(object,object);
 static object equalp(object,object);
@@ -324,6 +325,26 @@ DECLARE_GLOBALS
 
 /* These (crufty) printing functions are used for debugging. */
 static object terpri() {printf("\n"); return nil;}
+
+static int equal(x, y) object x, y;
+{
+    if (nullp(x)) return nullp(y);
+    if (obj_is_char(x)) return obj_is_char(y) && x == y;
+    switch(type_of(x)) {
+    case integer_tag:
+      return (type_of(y) == integer_tag &&
+              ((integer_type *) x)->value == ((integer_type *) y)->value);
+    case double_tag:
+      return (type_of(y) == double_tag &&
+              ((double_type *) x)->value == ((double_type *) y)->value);
+    case string_tag:
+      return (type_of(y) == string_tag &&
+              strcmp(((string_type *) x)->str,
+                     ((string_type *) y)->str) == 0);
+    default:
+      return x == y;
+    }
+}
 
 static object prin1(x) object x;
 {object tmp = nil;
@@ -393,7 +414,7 @@ static object get(x,i) object x,i;
 
 static object equalp(x,y) object x,y;
 {for (; ; x = cdr(x), y = cdr(y))
-   {if (eq(x,y)) return quote_t;
+   {if (equal(x,y)) return quote_t;
     if (obj_is_char(x) || obj_is_char(y) || 
         nullp(x) || nullp(y) ||
         type_of(x)!=cons_tag || type_of(y)!=cons_tag) return quote_f;
