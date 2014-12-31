@@ -7,10 +7,7 @@
 ;;TODO: string->list
   ))
 
-;TODO: should move working functions above into the unit-test file
-;
-; equality testing is all messed up - EG: (equal? 1 1)
-; need to improve this area
+; WIP TODO: move working functions above into the unit-test file
 ;
 ; port type (see below):
 ; consider http://stackoverflow.com/questions/6206893/how-to-implement-char-ready-in-c
