@@ -404,6 +404,7 @@
 (define (->cstr str) 
   (string-append "\"" str "\""))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; c-compile-prim : prim-exp -> string
 (define (c-compile-prim p)
   (let* ((c-func
@@ -495,7 +496,9 @@
      ((prim/cvar? p)
         (let ((cv-name (mangle (gensym 'c))))
            (c-code/vars 
-            (string-append "&" cv-name)
+            (if (prim:creates-object? p)
+                cv-name ;; Already a pointer
+                (string-append "&" cv-name)) ;; Point to data
             (list
                 (string-append c-func "(" cv-name)))))
      (else
@@ -514,7 +517,7 @@
     ((eq? p 'apply)  "common_type c; object") ;; TODO: shouldn't hardcode "c", see above
     (else #f)))
 
-; Does primitive create a C variable?
+;; Does primitive create a C variable?
 (define (prim/cvar? exp)
     (and (prim? exp)
          (member exp '(
@@ -522,9 +525,17 @@
              + - * / apply cons length cell))))
 
 ;; Need to pass an integer arg count as the function's first parameter
-(define (prim/arg-count? exp)
+(define (prim:arg-count? exp)
     (and (prim? exp)
          (member exp '(error string-append))))
+
+;; Primitive creates an object,
+(define (prim:creates-object? exp)
+    (and  (prim? exp)
+          (member exp '(string->list))))
+
+;; END primitives
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; c-compile-ref : ref-exp -> string
 (define (c-compile-ref exp)
@@ -590,7 +601,7 @@
                   (string-append 
                     (number->string num-args)
                     (if (> num-args 0) "," "")))
-                (c-args* (if (prim/arg-count? fun)
+                (c-args* (if (prim:arg-count? fun)
                              (c:append (c-code num-args-str) c-args)
                              c-args)))
             (if (prim/cvar? fun)
