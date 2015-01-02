@@ -540,6 +540,27 @@ static string_type Cyc_list2string(object lst){
     return str;
 }
 
+#define string2list(c,s) object c = nil; { \
+  char *str = ((string_type *)s)->str; \
+  int len = strlen(str); \
+  list buf; \
+  if (len > 0) { \
+      buf = alloca(sizeof(cons_type) * len); \
+      __string2list(str, &buf, len); \
+      c = (object)&(buf[0]); \
+  } \
+}
+
+static void __string2list(const char *str, list *buf, int buflen){
+    int i = 0;
+    while (str[i]){
+        buf[i]->tag = cons_tag;
+        buf[i]->cons_car = obj_char2obj(str[i]);
+        buf[i]->cons_cdr = (i == buflen - 1) ? nil : buf[i + 1]; 
+        i++;
+    }
+}
+
 static integer_type Cyc_string2number(object str){
     make_int(n, 0);
     if (type_of(str) == string_tag &&

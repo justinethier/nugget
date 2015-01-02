@@ -4,7 +4,8 @@
 
 (write
   (list
-;;TODO: string->list
+    (+ 1 2)
+    (string->list "test")
   ))
 
 ; WIP TODO: move working functions above into the unit-test file

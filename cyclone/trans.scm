@@ -472,6 +472,7 @@
      integer->char
      string->number
      string-append
+     string->list
      list->string
      boolean?
      char?
