@@ -543,20 +543,20 @@ static string_type Cyc_list2string(object lst){
 #define string2list(c,s) object c = nil; { \
   char *str = ((string_type *)s)->str; \
   int len = strlen(str); \
-  list buf; \
+  cons_type *buf; \
   if (len > 0) { \
       buf = alloca(sizeof(cons_type) * len); \
-      __string2list(str, &buf, len); \
+      __string2list(str, buf, len); \
       c = (object)&(buf[0]); \
   } \
 }
 
-static void __string2list(const char *str, list *buf, int buflen){
+static void __string2list(const char *str, cons_type *buf, int buflen){
     int i = 0;
     while (str[i]){
-        buf[i]->tag = cons_tag;
-        buf[i]->cons_car = obj_char2obj(str[i]);
-        buf[i]->cons_cdr = (i == buflen - 1) ? nil : buf[i + 1]; 
+        buf[i].tag = cons_tag;
+        buf[i].cons_car = obj_char2obj(str[i]);
+        buf[i].cons_cdr = (i == buflen - 1) ? nil : buf + (i + 1); 
         i++;
     }
 }
