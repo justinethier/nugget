@@ -14,6 +14,7 @@
 ; consider http://stackoverflow.com/questions/6206893/how-to-implement-char-ready-in-c
 ; FILE* may not be good enough
 ;
+; open-input-file
 ;(eof-object?)
 ;(read-char fp)
 ;

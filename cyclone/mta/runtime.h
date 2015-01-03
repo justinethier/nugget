@@ -3,9 +3,17 @@
  * This file contains the C runtime used by compiled programs.
  */
 
+// If this is set, GC is called every function call.
+// Only turn this on for debugging!!!
 #define DEBUG_ALWAYS_GC 1
+
+// Debug GC flag
 #define DEBUG_GC 0
+
+// Show diagnostic information for the GC when program terminates
 #define DEBUG_SHOW_DIAG 0
+
+// Maximum number of args that GC will accept
 #define NUM_GC_ANS 100
 
 /* STACK_GROWS_DOWNWARD is a machine-specific preprocessor switch. */
@@ -74,6 +82,8 @@ typedef long tag_type;
 #define double_tag 10
 #define string_tag 11
 #define primitive_tag 12
+#define eof_tag 13
+#define port_tag 14
 
 #define nil NULL
 #define eq(x,y) (x == y)
@@ -130,6 +140,15 @@ typedef struct {tag_type tag; char *str;} string_type;
       printf("Fatal error: data heap overflow\n"); exit(1); } \
   memcpy(dhallocp, s, len + 1); dhallocp += len + 1; }
 
+/* I/O types */
+
+// TODO: a simple wrapper around FILE may not be good enough long-term
+// TODO: how exactly mode will be used. need to know r/w, bin/txt
+typedef struct {tag_type tag; FILE *fp; int mode} port_type;
+#define make_port(p,f,m) port_type p; p.tag = port_tag; p.fp = f; p.mode = m;
+
+static symbol_type __EOF = {eof_tag, "", nil}; // symbol_type in lieu of custom type
+static const object Cyc_EOF = &__EOF;
 /* Define cons type. */
 
 typedef struct {tag_type tag; object cons_car,cons_cdr;} cons_type;
