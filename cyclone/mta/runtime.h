@@ -714,6 +714,7 @@ static object Cyc_io_close_input_port(object port) {
 }
 
 // TODO: read-char
+//  note this returns either char or eof
 
 /* Primitive types */
 //typedef common_type (*prim_function_type)();
