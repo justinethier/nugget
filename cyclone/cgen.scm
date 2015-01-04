@@ -472,6 +472,7 @@
             ((eq? p 'number?)       "Cyc_is_number")
             ((eq? p 'pair?)         "Cyc_is_cons")
             ((eq? p 'string?)       "Cyc_is_string")
+            ((eq? p 'eof-object?)   "Cyc_is_eof_object")
             ((eq? p 'symbol?)       "Cyc_is_symbol")
             ((eq? p 'cons)          "make_cons")
             ((eq? p 'cell)          "make_cell")

@@ -144,7 +144,7 @@ typedef struct {tag_type tag; char *str;} string_type;
 
 // TODO: a simple wrapper around FILE may not be good enough long-term
 // TODO: how exactly mode will be used. need to know r/w, bin/txt
-typedef struct {tag_type tag; FILE *fp; int mode} port_type;
+typedef struct {tag_type tag; FILE *fp; int mode;} port_type;
 #define make_port(p,f,m) port_type p; p.tag = port_tag; p.fp = f; p.mode = m;
 
 static symbol_type __EOF = {eof_tag, "", nil}; // symbol_type in lieu of custom type
@@ -514,6 +514,11 @@ static object Cyc_is_char(object o){
         return quote_t;
     return quote_f;}
 
+static object Cyc_is_eof_object(object o) {
+    if (!nullp(o) && type_of(o) == eof_tag)
+        return quote_t;
+    return quote_f;}
+
 static object Cyc_eq(object x, object y) {
     if (eq(x, y))
         return quote_t;
@@ -689,6 +694,26 @@ static void __halt(object obj) {
 #define __mul(c,x,y) integer_type c; c.tag = integer_tag; c.value = (((integer_type *)(x))->value * ((integer_type *)(y))->value);
 #define __sub(c,x,y) integer_type c; c.tag = integer_tag; c.value = (((integer_type *)(x))->value - ((integer_type *)(y))->value);
 #define __div(c,x,y) integer_type c; c.tag = integer_tag; c.value = (((integer_type *)(x))->value / ((integer_type *)(y))->value);
+
+/* I/O functions */
+
+static port_type Cyc_io_open_input_file(object str) {
+    const char *fname = ((string_type *)str)->str;
+    make_port(p, NULL, 0);
+    p.fp = fopen(fname, "r");
+    return p;
+}
+
+static object Cyc_io_close_input_port(object port) {
+    if (port && type_of(port) == port_tag) {
+       FILE *stream = ((port_type *)port)->fp;
+       if (stream) fclose(stream);
+       ((port_type *)port)->fp = NULL;
+    }
+    return port;
+}
+
+// TODO: read-char
 
 /* Primitive types */
 //typedef common_type (*prim_function_type)();

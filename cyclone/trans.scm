@@ -476,6 +476,7 @@
      list->string
      boolean?
      char?
+     eof-object?
      null?
      number?
      pair?
