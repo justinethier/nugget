@@ -8,6 +8,10 @@
     (string->list "test")
   ))
 
+(let ((fp (open-input-file "dev.scm")))
+  (write (read-char fp))
+  (close-input-port fp))
+
 ; WIP TODO: move working functions above into the unit-test file
 ;
 ; port type (see below):

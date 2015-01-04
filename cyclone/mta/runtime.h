@@ -713,8 +713,18 @@ static object Cyc_io_close_input_port(object port) {
     return port;
 }
 
+// TODO: add port type to GC!
 // TODO: read-char
-//  note this returns either char or eof
+//  TODO: port arg is optional!
+static object Cyc_io_read_char(object port) {
+    if (type_of(port) == port_tag) {
+        int c = fgetc(((port_type *) port)->fp);
+        if (c != EOF) {
+            return obj_char2obj(c);
+        }
+    }
+    return Cyc_EOF;
+}
 
 /* Primitive types */
 //typedef common_type (*prim_function_type)();
