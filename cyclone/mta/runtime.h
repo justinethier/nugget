@@ -713,7 +713,6 @@ static object Cyc_io_close_input_port(object port) {
     return port;
 }
 
-// TODO: read-char
 //  TODO: port arg is optional! (maybe handle that in expansion section??)
 static object Cyc_io_read_char(object port) {
     if (type_of(port) == port_tag) {
