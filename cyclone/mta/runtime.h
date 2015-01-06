@@ -713,9 +713,8 @@ static object Cyc_io_close_input_port(object port) {
     return port;
 }
 
-// TODO: add port type to GC!
 // TODO: read-char
-//  TODO: port arg is optional!
+//  TODO: port arg is optional! (maybe handle that in expansion section??)
 static object Cyc_io_read_char(object port) {
     if (type_of(port) == port_tag) {
         int c = fgetc(((port_type *) port)->fp);
@@ -971,8 +970,16 @@ static char *transport(x, gcgen) char *x; int gcgen;
        forward(x) = nx; type_of(x) = forward_tag;
        x = (char *) nx; allocp = ((char *) nx)+sizeof(integer_type);
        return (char *) nx;}
+    case port_tag:
+      {register port_type *nx = (port_type *) allocp;
+       type_of(nx) = port_tag; nx->fp = ((port_type *) x)->fp;
+       nx->mode = ((port_type *) x)->mode;
+       forward(x) = nx; type_of(x) = forward_tag;
+       x = (char *) nx; allocp = ((char *) nx)+sizeof(port_type);
+       return (char *) nx;}
     case forward_tag:
        return (char *) forward(x);
+    case eof_tag: break;
     case primitive_tag: break;
     case symbol_tag: break; // JAE TODO: raise an error here? Should not be possible in real code, though (IE, without GC DEBUG flag)
     default:
@@ -1107,6 +1114,12 @@ static void GC_loop(int major, closure cont, object *ans, int num_ans)
  printf("DEBUG transport integer \n");
 #endif
         scanp += sizeof(integer_type); break;
+      case port_tag:
+#if DEBUG_GC
+ printf("DEBUG transport port \n");
+#endif
+        scanp += sizeof(port_type); break;
+      case eof_tag:
       case primitive_tag:
       case symbol_tag: 
       default:
