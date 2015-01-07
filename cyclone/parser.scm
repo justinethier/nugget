@@ -62,81 +62,86 @@
   (set! *char-num* 0)
   (_cyc-read-all fp 0))
 
-(define (_cyc-read-all fp parens)
-  (letrec (
-   ;; Keep looping, adding finished token if there is one
-   (loop/tok (lambda (tok toks comment? quotes parens)
-                (if (null? tok)
-                    (loop '() toks comment? quotes parens)
-                    (loop '() (add-tok (->tok tok) toks quotes) comment? #f parens)))) ; read tok, no more '
-   ;; Loop over input
-   (loop (lambda (tok toks comment? quotes parens)
-    (set! *char-num* (+ 1 *char-num*))
-    (let ((c (read-char fp)))
-      (cond
-        ((eof-object? c) 
-         (if (> parens 0)
-             (parse-error "missing closing parenthesis" *line-num* *char-num*))
-         (reverse (with-tok tok toks quotes)))
-        (comment?
-         (if (eq? c #\newline)
-             (begin
-                (set! *line-num* (+ 1 *line-num*))
-                (set! *char-num* 0)
-                (loop '() toks #f quotes parens))
-             (loop '() toks #t quotes parens)))
-        ((char-whitespace? c)
-         (if (equal? c #\newline) (set! *line-num* (+ 1 *line-num*)))
-         (if (equal? c #\newline) (set! *char-num* 0))
-         (loop/tok tok toks #f quotes parens))
-        ((eq? c #\;)
-         (loop/tok tok toks #t quotes parens))
-        ((eq? c #\')
-         (let ((quote-level (if quotes
-                                (+ quotes 1)
-                                1)))
-           (if (null? tok)
-               (loop '() toks comment? quote-level parens)
-               (loop '() (add-tok (->tok tok) toks quotes) 
-                                  comment? quote-level parens))))
-        ((eq? c #\()
-         (let ((sub (_cyc-read-all fp (+ parens 1)))
-               (toks* (with-tok tok toks quotes)))
-            (loop 
-              '() 
-              (add-tok 
-                (if (dotted? sub)
-                    (->dotted-list sub)
-                    sub)
-                toks* 
-                quotes) 
-              #f #f parens)))
-        ((eq? c #\))
-         (if (= parens 0)
-             (parse-error "unexpected closing parenthesis" *line-num* *char-num*))
-         (reverse (with-tok tok toks quotes)))
-        ((eq? c #\")
-         (let ((str (read-str fp '()))
-               (toks* (with-tok tok toks quotes)))
-           (loop '() (add-tok str toks* quotes) #f #f parens)))
-        ((eq? c #\#)
+;; Add finished token, if there is one, and continue parsing
+(define (parse/tok fp tok toks comment? quotes parens)
+             (if (null? tok)
+                 (parse fp '() toks comment? quotes parens)
+                 (parse fp '() 
+                        (add-tok (->tok tok) toks quotes) 
+                        comment? 
+                        #f  ; read tok, no more quote
+                        parens)))
+
+;; Parse input from stream
+(define (parse fp tok toks comment? quotes parens)
+  (set! *char-num* (+ 1 *char-num*))
+  (let ((c (read-char fp)))
+    (cond
+      ((eof-object? c) 
+       (if (> parens 0)
+           (parse-error "missing closing parenthesis" *line-num* *char-num*))
+       (reverse (with-tok tok toks quotes)))
+      (comment?
+       (if (eq? c #\newline)
+           (begin
+              (set! *line-num* (+ 1 *line-num*))
+              (set! *char-num* 0)
+              (parse fp '() toks #f quotes parens))
+           (parse fp '() toks #t quotes parens)))
+      ((char-whitespace? c)
+       (if (equal? c #\newline) (set! *line-num* (+ 1 *line-num*)))
+       (if (equal? c #\newline) (set! *char-num* 0))
+       (parse/tok fp tok toks #f quotes parens))
+      ((eq? c #\;)
+       (parse/tok fp tok toks #t quotes parens))
+      ((eq? c #\')
+       (let ((quote-level (if quotes
+                              (+ quotes 1)
+                              1)))
          (if (null? tok)
-           ;; # reader
-           (let ((next-c (read-char fp)))
-              (set! *char-num* (+ 1 *char-num*))
-              (cond
-                ;; Do not use add-tok below, no need to quote a bool
-                ((eq? #\t next-c) (loop '() (cons #t toks) #f #f parens))
-                ((eq? #\f next-c) (loop '() (cons #f toks) #f #f parens))
-                ((eq? #\\ next-c)
-                 (loop '() (cons (read-pound fp) toks) #f #f parens))
-                (else
-                  (parse-error "Unhandled input sequence" *line-num* *char-num*))))
-           ;; just another char...
-           (loop (cons c tok) toks #f quotes parens)))
-        (else
-          (loop (cons c tok) toks #f quotes parens)))))))
-   (loop '() '() #f #f parens)))
+             (parse fp '() toks comment? quote-level parens)
+             (parse fp '() (add-tok (->tok tok) toks quotes) 
+                                comment? quote-level parens))))
+      ((eq? c #\()
+       (let ((sub (_cyc-read-all fp (+ parens 1)))
+             (toks* (with-tok tok toks quotes)))
+          (parse fp 
+            '() 
+            (add-tok 
+              (if (dotted? sub)
+                  (->dotted-list sub)
+                  sub)
+              toks* 
+              quotes) 
+            #f #f parens)))
+      ((eq? c #\))
+       (if (= parens 0)
+           (parse-error "unexpected closing parenthesis" *line-num* *char-num*))
+       (reverse (with-tok tok toks quotes)))
+      ((eq? c #\")
+       (let ((str (read-str fp '()))
+             (toks* (with-tok tok toks quotes)))
+         (parse fp '() (add-tok str toks* quotes) #f #f parens)))
+      ((eq? c #\#)
+       (if (null? tok)
+         ;; # reader
+         (let ((next-c (read-char fp)))
+            (set! *char-num* (+ 1 *char-num*))
+            (cond
+              ;; Do not use add-tok below, no need to quote a bool
+              ((eq? #\t next-c) (parse fp '() (cons #t toks) #f #f parens))
+              ((eq? #\f next-c) (parse fp '() (cons #f toks) #f #f parens))
+              ((eq? #\\ next-c)
+               (parse fp '() (cons (read-pound fp) toks) #f #f parens))
+              (else
+                (parse-error "Unhandled input sequence" *line-num* *char-num*))))
+         ;; just another char...
+         (parse fp (cons c tok) toks #f quotes parens)))
+      (else
+        (parse fp (cons c tok) toks #f quotes parens)))))
+
+(define (_cyc-read-all fp parens)
+   (parse fp '() '() #f #f parens))
 
 ;; Read chars past a leading #\
 (define (read-pound fp)
