@@ -142,6 +142,8 @@ typedef struct {tag_type tag; char *str;} string_type;
 
 /* I/O types */
 
+// TODO: FILE* may not be good enough
+//       consider http://stackoverflow.com/questions/6206893/how-to-implement-char-ready-in-c
 // TODO: a simple wrapper around FILE may not be good enough long-term
 // TODO: how exactly mode will be used. need to know r/w, bin/txt
 typedef struct {tag_type tag; FILE *fp; int mode;} port_type;

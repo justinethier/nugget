@@ -9,22 +9,19 @@
   ))
 
 (let ((fp (open-input-file "dev.scm")))
-  (write (read-char fp))
+  (display (read-char fp))
+  (display (read-char fp))
+  (display (read-char fp))
+  (display (read-char fp))
+  (display (read-char fp))
+  (display (read-char fp))
+  (display (read-char fp))
   (close-input-port fp))
 
 ; WIP TODO: move working functions above into the unit-test file
 ;
-; port type (see below):
-; consider http://stackoverflow.com/questions/6206893/how-to-implement-char-ready-in-c
-; FILE* may not be good enough
-;
-; open-input-file
-;(eof-object?)
-;(read-char fp)
-;
 ;string->symbol - TODO: can runtime allow dynamically-created symbols?
 ; letrec - TBD, may just restructure parser code to use defines
-;open-input-file (and closing too, I suppose)
 ; read - can this be derived from parser.scm implementation???
 
 ; idea - booleans
