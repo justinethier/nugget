@@ -122,6 +122,22 @@ typedef symbol_type *symbol;
 
 #define symbol_plist(x) (((symbol_type *) x)->plist)
 
+/* TODO: symbol table
+ symbols can be dynamically allocated (via malloc) and placed into a
+ global symbol table. possibly using a heap-allocated list
+
+ defsymbol below could then be used to create names that point to
+ symbols in the table
+
+ string->symbol would then:
+  - loopup symbol in the table
+  - if found, return that pointer
+  - otherwise, allocate symbol in table and return ptr to it
+
+
+ For now, GC of symbols is missing. long-term it probably would be desirable
+*/
+
 #define defsymbol(name) \
 static symbol_type name##_symbol = {symbol_tag, #name, nil}; \
 static const object quote_##name = &name##_symbol
