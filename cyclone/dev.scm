@@ -10,8 +10,10 @@
 
 (let ((fp (open-input-file "dev.scm")))
   (display (read-char fp))
+  (display (peek-char fp))
   (display (read-char fp))
   (display (read-char fp))
+  (display (peek-char fp))
   (display (read-char fp))
   (display (read-char fp))
   (display (read-char fp))

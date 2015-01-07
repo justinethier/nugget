@@ -726,6 +726,21 @@ static object Cyc_io_read_char(object port) {
     return Cyc_EOF;
 }
 
+static object Cyc_io_peek_char(object port) {
+    FILE *stream;
+    int c;
+
+    if (type_of(port) == port_tag) {
+        stream = ((port_type *) port)->fp;
+        c = fgetc(stream);
+        ungetc(c, stream);
+        if (c != EOF) {
+            return obj_char2obj(c);
+        }
+    }
+    return Cyc_EOF;
+}
+
 /* Primitive types */
 //typedef common_type (*prim_function_type)();
 //typedef void (*prim_function_type)();

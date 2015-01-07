@@ -485,6 +485,7 @@
      open-input-file
      close-input-port
      read-char
+     peek-char
      write
      display)))
 
