@@ -320,12 +320,7 @@
 (define (c-compile-quote qexp)
   (let ((exp (cadr qexp)))
     (c-compile-scalars exp)))
-;  // (1 . (2 . nil))
-;  make_int(i2, 2);
-;  make_cons(c2, &i2, nil);
-;  make_int(i1, 1);
-;  make_cons(c1, &i1, &c2);
-;  return_check1(__lambda_1, &c1);; 
+
 (define (c-compile-scalars args)
   (letrec (
     (num-args 0)
@@ -409,20 +404,23 @@
 (define (c-compile-prim p)
   (let* ((c-func
           (cond
-            ((eq? p '+)             "__sum")
-            ((eq? p '-)             "__sub")
-            ((eq? p '*)             "__mul")
-            ((eq? p '/)             "__div")
-            ((eq? p '=)             "__num_eq")
-            ((eq? p '>)             "__num_gt")
-            ((eq? p '<)             "__num_lt")
-            ((eq? p '>=)            "__num_gte")
-            ((eq? p '<=)            "__num_lte")
-            ((eq? p 'apply)         "apply")
-            ((eq? p '%halt)         "__halt")
-            ((eq? p 'error)         "Cyc_error")
-            ((eq? p 'display)       "prin1")
-            ((eq? p 'write)         "write")
+            ((eq? p '+)                 "__sum")
+            ((eq? p '-)                 "__sub")
+            ((eq? p '*)                 "__mul")
+            ((eq? p '/)                 "__div")
+            ((eq? p '=)                 "__num_eq")
+            ((eq? p '>)                 "__num_gt")
+            ((eq? p '<)                 "__num_lt")
+            ((eq? p '>=)                "__num_gte")
+            ((eq? p '<=)                "__num_lte")
+            ((eq? p 'apply)             "apply")
+            ((eq? p '%halt)             "__halt")
+            ((eq? p 'error)             "Cyc_error")
+            ((eq? p 'open-input-file)   "Cyc_io_open_input_file")
+            ((eq? p 'close-input-port)  "Cyc_io_close_input_port")
+            ((eq? p 'read-char)         "Cyc_io_read_char")
+            ((eq? p 'display)           "prin1")
+            ((eq? p 'write)             "write")
             ((eq? p 'car)           "car")
             ((eq? p 'cdr)           "cdr")
             ((eq? p 'caar)          "caar")
@@ -497,7 +495,7 @@
      ((prim/cvar? p)
         (let ((cv-name (mangle (gensym 'c))))
            (c-code/vars 
-            (if (prim:creates-object? p)
+            (if (prim:allocates-object? p)
                 cv-name ;; Already a pointer
                 (string-append "&" cv-name)) ;; Point to data
             (list
@@ -509,6 +507,7 @@
 ;; EG: int v = prim();
 (define (prim/c-var-assign p)
   (cond
+    ((eq? p 'open-input-file) "port_type")
     ((eq? p 'length) "integer_type")
     ((eq? p 'char->integer) "integer_type")
     ((eq? p 'string->number) "integer_type")
@@ -518,10 +517,11 @@
     ((eq? p 'apply)  "common_type c; object") ;; TODO: shouldn't hardcode "c", see above
     (else #f)))
 
-;; Does primitive create a C variable?
+;; Primitive creates a C variable
 (define (prim/cvar? exp)
     (and (prim? exp)
          (member exp '(
+             open-input-file
              char->integer string->number string-append list->string string->list
              + - * / apply cons length cell))))
 
@@ -530,8 +530,8 @@
     (and (prim? exp)
          (member exp '(error string-append))))
 
-;; Primitive creates an object,
-(define (prim:creates-object? exp)
+;; Primitive allocates an object
+(define (prim:allocates-object? exp)
     (and  (prim? exp)
           (member exp '(string->list))))
 

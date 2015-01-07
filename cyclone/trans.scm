@@ -482,6 +482,9 @@
      pair?
      string?
      symbol?
+     open-input-file
+     close-input-port
+     read-char
      write
      display)))
 
