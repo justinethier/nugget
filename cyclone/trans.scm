@@ -769,6 +769,14 @@
              (args      (letrec->args exp)))
         `(let ,namings
            (begin ,@(append sets (letrec->exp exp)))))))
+;; NOTE: chibi uses the following macro. turns vars into defines?
+;;(define-syntax letrec
+;;  (er-macro-transformer
+;;   (lambda (expr rename compare)
+;;     ((lambda (defs)
+;;        `((,(rename 'lambda) () ,@defs ,@(cddr expr))))
+;;      (map (lambda (x) (cons (rename 'define) x)) (cadr expr))))))
+;;
 
 ; begin=>let : begin-exp -> let-exp
 (define (begin=>let exp)

@@ -23,16 +23,6 @@
 ; WIP TODO: move working functions above into the unit-test file
 ;
 ;string->symbol - TODO: can runtime allow dynamically-created symbols?
-; letrec - TBD, may just restructure parser code to use defines
-;
-; chibi uses the following macro. turns vars into defines?
-(define-syntax letrec
-  (er-macro-transformer
-   (lambda (expr rename compare)
-     ((lambda (defs)
-        `((,(rename 'lambda) () ,@defs ,@(cddr expr))))
-      (map (lambda (x) (cons (rename 'define) x)) (cadr expr))))))
-;
 ; read - can this be derived from parser.scm implementation???
 
 ; idea - booleans
