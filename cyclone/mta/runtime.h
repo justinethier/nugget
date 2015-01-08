@@ -305,6 +305,10 @@ static void main_main(long stack_size,long heap_size,char *stack_base) never_ret
 static long long_arg(int argc,char **argv,char *name,long dval);
 
 /* Symbol Table */
+char *_strdup (const char *s);
+static object find_symbol_by_name(const char *name);
+static object add_symbol(symbol_type *psym);
+static object add_symbol_by_name(const char *name);
 list symbol_table = nil;
 
 char *_strdup (const char *s) {
@@ -313,7 +317,7 @@ char *_strdup (const char *s) {
     return d;
 }
 
-static object find_symbol(const char *name) {
+static object find_symbol_by_name(const char *name) {
   list l = symbol_table;
   for (; !nullp(l); l = cdr(l)) {
     if (strcmp(((symbol_type *)car(l))->pname, name) == 0) return car(l);
@@ -321,23 +325,24 @@ static object find_symbol(const char *name) {
   return nil;
 }
 
-static object add_symbol(const char *name) {
+static object add_symbol(symbol_type *psym) {
+   symbol_table = mcons(psym, symbol_table);
+   return psym;
+}
+
+static object add_symbol_by_name(const char *name) {
    symbol_type sym = {symbol_tag, _strdup(name), nil};
    symbol_type *psym = malloc(sizeof(symbol_type));
    memcpy(psym, &sym, sizeof(symbol_type));
-   symbol_table = mcons(psym, symbol_table);
-
-   return psym;
+   return add_symbol(psym);
 }
+
 /* TODO: symbol table
- symbols can be dynamically allocated (via malloc) and placed into a
- global symbol table. possibly using a heap-allocated list
 
- defsymbol below could then be used to create names that point to
- symbols in the table
+ need to initialize symbol table 
 
- string->symbol would then:
-  - loopup symbol in the table
+ string->symbol can:
+  - lookup symbol in the table
   - if found, return that pointer
   - otherwise, allocate symbol in table and return ptr to it
 
