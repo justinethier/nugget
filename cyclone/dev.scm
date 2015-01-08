@@ -28,6 +28,7 @@
 ; WIP TODO: move working functions above into the unit-test file
 ;
 ;string->symbol - TODO: can runtime allow dynamically-created symbols?
+;symbol->string
 ; read - can this be derived from parser.scm implementation???
 
 ; idea - booleans
