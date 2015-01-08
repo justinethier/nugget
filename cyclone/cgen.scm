@@ -882,7 +882,9 @@
     ;; Emit symbols
     (for-each
         (lambda (sym)
-            (emit (string-append "defsymbol(" (mangle sym) ");")))
+            (emit 
+              (string-append 
+                "defsymbol(" (mangle sym) ", \"" (symbol->string sym) "\");")))
         *symbols*)
 
     ;; Emit lambdas:

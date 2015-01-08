@@ -2,7 +2,8 @@
 ;; supported yet by cyclone
 ;;
 
-'a
+'a/test
+(write 'a/test)
 'a
 'b
 'c

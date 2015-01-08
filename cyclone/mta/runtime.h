@@ -122,8 +122,8 @@ typedef symbol_type *symbol;
 
 #define symbol_plist(x) (((symbol_type *) x)->plist)
 
-#define defsymbol(name) \
-static symbol_type name##_symbol = {symbol_tag, #name, nil}; \
+#define defsymbol(name,pname) \
+static symbol_type name##_symbol = {symbol_tag, #pname, nil}; \
 static const object quote_##name = &name##_symbol
 
 /* Define numeric types */
@@ -379,8 +379,8 @@ static jmp_buf jmp_main; /* Where to jump to. */
 
 /* Define the Lisp atoms that we need. */
 
-defsymbol(f);
-defsymbol(t);
+defsymbol(f,"f");
+defsymbol(t,"t");
 
 //static object quote_list_f;  /* Initialized by main to '(f) */
 //static object quote_list_t;  /* Initialized by main to '(t) */
