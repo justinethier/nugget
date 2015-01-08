@@ -339,8 +339,6 @@ static object add_symbol_by_name(const char *name) {
 
 /* TODO: symbol table
 
- need to initialize symbol table 
-
  string->symbol can:
   - lookup symbol in the table
   - if found, return that pointer

@@ -907,6 +907,12 @@
     (emit "
   static void c_entry_pt(argc, env,cont) int argc; closure env,cont; { ")
 
+    ;; Initialize symbol table
+    (for-each
+        (lambda (sym)
+            (emit (string-append "  add_symbol(quote_" (mangle sym) ");")))
+        *symbols*)
+
     ;; Initialize globals
     (let ((prefix "  "))
       (for-each
