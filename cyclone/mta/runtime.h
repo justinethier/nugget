@@ -122,22 +122,6 @@ typedef symbol_type *symbol;
 
 #define symbol_plist(x) (((symbol_type *) x)->plist)
 
-/* TODO: symbol table
- symbols can be dynamically allocated (via malloc) and placed into a
- global symbol table. possibly using a heap-allocated list
-
- defsymbol below could then be used to create names that point to
- symbols in the table
-
- string->symbol would then:
-  - loopup symbol in the table
-  - if found, return that pointer
-  - otherwise, allocate symbol in table and return ptr to it
-
-
- For now, GC of symbols is missing. long-term it probably would be desirable
-*/
-
 #define defsymbol(name) \
 static symbol_type name##_symbol = {symbol_tag, #name, nil}; \
 static const object quote_##name = &name##_symbol
@@ -319,6 +303,47 @@ static void GC(closure,object*,int) never_returns;
 
 static void main_main(long stack_size,long heap_size,char *stack_base) never_returns;
 static long long_arg(int argc,char **argv,char *name,long dval);
+
+/* Symbol Table */
+list symbol_table = nil;
+
+char *_strdup (const char *s) {
+    char *d = malloc (strlen (s) + 1);
+    if (d) { strcpy (d,s); }
+    return d;
+}
+
+static object find_symbol(const char *name) {
+  list l = symbol_table;
+  for (; !nullp(l); l = cdr(l)) {
+    if (strcmp(((symbol_type *)car(l))->pname, name) == 0) return car(l);
+  }
+  return nil;
+}
+
+static object add_symbol(const char *name) {
+   symbol_type sym = {symbol_tag, _strdup(name), nil};
+   symbol_type *psym = malloc(sizeof(symbol_type));
+   memcpy(psym, &sym, sizeof(symbol_type));
+   symbol_table = mcons(psym, symbol_table);
+
+   return psym;
+}
+/* TODO: symbol table
+ symbols can be dynamically allocated (via malloc) and placed into a
+ global symbol table. possibly using a heap-allocated list
+
+ defsymbol below could then be used to create names that point to
+ symbols in the table
+
+ string->symbol would then:
+  - loopup symbol in the table
+  - if found, return that pointer
+  - otherwise, allocate symbol in table and return ptr to it
+
+
+ For now, GC of symbols is missing. long-term it probably would be desirable
+*/
 
 /* Global variables. */
 

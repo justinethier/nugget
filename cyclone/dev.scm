@@ -2,6 +2,10 @@
 ;; supported yet by cyclone
 ;;
 
+'a
+'a
+'b
+'c
 (write
   (list
     (+ 1 2)
