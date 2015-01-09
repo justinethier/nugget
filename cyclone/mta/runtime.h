@@ -321,7 +321,8 @@ char *_strdup (const char *s) {
 static object find_symbol_by_name(const char *name) {
   list l = symbol_table;
   for (; !nullp(l); l = cdr(l)) {
-    if (strcmp(((symbol_type *)car(l))->pname, name) == 0) return car(l);
+    const char *str = symbol_pname(car(l));
+    if (strcmp(str, name) == 0) return car(l);
   }
   return nil;
 }
