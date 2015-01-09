@@ -476,6 +476,7 @@
      list->string
      string->symbol
      symbol->string
+     number->string
      boolean?
      char?
      eof-object?

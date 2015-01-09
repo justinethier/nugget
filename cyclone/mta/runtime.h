@@ -596,6 +596,15 @@ static integer_type Cyc_length(object l){
     return len;
 }
 
+static string_type Cyc_number2string(object n) {
+    char buffer[1024];
+    int num = ((integer_type *) n)->value;
+    
+    snprintf(buffer, 1024, "%d", num);
+    make_string(str, buffer);
+    return str;
+}
+
 static string_type Cyc_symbol2string(object sym) {
     make_string(str, symbol_pname(sym));
     return str;

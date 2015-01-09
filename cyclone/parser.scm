@@ -220,8 +220,8 @@
 
 ;(let ((fp (open-input-file "tests/begin.scm")))
 ;(let ((fp (open-input-file "tests/strings.scm")))
-;(let ((fp (open-input-file "dev.scm")))
-;  (write (cyc-read-all fp)))
+(let ((fp (open-input-file "dev.scm")))
+  (write (cyc-read-all fp)))
 
 ;(define (display-file filename)
 ;  (call-with-input-file filename
