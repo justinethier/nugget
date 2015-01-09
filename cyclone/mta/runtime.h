@@ -120,6 +120,7 @@ typedef void (*function_type)();
 typedef struct {const tag_type tag; const char *pname; object plist;} symbol_type;
 typedef symbol_type *symbol;
 
+#define symbol_pname(x) (((symbol_type *) x)->pname)
 #define symbol_plist(x) (((symbol_type *) x)->plist)
 
 #define defsymbol(name,pname) \
@@ -592,6 +593,19 @@ static integer_type Cyc_length(object l){
         len.value++;
     }
     return len;
+}
+
+static string_type Cyc_symbol2string(object sym) {
+    make_string(str, symbol_pname(sym));
+    return str;
+}
+
+static object Cyc_string2symbol(object str) {
+    object sym = find_symbol_by_name(symbol_pname(str));
+    if (!sym) {
+        sym = add_symbol_by_name(symbol_pname(str));
+    }
+    return sym;
 }
 
 static string_type Cyc_list2string(object lst){
