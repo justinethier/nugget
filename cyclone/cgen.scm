@@ -458,6 +458,8 @@
             ((eq? p 'list->string)  "Cyc_list2string")
             ((eq? p 'string->list)  "string2list")
             ((eq? p 'string-append) "Cyc_string_append")
+            ((eq? p 'string->symbol) "Cyc_string2symbol")
+            ((eq? p 'symbol->string) "Cyc_symbol2string")
             ((eq? p 'member)        "memberp")
             ((eq? p 'length)        "Cyc_length")
             ((eq? p 'set-car!)      "Cyc_set_car")
@@ -515,6 +517,7 @@
     ((eq? p 'list->string) "string_type")
 ;    ((eq? p 'string->list) "object")
     ((eq? p 'string-append) "string_type")
+    ((eq? p 'symbol->string) "string_type")
     ((eq? p 'apply)  "common_type c; object") ;; TODO: shouldn't hardcode "c", see above
     (else #f)))
 
@@ -524,6 +527,7 @@
          (member exp '(
              open-input-file
              char->integer string->number string-append list->string string->list
+             symbol->string
              + - * / apply cons length cell))))
 
 ;; Need to pass an integer arg count as the function's first parameter

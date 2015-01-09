@@ -474,6 +474,8 @@
      string-append
      string->list
      list->string
+     string->symbol
+     symbol->string
      boolean?
      char?
      eof-object?

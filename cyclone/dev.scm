@@ -11,6 +11,11 @@
   (list
     (+ 1 2)
     (string->list "test")
+    (string->symbol "a-b-c-d")
+    (symbol->string 'a/test-01)
+    (eq? 'a-1 'a-1)
+    (eq? (string->symbol "aa") 'aa)
+    (equal? (string->symbol "aa") 'aa)
   ))
 
 (let ((fp (open-input-file "dev.scm")))
