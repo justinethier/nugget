@@ -111,6 +111,8 @@ typedef void *object;
 #define obj_obj2char(x) (char)((long)(x)>>1)
 #define obj_char2obj(c) ((void *)(((c)<<1) | 1))
 
+#define is_value_type(x) obj_is_char(x)
+
 /* Define function type. */
 
 typedef void (*function_type)();
@@ -527,13 +529,14 @@ static object __num_lte(x, y) object x, y;
 // TODO: static object Cyc_is_eq(x, y) object x, y)
 static object Cyc_is_boolean(object o){
     if (!nullp(o) && 
+        !is_value_type(o) &&
         ((list)o)->tag == symbol_tag &&
         (eq(quote_f, o) || eq(quote_t, o)))
         return quote_t;
     return quote_f;}
 
 static object Cyc_is_cons(object o){
-    if (!nullp(o) && ((list)o)->tag == cons_tag)
+    if (!nullp(o) && !is_value_type(o) && ((list)o)->tag == cons_tag)
         return quote_t;
     return quote_f;}
 
@@ -543,17 +546,17 @@ static object Cyc_is_null(object o){
     return quote_f;}
 
 static object Cyc_is_number(object o){
-    if (!nullp(o) && ((list)o)->tag == integer_tag)
+    if (!nullp(o) && !is_value_type(o) && ((list)o)->tag == integer_tag)
         return quote_t;
     return quote_f;}
 
 static object Cyc_is_symbol(object o){
-    if (!nullp(o) && ((list)o)->tag == symbol_tag)
+    if (!nullp(o) && !is_value_type(o) && ((list)o)->tag == symbol_tag)
         return quote_t;
     return quote_f;}
 
 static object Cyc_is_string(object o){
-    if (!nullp(o) && ((list)o)->tag == string_tag)
+    if (!nullp(o) && !is_value_type(o) && ((list)o)->tag == string_tag)
         return quote_t;
     return quote_f;}
 
@@ -563,7 +566,7 @@ static object Cyc_is_char(object o){
     return quote_f;}
 
 static object Cyc_is_eof_object(object o) {
-    if (!nullp(o) && type_of(o) == eof_tag)
+    if (!nullp(o) && !is_value_type(o) && type_of(o) == eof_tag)
         return quote_t;
     return quote_f;}
 
