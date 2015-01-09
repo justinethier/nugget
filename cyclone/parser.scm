@@ -10,6 +10,14 @@
   (define (loop i)
 ; TODO: for some reason this loops forever and crashes when executed via cyc
 ;       looks like quotes is somehow being set to the empty list (??)
+;
+;Seems things are passed correctly from parse/tok's add-tok (second instance):
+;  __lambda__64
+;  return_funcall4(  __glo_add_91tok, &c_731713, r_731044, ((closureN)self_731256
+;But this is received by __lambda_32 which seems to be a mis-match, as parameters are lost:
+;  static void __lambda_32(int argc, closure _,object k_73977, object loop_73893)
+;When add-tok is finally called in __lambda_30, garbage is inserted for man yof the parameters:
+;  static void __lambda_30(int argc, object self_731213, object tok_73894, object
 ;    (write 'q)
 ;    (write quotes)
 ;    (write 'i)
