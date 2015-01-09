@@ -8,6 +8,12 @@
 ;; Helper functions
 (define (add-tok tok toks quotes)
   (define (loop i)
+; TODO: for some reason this loops forever and crashes when executed via cyc
+;       looks like quotes is somehow being set to the empty list (??)
+;    (write 'q)
+;    (write quotes)
+;    (write 'i)
+;    (write i)
     (if (= quotes i)
       tok
       (cons 'quote (cons (loop (+ i 1)) '()))))
