@@ -25,7 +25,13 @@
 
 ; WIP TODO: move working functions above into the unit-test file
 ;
-; read - can this be derived from parser.scm implementation???
+; Goals
+; 1) read - can this be derived from parser.scm implementation???
+; 2) simple repl from parser module - read, print AST
+; 3 or 4) multiple module compilation
+; 3 or 4) actual REPL by combining eval.scm and parser.scm.
+;         can use load or just cat to combine initially, though
+;         longer term they need to be distinct modules
 
 ; idea - booleans
 ; do we want to have a separate def macro for them? IE, have the
