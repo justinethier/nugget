@@ -6,11 +6,13 @@
 ;; how to handle the internal define p?
 ;; CPS conversion is trying to wrap p with a lambda, which is not going to
 ;; work because callers want to pass a,b,c directly.
+(define test 1)
 (define (glob a b c)
   (define (p d)
     (write (list a b c d)))
   (p 4))
 (glob 1 2 3)
+test
 
 ;'a/test
 ;(write 'a/test)

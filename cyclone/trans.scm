@@ -1140,12 +1140,35 @@
       (error "Unbound variable(s)" unknown-vars))
      ((define? ast)
       ;; Deconstruct define so underlying code can assume internal defines
-      `(define 
-         ,(define->var ast)
-         ,@(convert (initialize-top-level-vars 
-                      (define->exp ast)
-                      (difference fv (built-in-syms)))
-                    (list))))
+      (let ((body (car ;; Only one member by now
+                    (define->exp ast))))
+;(write `(DEBUG body ,body))
+        (cond
+          ((lambda? body)
+            ;; Any internal defines need to be initialized within the lambda,
+            ;; so the lambda formals are preserved. So we need to deconstruct
+            ;; the defined lambda and then reconstruct it, with #f placeholders
+            ;; for any internal definitions.
+            ;;
+            ;; Also, initialize-top-level-vars cannot be used directly due to 
+            ;; the required splicing.
+            `(define 
+               ,(define->var ast)
+               (lambda ,(lambda->formals body)
+                 ,@(convert (let ((fv* (difference fv (built-in-syms)))
+                                 (ast* (lambda->exp body)))
+                             (if (> (length fv*) 0)
+                               `(((lambda ,fv* ,@ast*)
+                                  ,@(map (lambda (_) #f) fv*)))
+                                ast*))
+                            (list)))))
+          (else
+            `(define 
+               ,(define->var ast)
+               ,@(convert (initialize-top-level-vars 
+                            (define->exp ast)
+                            (difference fv (built-in-syms)))
+                          (list)))))))
      (else
       (convert (initialize-top-level-vars 
                  ast 
