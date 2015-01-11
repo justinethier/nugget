@@ -30,6 +30,28 @@
 (assert "" (integer->char 65) #\A)
 (assert "" (char->integer #\a) 97)
 
+(assert "" (number->string (+ 1 2)) "3")
+(assert "" (string->list "test") '(#\t #\e #\s #\t))
+(assert "" (string->symbol "a-b-c-d") 'a-b-c-d)
+(assert "" (symbol->string 'a/test-01) "a/test-01")
+(assert "" (eq? 'a-1 'a-1) #t)
+(assert "" (eq? (string->symbol "aa") 'aa) #t)
+(assert "" (equal? (string->symbol "aa") 'aa) #t)
+
+;; Prove internal defines are compiled properly
+;;
+;; Illustrates an old problem with compiling parser.
+;; how to handle the internal define p?
+;; trans was trying to wrap p with a lambda, which is not going to
+;; work because callers want to pass a,b,c directly.
+(define (glob a b c)
+  (define (p d)
+    (list a b c d))
+  (p 4))
+(assert "internal defs for global funcs"
+        (glob 1 2 3)
+       '(1 2 3 4))
+
 ; TODO: use display, output without surrounding quotes
 (write "All test passed")
 ;;
