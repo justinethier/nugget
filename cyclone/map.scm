@@ -1,4 +1,4 @@
-;; TODO: relocate this stuff into a common place, and delete this file
+;; TODO: move all this to the unit-test suite, and kill this file!
 
 (define a length)
 (write a)
