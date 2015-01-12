@@ -63,14 +63,31 @@
       msg)))
 
 ;; TODO: would be best if these did not have to be global
-(define *line-num* #f)
-(define *char-num* #f)
+(define *line-num* 1)
+(define *char-num* 0)
 
 ;; Main lexer/parser
-(define (cyc-read-all fp)
+;(define (cyc-read-all fp)
+;  (set! *line-num* 1)
+;  (set! *char-num* 0)
+;  (_cyc-read-all fp 0))
+
+;; TODO: do we need a concept of a 'read multiple' flag to handle
+;; fact that read should only return one object, but reading a list
+;; necessitates reading all objects within that list?
+(define (read fp)
+  (parse fp '() '() #f #f 0))
+
+(define (read-all fp)
   (set! *line-num* 1)
   (set! *char-num* 0)
-  (_cyc-read-all fp 0))
+  (define (loop fp result)
+    (let ((obj (read fp)))
+      (if (eof-object? obj)
+        (reverse result)
+        (loop fp (cons obj result)))))
+  (loop fp '()))
+
 
 ;; Add finished token, if there is one, and continue parsing
 (define (parse/tok fp tok toks comment? quotes parens)
@@ -113,7 +130,8 @@
              (parse fp '() (add-tok (->tok tok) toks quotes) 
                                 comment? quote-level parens))))
       ((eq? c #\()
-       (let ((sub (_cyc-read-all fp (+ parens 1)))
+       (let ((sub ;(_cyc-read-all fp (+ parens 1)))
+                  (parse fp '() '() #f #f (+ parens 1)))
              (toks* (with-tok tok toks quotes)))
           (parse fp 
             '() 
@@ -150,8 +168,8 @@
       (else
         (parse fp (cons c tok) toks #f quotes parens)))))
 
-(define (_cyc-read-all fp parens)
-   (parse fp '() '() #f #f parens))
+;(define (_cyc-read-all fp parens)
+;   (parse fp '() '() #f #f parens))
 
 ;; Read chars past a leading #\
 (define (read-pound fp)
@@ -228,17 +246,10 @@
      (string->symbol
        (list->string a)))))
 
-(define (read-all fp)
-  (define (loop fp result)
-    (let ((obj (read fp)))
-      (if (eof-object? obj)
-        (reverse result)
-        (loop fp (cons obj result)))))
-  (loop fp '()))
-
 ;(let ((fp (open-input-file "tests/begin.scm")))
 ;(let ((fp (open-input-file "tests/strings.scm")))
-;(let ((fp (open-input-file "dev.scm")))
+(let ((fp (open-input-file "dev.scm")))
+  (write (read fp)))
 ;  (write (cyc-read-all fp)))
 ;(let ((fp (current-input-port)))
 ; (write (cyc-read-all fp)))

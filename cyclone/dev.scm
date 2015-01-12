@@ -4,6 +4,7 @@
 
 'a/test
 (write 'a/test)
+(write #\space)
 'a
 'b
 'c
