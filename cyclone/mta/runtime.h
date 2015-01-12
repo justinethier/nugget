@@ -770,6 +770,11 @@ static void __halt(object obj) {
 
 /* I/O functions */
 
+static port_type Cyc_io_current_input_port() {
+    make_port(p, stdin, 0);
+    return p;
+}
+
 static port_type Cyc_io_open_input_file(object str) {
     const char *fname = ((string_type *)str)->str;
     make_port(p, NULL, 0);

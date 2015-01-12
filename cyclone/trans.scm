@@ -485,6 +485,7 @@
      pair?
      string?
      symbol?
+     current-input-port
      open-input-file
      close-input-port
      read-char

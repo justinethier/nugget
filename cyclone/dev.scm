@@ -11,17 +11,17 @@
   (list
   ))
 
-(let ((fp (open-input-file "dev.scm")))
-  (display (read-char fp))
-  (display (peek-char fp))
-  (display (read-char fp))
-  (display (read-char fp))
-  (display (peek-char fp))
-  (display (read-char fp))
-  (display (read-char fp))
-  (display (read-char fp))
-  (display (read-char fp))
-  (close-input-port fp))
+;(let ((fp (open-input-file "dev.scm")))
+;  (display (read-char fp))
+;  (display (peek-char fp))
+;  (display (read-char fp))
+;  (display (read-char fp))
+;  (display (peek-char fp))
+;  (display (read-char fp))
+;  (display (read-char fp))
+;  (display (read-char fp))
+;  (display (read-char fp))
+;  (close-input-port fp))
 
 ; WIP TODO: move working functions above into the unit-test file
 ;

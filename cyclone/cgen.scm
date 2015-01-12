@@ -404,24 +404,25 @@
 (define (c-compile-prim p)
   (let* ((c-func
           (cond
-            ((eq? p '+)                 "__sum")
-            ((eq? p '-)                 "__sub")
-            ((eq? p '*)                 "__mul")
-            ((eq? p '/)                 "__div")
-            ((eq? p '=)                 "__num_eq")
-            ((eq? p '>)                 "__num_gt")
-            ((eq? p '<)                 "__num_lt")
-            ((eq? p '>=)                "__num_gte")
-            ((eq? p '<=)                "__num_lte")
-            ((eq? p 'apply)             "apply")
-            ((eq? p '%halt)             "__halt")
-            ((eq? p 'error)             "Cyc_error")
-            ((eq? p 'open-input-file)   "Cyc_io_open_input_file")
-            ((eq? p 'close-input-port)  "Cyc_io_close_input_port")
-            ((eq? p 'read-char)         "Cyc_io_read_char")
-            ((eq? p 'peek-char)         "Cyc_io_peek_char")
-            ((eq? p 'display)           "prin1")
-            ((eq? p 'write)             "write")
+            ((eq? p '+)                     "__sum")
+            ((eq? p '-)                     "__sub")
+            ((eq? p '*)                     "__mul")
+            ((eq? p '/)                     "__div")
+            ((eq? p '=)                     "__num_eq")
+            ((eq? p '>)                     "__num_gt")
+            ((eq? p '<)                     "__num_lt")
+            ((eq? p '>=)                    "__num_gte")
+            ((eq? p '<=)                    "__num_lte")
+            ((eq? p 'apply)                 "apply")
+            ((eq? p '%halt)                 "__halt")
+            ((eq? p 'error)                 "Cyc_error")
+            ((eq? p 'current-input-port)    "Cyc_io_current_input_port")
+            ((eq? p 'open-input-file)       "Cyc_io_open_input_file")
+            ((eq? p 'close-input-port)      "Cyc_io_close_input_port")
+            ((eq? p 'read-char)             "Cyc_io_read_char")
+            ((eq? p 'peek-char)             "Cyc_io_peek_char")
+            ((eq? p 'display)               "prin1")
+            ((eq? p 'write)                 "write")
             ((eq? p 'car)           "car")
             ((eq? p 'cdr)           "cdr")
             ((eq? p 'caar)          "caar")
@@ -511,6 +512,7 @@
 ;; EG: int v = prim();
 (define (prim/c-var-assign p)
   (cond
+    ((eq? p 'current-input-port) "port_type")
     ((eq? p 'open-input-file) "port_type")
     ((eq? p 'length) "integer_type")
     ((eq? p 'char->integer) "integer_type")
@@ -527,7 +529,7 @@
 (define (prim/cvar? exp)
     (and (prim? exp)
          (member exp '(
-             open-input-file
+             current-input-port open-input-file
              char->integer string->number string-append list->string string->list
              symbol->string number->string
              + - * / apply cons length cell))))
