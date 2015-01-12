@@ -90,19 +90,30 @@
 
 ;; Add finished token, if there is one, and continue parsing
 (define (parse/tok fp tok toks all? comment? quotes parens)
-  (if (null? tok)
-      (parse fp '() toks all? comment? quotes parens)
-      (parse fp '() 
-             (add-tok (->tok tok) toks quotes) 
-             all?
-             comment? 
-             #f  ; read tok, no more quote
-             parens)))
+  (cond
+   ((null? tok)
+    (parse fp '() toks all? comment? quotes parens))
+   (all?
+    (parse fp '() 
+           (add-tok (->tok tok) toks quotes) 
+           all?
+           comment? 
+           #f  ; read tok, no more quote
+           parens))
+   (else
+     (reverse toks))))
 
 ;; Parse input from stream
 (define (parse fp tok toks all? comment? quotes parens)
+;; TODO: peek-char, if it is start of a comment and we have any toks,
+;; need to return those toks (if we are in a read). otherwise can get
+;; into a situation where the ; is lost
   (set! *char-num* (+ 1 *char-num*))
   (let ((c (read-char fp)))
+;; DEBUGGING
+(write `(DEBUG read ,c))
+(write (newline))
+;; END DEBUG
     (cond
       ((eof-object? c) 
        (if (> parens 0)
@@ -113,7 +124,9 @@
            (begin
               (set! *line-num* (+ 1 *line-num*))
               (set! *char-num* 0)
-              (parse fp '() toks all? #f quotes parens))
+              (if all?
+                (parse fp '() toks all? #f quotes parens)
+                (reverse toks)))
            (parse fp '() toks all? #t quotes parens)))
       ((char-whitespace? c)
        (if (equal? c #\newline) (set! *line-num* (+ 1 *line-num*)))
@@ -127,21 +140,23 @@
                               1)))
          (if (null? tok)
              (parse fp '() toks all? comment? quote-level parens)
+;; TODO: is this what we want to do if !all? or do we need to peek
+;;       for the quote and return, instead of trying to read a second obj??
              (parse fp '() (add-tok (->tok tok) toks quotes) 
                            all? comment? quote-level parens))))
       ((eq? c #\()
        (let ((sub ;(_cyc-read-all fp (+ parens 1)))
                   (parse fp '() '() #t #f #f (+ parens 1)))
              (toks* (get-toks tok toks quotes)))
-          (parse fp 
-            '() 
-            (add-tok 
-              (if (dotted? sub)
-                  (->dotted-list sub)
-                  sub)
-              toks* 
-              quotes) 
-            all? #f #f parens)))
+         (define new-toks (add-tok 
+                            (if (dotted? sub)
+                                (->dotted-list sub)
+                                sub)
+                            toks* 
+                            quotes)) 
+         (if all?
+          (parse fp '() new-toks all? #f #f parens)
+          (reverse new-toks))))
       ((eq? c #\))
        (if (= parens 0)
            (parse-error "unexpected closing parenthesis" *line-num* *char-num*))
@@ -149,7 +164,10 @@
       ((eq? c #\")
        (let ((str (read-str fp '()))
              (toks* (get-toks tok toks quotes)))
-         (parse fp '() (add-tok str toks* quotes) all? #f #f parens)))
+         (define new-toks (add-tok str toks* quotes))
+         (if all?
+          (parse fp '() new-toks all? #f #f parens)
+          (reverse new-toks))))
       ((eq? c #\#)
        (if (null? tok)
          ;; # reader
@@ -160,7 +178,10 @@
               ((eq? #\t next-c) (parse fp '() (cons #t toks) all? #f #f parens))
               ((eq? #\f next-c) (parse fp '() (cons #f toks) all? #f #f parens))
               ((eq? #\\ next-c)
-               (parse fp '() (cons (read-pound fp) toks) all? #f #f parens))
+               (let ((new-toks (cons (read-pound fp) toks)))
+                 (if all?
+                   (parse fp '() new-toks all? #f #f parens)
+                   (reverse new-toks))))
               (else
                 (parse-error "Unhandled input sequence" *line-num* *char-num*))))
          ;; just another char...
