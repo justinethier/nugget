@@ -1,6 +1,11 @@
-((define fp (open-input-file "dev.scm")))
-(let loop ((obj (read fp)))
-  (if (not (eof-object? obj))
-    (begin
-      (write obj)
-      (loop (read fp)))))
+
+(define (read-all fp)
+  (define (loop fp result)
+    (let ((obj (read fp)))
+      (if (eof-object? obj)
+        (reverse result)
+        (loop fp (cons obj result)))))
+  (loop fp '()))
+
+(define fp (open-input-file "repl.scm"))
+(write (read-all fp))
