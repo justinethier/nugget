@@ -428,6 +428,12 @@ static object prin1(x) object x;
     case closureN_tag:
       printf("<%p>",(void *)((closure) x)->fn);
       break;
+    case eof_tag:
+      printf("<EOF>");
+      break;
+    case port_tag:
+      printf("<port>");
+      break;
     case primitive_tag:
       printf("<primitive>");
       break;
