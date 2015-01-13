@@ -259,7 +259,7 @@
 ;; TODO: do we need a concept of a 'read multiple' flag to handle
 ;; fact that read should only return one object, but reading a list
 ;; necessitates reading all objects within that list?
-(define my-read ;; TODO: should be (read), but that is breaking on csi 4.8.0.5
+(define cyc-read ;; TODO: should be (read), but that is breaking on csi 4.8.0.5
   (lambda (fp)
     (parse fp '() '() #f #f #f 0)))
 
@@ -267,7 +267,7 @@
   (set! *line-num* 1)
   (set! *char-num* 0)
   (define (loop fp result)
-    (let ((obj (my-read fp)))
+    (let ((obj (cyc-read fp)))
       (if (eof-object? obj)
         (reverse result)
         (loop fp (cons obj result)))))

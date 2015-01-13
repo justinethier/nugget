@@ -122,7 +122,7 @@
          (src-file (string-append exec-file ".c")))
     (call-with-input-file in-file
       (lambda (port)
-        (let ((program (cyc-read-all port)))
+        (let ((program (read-all port)))
 ;; TODO: husk does not support with-output-to-file
 ;; will be a problem bootstrapping from husk in the meantime...
           (with-output-to-file 
