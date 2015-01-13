@@ -97,7 +97,12 @@
       ((eof-object? c) 
        (if (> parens 0)
            (parse-error "missing closing parenthesis" *line-num* *char-num*))
-       (reverse (get-toks tok toks quotes)))
+       (if all?
+         (reverse (get-toks tok toks quotes))
+         (let ((last (get-toks tok toks quotes)))
+           (if (> (length last) 0)
+             (car last)
+             c)))) ;; EOF
       (comment?
        (if (eq? c #\newline)
            (begin
@@ -270,7 +275,7 @@
 ;(let ((fp (open-input-file "tests/begin.scm")))
 ;(let ((fp (open-input-file "tests/strings.scm")))
 (let ((fp (open-input-file "dev.scm")))
-  (write (my-read fp)))
+  (write (read-all fp)))
 ;  (write (cyc-read-all fp)))
 ;(let ((fp (current-input-port)))
 ; (write (cyc-read-all fp)))
