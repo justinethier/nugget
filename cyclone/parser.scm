@@ -65,28 +65,6 @@
 (define *line-num* 1)
 (define *char-num* 0)
 
-;; Main lexer/parser
-;(define (cyc-read-all fp)
-;  (set! *line-num* 1)
-;  (set! *char-num* 0)
-;  (_cyc-read-all fp 0))
-
-;; TODO: do we need a concept of a 'read multiple' flag to handle
-;; fact that read should only return one object, but reading a list
-;; necessitates reading all objects within that list?
-(define (read fp)
-  (parse fp '() '() #f #f #f 0))
-
-(define (read-all fp)
-  (set! *line-num* 1)
-  (set! *char-num* 0)
-  (define (loop fp result)
-    (let ((obj (read fp)))
-      (if (eof-object? obj)
-        (reverse result)
-        (loop fp (cons obj result)))))
-  (loop fp '()))
-
 
 ;; Add finished token, if there is one, and continue parsing
 (define (parse/tok fp tok toks all? comment? quotes parens)
@@ -101,7 +79,8 @@
            #f  ; read tok, no more quote
            parens))
    (else
-     (reverse toks))))
+     (car (add-tok (->tok tok) toks quotes)))))
+     ;(reverse (add-tok (->tok tok) toks quotes)))))
 
 ;; Parse input from stream
 (define (parse fp tok toks all? comment? quotes parens)
@@ -111,8 +90,8 @@
   (set! *char-num* (+ 1 *char-num*))
   (let ((c (read-char fp)))
 ;; DEBUGGING
-(write `(DEBUG read ,c))
-(write (newline))
+;(write `(DEBUG read ,tok ,c))
+;(write (newline))
 ;; END DEBUG
     (cond
       ((eof-object? c) 
@@ -124,9 +103,7 @@
            (begin
               (set! *line-num* (+ 1 *line-num*))
               (set! *char-num* 0)
-              (if all?
-                (parse fp '() toks all? #f quotes parens)
-                (reverse toks)))
+              (parse fp '() toks all? #f quotes parens))
            (parse fp '() toks all? #t quotes parens)))
       ((char-whitespace? c)
        (if (equal? c #\newline) (set! *line-num* (+ 1 *line-num*)))
@@ -267,10 +244,33 @@
      (string->symbol
        (list->string a)))))
 
+;; Main lexer/parser
+;(define (cyc-read-all fp)
+;  (set! *line-num* 1)
+;  (set! *char-num* 0)
+;  (_cyc-read-all fp 0))
+
+;; TODO: do we need a concept of a 'read multiple' flag to handle
+;; fact that read should only return one object, but reading a list
+;; necessitates reading all objects within that list?
+(define my-read ;; TODO: should be (read), but that is breaking on csi 4.8.0.5
+  (lambda (fp)
+    (parse fp '() '() #f #f #f 0)))
+
+(define (read-all fp)
+  (set! *line-num* 1)
+  (set! *char-num* 0)
+  (define (loop fp result)
+    (let ((obj (my-read fp)))
+      (if (eof-object? obj)
+        (reverse result)
+        (loop fp (cons obj result)))))
+  (loop fp '()))
+
 ;(let ((fp (open-input-file "tests/begin.scm")))
 ;(let ((fp (open-input-file "tests/strings.scm")))
 (let ((fp (open-input-file "dev.scm")))
-  (write (read fp)))
+  (write (my-read fp)))
 ;  (write (cyc-read-all fp)))
 ;(let ((fp (current-input-port)))
 ; (write (cyc-read-all fp)))
