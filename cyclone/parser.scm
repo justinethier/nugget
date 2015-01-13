@@ -280,6 +280,7 @@
 ;  (write (read-all fp)))
 ;  (write (cyc-read-all fp)))
 ;(let ((fp (current-input-port)))
+; (write (cyc-read fp)))
 ; (write (cyc-read-all fp)))
 
 
