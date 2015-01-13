@@ -8,6 +8,7 @@
 'a
 'b
 'c
+1
 (write
   (list
   ))

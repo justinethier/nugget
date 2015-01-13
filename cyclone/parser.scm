@@ -138,7 +138,8 @@
                             quotes)) 
          (if all?
           (parse fp '() new-toks all? #f #f parens)
-          (reverse new-toks))))
+          (car new-toks))))
+          ;(reverse new-toks))))
       ((eq? c #\))
        (if (= parens 0)
            (parse-error "unexpected closing parenthesis" *line-num* *char-num*))
@@ -274,8 +275,9 @@
 
 ;(let ((fp (open-input-file "tests/begin.scm")))
 ;(let ((fp (open-input-file "tests/strings.scm")))
-(let ((fp (open-input-file "dev.scm")))
-  (write (read-all fp)))
+;(let ((fp (open-input-file "dev.scm")))
+;(let ((fp (open-input-file "eval.scm")))
+;  (write (read-all fp)))
 ;  (write (cyc-read-all fp)))
 ;(let ((fp (current-input-port)))
 ; (write (cyc-read-all fp)))
