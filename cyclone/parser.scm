@@ -4,16 +4,16 @@
 ;;
 ;; This module contains the s-expression parser and supporting functions.
 ;;
+;;
+;; FUTURE: if this was a module/library, would probably only want to export
+;;         read and read-all
+;;
 
-;; TODO: need to modify parse to work with read. that is, read a single object and
-;;       return once a scheme object is read, instead of trying to read the next one
-;;
-;; TODO: kill cyc-read-all and replace with read-all?
-;;       at minimum, do not want to call into cyc-read-all from any of the parser code
-;;
-;; TODO: if this was a module/library, would probably only want to export
-;;       read and read-all
-;;
+
+; TODO: need to address TODO's below, and try to clean up new code.
+; there are still performance issues (~10%) compared to old code on 
+; master. want to get this in good shape before moving on
+
 
 ;; Helper functions
 (define (add-tok tok toks quotes)
