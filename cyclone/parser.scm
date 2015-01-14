@@ -27,7 +27,7 @@
 ;; Extended information for each input port
 (define *in-port-table* '())
 (define (reg-port fp)
-  (let ((r (assoc fp)))
+  (let ((r (assoc fp *in-port-table*)))
     (cond
      ((not r)
       (set! r (list 
@@ -92,17 +92,18 @@
 
 
 ;; Add finished token, if there is one, and continue parsing
-(define (parse/tok fp tok toks all? comment? quotes parens)
+(define (parse/tok fp tok toks all? comment? quotes parens ptbl)
   (cond
    ((null? tok)
-    (parse fp '() toks all? comment? quotes parens))
+    (parse fp '() toks all? comment? quotes parens ptbl))
    (all?
     (parse fp '() 
            (add-tok (->tok tok) toks quotes) 
            all?
            comment? 
            #f  ; read tok, no more quote
-           parens))
+           parens
+           ptbl))
    (else
      (car (add-tok (->tok tok) toks quotes)))))
      ;(reverse (add-tok (->tok tok) toks quotes)))))
@@ -116,9 +117,10 @@
 ;; - Bool - Are we inside a comment?
 ;; - Quote level
 ;; - Level of nested parentheses 
+;; - Entry in the in-port table for this port
 ;; Output: next object, or list of objects (if read-all mode)
 ;; 
-(define (parse fp tok toks all? comment? quotes parens)
+(define (parse fp tok toks all? comment? quotes parens ptbl)
 ;; TODO: peek-char, if it is start of a comment and we have any toks,
 ;; need to return those toks (if we are in a read). otherwise can get
 ;; into a situation where the ; is lost
@@ -143,27 +145,27 @@
            (begin
               (set! *line-num* (+ 1 *line-num*))
               (set! *char-num* 0)
-              (parse fp '() toks all? #f quotes parens))
-           (parse fp '() toks all? #t quotes parens)))
+              (parse fp '() toks all? #f quotes parens ptbl))
+           (parse fp '() toks all? #t quotes parens ptbl)))
       ((char-whitespace? c)
        (if (equal? c #\newline) (set! *line-num* (+ 1 *line-num*)))
        (if (equal? c #\newline) (set! *char-num* 0))
-       (parse/tok fp tok toks all? #f quotes parens))
+       (parse/tok fp tok toks all? #f quotes parens ptbl))
       ((eq? c #\;)
-       (parse/tok fp tok toks all? #t quotes parens))
+       (parse/tok fp tok toks all? #t quotes parens ptbl))
       ((eq? c #\')
        (let ((quote-level (if quotes
                               (+ quotes 1)
                               1)))
          (if (null? tok)
-             (parse fp '() toks all? comment? quote-level parens)
+             (parse fp '() toks all? comment? quote-level parens ptbl)
 ;; TODO: is this what we want to do if !all? or do we need to peek
 ;;       for the quote and return, instead of trying to read a second obj??
              (parse fp '() (add-tok (->tok tok) toks quotes) 
-                           all? comment? quote-level parens))))
+                           all? comment? quote-level parens ptbl))))
       ((eq? c #\()
        (let ((sub ;(_cyc-read-all fp (+ parens 1)))
-                  (parse fp '() '() #t #f #f (+ parens 1)))
+                  (parse fp '() '() #t #f #f (+ parens 1) ptbl))
              (toks* (get-toks tok toks quotes)))
          (define new-toks (add-tok 
                             (if (dotted? sub)
@@ -172,7 +174,7 @@
                             toks* 
                             quotes)) 
          (if all?
-          (parse fp '() new-toks all? #f #f parens)
+          (parse fp '() new-toks all? #f #f parens ptbl)
           (car new-toks))))
           ;(reverse new-toks))))
       ((eq? c #\))
@@ -180,11 +182,11 @@
            (parse-error "unexpected closing parenthesis" *line-num* *char-num*))
        (reverse (get-toks tok toks quotes)))
       ((eq? c #\")
-       (let ((str (read-str fp '()))
+       (let ((str (read-str fp '() ptbl))
              (toks* (get-toks tok toks quotes)))
          (define new-toks (add-tok str toks* quotes))
          (if all?
-          (parse fp '() new-toks all? #f #f parens)
+          (parse fp '() new-toks all? #f #f parens ptbl)
           (reverse new-toks))))
       ((eq? c #\#)
        (if (null? tok)
@@ -193,25 +195,25 @@
             (set! *char-num* (+ 1 *char-num*))
             (cond
               ;; Do not use add-tok below, no need to quote a bool
-              ((eq? #\t next-c) (parse fp '() (cons #t toks) all? #f #f parens))
-              ((eq? #\f next-c) (parse fp '() (cons #f toks) all? #f #f parens))
+              ((eq? #\t next-c) (parse fp '() (cons #t toks) all? #f #f parens ptbl))
+              ((eq? #\f next-c) (parse fp '() (cons #f toks) all? #f #f parens ptbl))
               ((eq? #\\ next-c)
-               (let ((new-toks (cons (read-pound fp) toks)))
+               (let ((new-toks (cons (read-pound fp ptbl) toks)))
                  (if all?
-                   (parse fp '() new-toks all? #f #f parens)
+                   (parse fp '() new-toks all? #f #f parens ptbl)
                    (reverse new-toks))))
               (else
                 (parse-error "Unhandled input sequence" *line-num* *char-num*))))
          ;; just another char...
-         (parse fp (cons c tok) toks all? #f quotes parens)))
+         (parse fp (cons c tok) toks all? #f quotes parens ptbl)))
       (else
-        (parse fp (cons c tok) toks all? #f quotes parens)))))
+        (parse fp (cons c tok) toks all? #f quotes parens ptbl)))))
 
 ;(define (_cyc-read-all fp parens)
 ;   (parse fp '() '() #f #f parens))
 
 ;; Read chars past a leading #\
-(define (read-pound fp)
+(define (read-pound fp ptbl)
   (define (done raw-buf)
     (let ((buf (reverse raw-buf)))
       (cond 
@@ -252,7 +254,7 @@
          (loop (cons (read-char fp) buf)))))
   (loop '()))
 
-(define (read-str fp buf)
+(define (read-str fp buf ptbl)
   (let ((c (read-char fp)))
     ;; TODO: for now, end on raw double-quote. real scheme
     ;; strings are not quite this simple - see spec.
@@ -262,7 +264,7 @@
       ((equal? #\" c)
        (list->string (reverse buf)))
       (else
-        (read-str fp (cons c buf))))))
+        (read-str fp (cons c buf) ptbl)))))
 
 (define (sign? c)
   (or
@@ -293,10 +295,10 @@
 
 (define cyc-read ;; TODO: should be (read), but that is breaking on csi 4.8.0.5
   (lambda (fp)
-TODO: when returning a tok, if there is an extra char, store it in reg.
-      then before reading char, check if there is one in buf. if so, use that instead of read-char
-TODO: longer term, replace *-num* globals with equivalents from tbl.
-      may not be so bad since tbl will already be threaded through parse
+;TODO: when returning a tok, if there is an extra char, store it in reg.
+;      then before reading char, check if there is one in buf. if so, use that instead of read-char
+;TODO: longer term, replace *-num* globals with equivalents from tbl.
+;      may not be so bad since tbl will already be threaded through parse
     (parse fp '() '() #f #f #f 0 (reg-port fp))))
 
 (define (read-all fp)
