@@ -30,15 +30,26 @@
   (let ((r (assoc fp *in-port-table*)))
     (cond
      ((not r)
-      (set! r (list 
-        #f  ; Buffered char, if any
-        1   ; Line number
-        0)) ; Char number
+;(write `(ADDED NEW ENTRY TO in port table!!))
+      (set! r 
+        (list fp 
+              #f   ; Buffered char, if any
+              1    ; Line number
+              0)) ; Char number
       (set! *in-port-table* (cons r *in-port-table*))
       r)
      (else r))))
 ;; TODO: unreg-port - delete fp entry from *in-port-table*
 ;; would want to do this when port is closed
+
+(define (in-port:get-buf ptbl)
+  (cadr ptbl))
+(define (in-port:set-buf! ptbl buf)
+  (set-car! (cdr ptbl) buf))
+(define (in-port:read-buf! ptbl)
+ (let ((result (cadr ptbl)))
+   (in-port:set-buf! ptbl #f)
+   result))
 
 ;; Helper functions
 (define (add-tok tok toks quotes)
@@ -92,7 +103,7 @@
 
 
 ;; Add finished token, if there is one, and continue parsing
-(define (parse/tok fp tok toks all? comment? quotes parens ptbl)
+(define (parse/tok fp tok toks all? comment? quotes parens ptbl curr-char)
   (cond
    ((null? tok)
     (parse fp '() toks all? comment? quotes parens ptbl))
@@ -105,6 +116,9 @@
            parens
            ptbl))
    (else
+     (in-port:set-buf! ptbl curr-char) ;; Not used yet; save
+;(write `(DEBUG ,tok ,ptbl))
+;(write "\n")
      (car (add-tok (->tok tok) toks quotes)))))
      ;(reverse (add-tok (->tok tok) toks quotes)))))
 
@@ -125,7 +139,10 @@
 ;; need to return those toks (if we are in a read). otherwise can get
 ;; into a situation where the ; is lost
   (set! *char-num* (+ 1 *char-num*))
-  (let ((c (read-char fp)))
+;(write `(DEBUG ptbl ,ptbl))
+  (let ((c (if (in-port:get-buf ptbl)
+               (in-port:read-buf! ptbl) ;; Already buffered
+               (read-char fp))))
 ;; DEBUGGING
 ;(write `(DEBUG read ,tok ,c))
 ;(write (newline))
@@ -150,9 +167,9 @@
       ((char-whitespace? c)
        (if (equal? c #\newline) (set! *line-num* (+ 1 *line-num*)))
        (if (equal? c #\newline) (set! *char-num* 0))
-       (parse/tok fp tok toks all? #f quotes parens ptbl))
+       (parse/tok fp tok toks all? #f quotes parens ptbl c))
       ((eq? c #\;)
-       (parse/tok fp tok toks all? #t quotes parens ptbl))
+       (parse/tok fp tok toks all? #t quotes parens ptbl c))
       ((eq? c #\')
        (let ((quote-level (if quotes
                               (+ quotes 1)
@@ -164,6 +181,7 @@
              (parse fp '() (add-tok (->tok tok) toks quotes) 
                            all? comment? quote-level parens ptbl))))
       ((eq? c #\()
+;; TODO: if not (all?) and we have a token, need to buffer ( and return what we have
        (let ((sub ;(_cyc-read-all fp (+ parens 1)))
                   (parse fp '() '() #t #f #f (+ parens 1) ptbl))
              (toks* (get-toks tok toks quotes)))
@@ -332,3 +350,13 @@
 ;        (write-char thing)
 ;        (loop))))))))
 ;
+
+; Test cases for parser, put these in a file EG: dev2.scm
+; also will need to test them interactively (see REPL above)
+; 123(list)
+; 'a'c
+; (write
+;   (list
+;   1;2
+;   ))
+; 1;2
