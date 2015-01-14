@@ -462,6 +462,8 @@
             ((eq? p 'string->symbol) "Cyc_string2symbol")
             ((eq? p 'symbol->string) "Cyc_symbol2string")
             ((eq? p 'number->string) "Cyc_number2string")
+            ((eq? p 'assq)          "assq")
+            ((eq? p 'assoc)         "assoc")
             ((eq? p 'member)        "memberp")
             ((eq? p 'length)        "Cyc_length")
             ((eq? p 'set-car!)      "Cyc_set_car")

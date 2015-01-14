@@ -498,7 +498,12 @@ static object equalp(x,y) object x,y;
 static list assq(x,l) object x; list l;
 {for (; !nullp(l); l = cdr(l))
    {register list la = car(l); if (eq(x,car(la))) return la;}
- return nil;}
+ return quote_f;}
+
+static list assoc(x,l) object x; list l;
+{for (; !nullp(l); l = cdr(l))
+   {register list la = car(l); if (quote_f != equalp(x,car(la))) return la;}
+ return quote_f;}
 
 
 // TODO: generate these using macros???

@@ -458,6 +458,8 @@
      eq?
      eqv?
      equal?
+     assoc
+     assq
      member
      length
      set-car!
