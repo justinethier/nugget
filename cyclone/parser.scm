@@ -293,7 +293,11 @@
 
 (define cyc-read ;; TODO: should be (read), but that is breaking on csi 4.8.0.5
   (lambda (fp)
-    (parse fp '() '() #f #f #f 0)))
+TODO: when returning a tok, if there is an extra char, store it in reg.
+      then before reading char, check if there is one in buf. if so, use that instead of read-char
+TODO: longer term, replace *-num* globals with equivalents from tbl.
+      may not be so bad since tbl will already be threaded through parse
+    (parse fp '() '() #f #f #f 0 (reg-port fp))))
 
 (define (read-all fp)
   (set! *line-num* 1)
