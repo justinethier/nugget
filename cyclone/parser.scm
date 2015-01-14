@@ -24,6 +24,21 @@
 ; there are still performance issues (~10%) compared to old code on 
 ; master. want to get this in good shape before moving on
 
+;; Extended information for each input port
+(define *in-port-table* '())
+(define (reg-port fp)
+  (let ((r (assoc fp)))
+    (cond
+     ((not r)
+      (set! r (list 
+        #f  ; Buffered char, if any
+        1   ; Line number
+        0)) ; Char number
+      (set! *in-port-table* (cons r *in-port-table*))
+      r)
+     (else r))))
+;; TODO: unreg-port - delete fp entry from *in-port-table*
+;; would want to do this when port is closed
 
 ;; Helper functions
 (define (add-tok tok toks quotes)
