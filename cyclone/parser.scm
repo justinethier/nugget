@@ -83,6 +83,16 @@
      ;(reverse (add-tok (->tok tok) toks quotes)))))
 
 ;; Parse input from stream
+;; Input:
+;; - Port object
+;; - Current token
+;; - List of tokens read (if applicable)
+;; - Bool - Read-all mode, or just read the next object?
+;; - Bool - Are we inside a comment?
+;; - Quote level
+;; - Level of nested parentheses 
+;; Output: next object, or list of objects (if read-all mode)
+;; 
 (define (parse fp tok toks all? comment? quotes parens)
 ;; TODO: peek-char, if it is start of a comment and we have any toks,
 ;; need to return those toks (if we are in a read). otherwise can get
