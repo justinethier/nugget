@@ -8,6 +8,12 @@
 ;; FUTURE: if this was a module/library, would probably only want to export
 ;;         read and read-all
 ;;
+;; TODO: issue list
+;;  - A quote mid-object restarts the parser
+;;    EG: for (read), a'b ==> (quote b)
+;;  - A comment immediately after an object causes the ; to be lost
+;;    EG: 1;2 ==> causes 2 to be read even though it is inside a comment
+;;    This is a problem for (read-all)
 
 
 ; TODO: need to address TODO's below, and try to clean up new code.
@@ -266,9 +272,6 @@
 ;  (set! *char-num* 0)
 ;  (_cyc-read-all fp 0))
 
-;; TODO: do we need a concept of a 'read multiple' flag to handle
-;; fact that read should only return one object, but reading a list
-;; necessitates reading all objects within that list?
 (define cyc-read ;; TODO: should be (read), but that is breaking on csi 4.8.0.5
   (lambda (fp)
     (parse fp '() '() #f #f #f 0)))
