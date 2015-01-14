@@ -9,11 +9,15 @@
 ;;         read and read-all
 ;;
 ;; TODO: issue list
+;;  The root cause of all these issues is when we read an extra char that
+;;  causes the current token to end, but then the char that was read is lost
+;;
 ;;  - A quote mid-object restarts the parser
 ;;    EG: for (read), a'b ==> (quote b)
 ;;  - A comment immediately after an object causes the ; to be lost
 ;;    EG: 1;2 ==> causes 2 to be read even though it is inside a comment
 ;;    This is a problem for (read-all)
+;;  - abc(list) ==> (list) 
 
 
 ; TODO: need to address TODO's below, and try to clean up new code.
