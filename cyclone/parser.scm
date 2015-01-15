@@ -17,8 +17,8 @@
 ;(write `(ADDED NEW ENTRY TO in port table!!))
       (set! r 
         (list fp 
-              #f   ; Buffered char, if any
-              1    ; Line number
+              #f  ; Buffered char, if any
+              1   ; Line number
               0)) ; Char number
       (set! *in-port-table* (cons r *in-port-table*))
       r)
@@ -26,10 +26,12 @@
 ;; TODO: unreg-port - delete fp entry from *in-port-table*
 ;; would want to do this when port is closed
 
-(define (in-port:get-buf ptbl)
-  (cadr ptbl))
-(define (in-port:set-buf! ptbl buf)
-  (set-car! (cdr ptbl) buf))
+(define (in-port:get-buf ptbl) (cadr ptbl))
+(define (in-port:set-buf! ptbl buf) (set-car! (cdr ptbl) buf))
+(define (in-port:get-lnum ptbl) (caddr ptbl))
+(define (in-port:set-lnum! ptbl lnum) (set-car! (cddr ptbl) lnum))
+(define (in-port:get-cnum ptbl) (cadddr ptbl))
+(define (in-port:set-cnum! ptbl cnum) (set-car! (cdddr ptbl) cnum))
 (define (in-port:read-buf! ptbl)
  (let ((result (cadr ptbl)))
    (in-port:set-buf! ptbl #f)
@@ -83,7 +85,6 @@
       msg)))
 
 ;; TODO: would be best if these did not have to be global
-(define *line-num* 1)
 (define *char-num* 0)
 
 
@@ -136,7 +137,9 @@
     (cond
       ((eof-object? c) 
        (if (> parens 0)
-           (parse-error "missing closing parenthesis" *line-num* *char-num*))
+           (parse-error "missing closing parenthesis" 
+             (in-port:get-lnum ptbl)
+             *char-num*))
        (if all?
          (reverse (get-toks tok toks quotes))
          (let ((last (get-toks tok toks quotes)))
@@ -146,12 +149,15 @@
       (comment?
        (if (eq? c #\newline)
            (begin
-              (set! *line-num* (+ 1 *line-num*))
+              (in-port:set-lnum! ptbl 
+                (+ 1 (in-port:get-lnum ptbl)))
               (set! *char-num* 0)
               (parse fp '() toks all? #f quotes parens ptbl))
            (parse fp '() toks all? #t quotes parens ptbl)))
       ((char-whitespace? c)
-       (if (equal? c #\newline) (set! *line-num* (+ 1 *line-num*)))
+       (if (equal? c #\newline)
+           (in-port:set-lnum! ptbl 
+             (+ 1 (in-port:get-lnum ptbl))))
        (if (equal? c #\newline) (set! *char-num* 0))
        (parse/tok fp tok toks all? #f quotes parens ptbl c))
       ((eq? c #\;)
@@ -199,7 +205,9 @@
       ((eq? c #\))
 ;(write `(DEBUG decrementing paren level ,parens))
        (if (= parens 0)
-           (parse-error "unexpected closing parenthesis" *line-num* *char-num*))
+           (parse-error "unexpected closing parenthesis" 
+             (in-port:get-lnum ptbl)
+             *char-num*))
        (reverse (get-toks tok toks quotes)))
       ((eq? c #\")
        (cond
@@ -229,7 +237,9 @@
                    (parse fp '() new-toks all? #f #f parens ptbl)
                    (car new-toks))))
               (else
-                (parse-error "Unhandled input sequence" *line-num* *char-num*))))
+                (parse-error "Unhandled input sequence" 
+                  (in-port:get-lnum ptbl)
+                  *char-num*))))
          ;; just another char...
          (parse fp (cons c tok) toks all? #f quotes parens ptbl)))
       (else
@@ -241,7 +251,9 @@
     (let ((buf (reverse raw-buf)))
       (cond 
         ((= 0 (length buf))
-         (parse-error "missing character" *line-num* *char-num*))
+         (parse-error "missing character" 
+           (in-port:get-lnum ptbl)
+           *char-num*))
         ((= 1 (length buf))
          (car buf))
         ((equal? buf '(#\a #\l #\a #\r #\m))
@@ -266,7 +278,8 @@
          (parse-error (string-append 
                         "unable to parse character: "
                         (list->string buf))
-                      *line-num* *char-num*)))))
+                      (in-port:get-lnum ptbl)
+                      *char-num*)))))
   (define (loop buf)
     (let ((c (peek-char fp)))
       (if (or (eof-object? c)
@@ -283,7 +296,9 @@
     ;; strings are not quite this simple - see spec.
     (cond
       ((eof-object? c)
-       (parse-error "missing closing double-quote" *line-num* *char-num*))
+       (parse-error "missing closing double-quote" 
+         (in-port:get-lnum ptbl)
+         *char-num*))
       ((equal? #\" c)
        (list->string (reverse buf)))
       (else
@@ -318,7 +333,6 @@
     (parse fp '() '() #f #f #f 0 (reg-port fp))))
 
 (define (read-all fp)
-  (set! *line-num* 1)
   (set! *char-num* 0)
   (define (loop fp result)
     (let ((obj (cyc-read fp)))
@@ -332,6 +346,6 @@
 ;(let ((fp (open-input-file "eval.scm")))
 ;(let ((fp (open-input-file "dev.scm")))
 ;  (write (read-all fp)))
-(let ((fp (current-input-port)))
- (write (cyc-read fp)))
+;(let ((fp (current-input-port)))
+; (write (cyc-read fp)))
 
