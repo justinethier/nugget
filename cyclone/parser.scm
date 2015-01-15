@@ -4,25 +4,9 @@
 ;;
 ;; This module contains the s-expression parser and supporting functions.
 ;;
-;;
 ;; FUTURE: if this was a module/library, would probably only want to export
 ;;         read and read-all
 ;;
-;; TODO: issue list
-;;  The root cause of all these issues is when we read an extra char that
-;;  causes the current token to end, but then the char that was read is lost
-;;
-;;  - A quote mid-object restarts the parser
-;;    EG: for (read), a'b ==> (quote b)
-;;  - A comment immediately after an object causes the ; to be lost
-;;    EG: 1;2 ==> causes 2 to be read even though it is inside a comment
-;;    This is a problem for (read-all)
-;;  - abc(list) ==> (list) 
-
-
-; TODO: need to address TODO's below, and try to clean up new code.
-; there are still performance issues (~10%) compared to old code on 
-; master. want to get this in good shape before moving on
 
 ;; Extended information for each input port
 (define *in-port-table* '())
@@ -50,6 +34,7 @@
  (let ((result (cadr ptbl)))
    (in-port:set-buf! ptbl #f)
    result))
+;; END input port table
 
 ;; Helper functions
 (define (add-tok tok toks quotes)
@@ -124,7 +109,6 @@
 ;(write `(DEBUG ,tok ,ptbl))
 ;(write "\n")
      (car (add-tok (->tok tok) toks quotes)))))
-     ;(reverse (add-tok (->tok tok) toks quotes)))))
 
 ;; Parse input from stream
 ;;
@@ -141,11 +125,7 @@
 ;; Output: next object, or list of objects (if read-all mode)
 ;; 
 (define (parse fp tok toks all? comment? quotes parens ptbl)
-;; TODO: peek-char, if it is start of a comment and we have any toks,
-;; need to return those toks (if we are in a read). otherwise can get
-;; into a situation where the ; is lost
   (set! *char-num* (+ 1 *char-num*))
-;(write `(DEBUG ptbl ,ptbl))
   (let ((c (if (in-port:get-buf ptbl)
                (in-port:read-buf! ptbl) ;; Already buffered
                (read-char fp))))
@@ -180,8 +160,9 @@
        (cond
          ((and (not all?) (not quotes) (not (null? tok)))
            ;; Reached a terminal char, read out previous token
-           ;; TODO: would also need to do this if previous char was
-           ;;       not a quote!
+;; TODO: would also need to do this if previous char was
+;;       not a quote!
+;;       EG: 'a'b ==> (quote a) (quote b), NOT (quote (quote b))
           (in-port:set-buf! ptbl c)
           (car (add-tok (->tok tok) toks quotes)))
          (else
@@ -330,15 +311,8 @@
        (list->string a)))))
 
 ;; Main lexer/parser
-;(define (cyc-read-all fp)
-;  (set! *line-num* 1)
-;  (set! *char-num* 0)
-;  (_cyc-read-all fp 0))
-
 (define cyc-read ;; TODO: should be (read), but that is breaking on csi 4.8.0.5
   (lambda (fp)
-;TODO: when returning a tok, if there is an extra char, store it in reg.
-;      then before reading char, check if there is one in buf. if so, use that instead of read-char
 ;TODO: longer term, replace *-num* globals with equivalents from tbl.
 ;      may not be so bad since tbl will already be threaded through parse
     (parse fp '() '() #f #f #f 0 (reg-port fp))))
@@ -356,31 +330,8 @@
 ;(let ((fp (open-input-file "tests/begin.scm")))
 ;(let ((fp (open-input-file "tests/strings.scm")))
 ;(let ((fp (open-input-file "eval.scm")))
-(let ((fp (open-input-file "dev2.scm")))
-  (write (read-all fp)))
-;  (write (cyc-read-all fp)))
-;(let ((fp (current-input-port)))
-; (write (cyc-read fp)))
-; (write (cyc-read-all fp)))
+;(let ((fp (open-input-file "dev.scm")))
+;  (write (read-all fp)))
+(let ((fp (current-input-port)))
+ (write (cyc-read fp)))
 
-
-;(define (display-file filename)
-;  (call-with-input-file filename
-;    (lambda (port)
-;      (let loop ()
-;    (let ((thing (read-char port)))
-;      (if (not (eof-object? thing))
-;          (begin
-;        (write-char thing)
-;        (loop))))))))
-;
-
-; Test cases for parser, put these in a file EG: dev2.scm
-; also will need to test them interactively (see REPL above)
-; 123(list)
-; 'a'c
-; (write
-;   (list
-;   1;2
-;   ))
-; 1;2

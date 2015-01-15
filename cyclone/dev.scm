@@ -2,16 +2,18 @@
 ;; supported yet by cyclone
 ;;
 
-'a/test
-(write 'a/test)
-(write #\space)
-'a
-'b
-'c
-1
+(
+123(list)
+1'b
+'a'c
 (write
   (list
+  1;2
   ))
+1;2
+3"four five"
+#\space
+)
 
 ;(let ((fp (open-input-file "dev.scm")))
 ;  (display (read-char fp))
