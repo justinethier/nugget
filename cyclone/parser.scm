@@ -116,13 +116,18 @@
            parens
            ptbl))
    (else
-     (in-port:set-buf! ptbl curr-char) ;; Not used yet; save
+     ;; Reached a terminating char, return current token and
+     ;; save term char for the next (read).
+     ;; Note: never call set-buf! if in "all?" mode, since
+     ;;       that mode builds a list of tokens
+     (in-port:set-buf! ptbl curr-char)
 ;(write `(DEBUG ,tok ,ptbl))
 ;(write "\n")
      (car (add-tok (->tok tok) toks quotes)))))
      ;(reverse (add-tok (->tok tok) toks quotes)))))
 
 ;; Parse input from stream
+;;
 ;; Input:
 ;; - Port object
 ;; - Current token
@@ -132,6 +137,7 @@
 ;; - Quote level
 ;; - Level of nested parentheses 
 ;; - Entry in the in-port table for this port
+;;
 ;; Output: next object, or list of objects (if read-all mode)
 ;; 
 (define (parse fp tok toks all? comment? quotes parens ptbl)
@@ -172,7 +178,7 @@
        (parse/tok fp tok toks all? #t quotes parens ptbl c))
       ((eq? c #\')
        (cond
-         ((and (not quotes) (not (null? tok)))
+         ((and (not all?) (not quotes) (not (null? tok)))
            ;; Reached a terminal char, read out previous token
            ;; TODO: would also need to do this if previous char was
            ;;       not a quote!
@@ -188,15 +194,10 @@
               (else
                  (parse fp '() (add-tok (->tok tok) toks quotes) 
                                all? comment? quote-level parens ptbl)))))))
-              ;(else
-              ;   (in-port:set-buf! ptbl c)
-              ;   (let ((result (add-tok (->tok tok) toks quotes)))
-              ;       (write `(DEBUG ,result))
-              ;       (car (add-tok (->tok tok) toks quotes))))))))
       ((eq? c #\()
-;; TODO: if not (all?) and we have a token, need to buffer ( and return what we have
+;(write `(DEBUG read open paren ,tok))
        (cond
-         ((not (null? tok)) 
+         ((and (not all?) (not (null? tok)))
           ;; Reached a terminal char, read out previous token
           (in-port:set-buf! ptbl c)
           (car (add-tok (->tok tok) toks quotes)))
@@ -205,26 +206,33 @@
                       (parse fp '() '() #t #f #f (+ parens 1) ptbl))
                  (toks* (get-toks tok toks quotes)))
              (define new-toks (add-tok 
-                                (if (dotted? sub)
+                                (if (and (list? sub) (dotted? sub))
                                     (->dotted-list sub)
                                     sub)
                                 toks* 
                                 quotes)) 
+;(write `(DEBUG incrementing paren level ,parens ,sub))
              (if all?
               (parse fp '() new-toks all? #f #f parens ptbl)
               (car new-toks))))))
       ((eq? c #\))
+;(write `(DEBUG decrementing paren level ,parens))
        (if (= parens 0)
            (parse-error "unexpected closing parenthesis" *line-num* *char-num*))
        (reverse (get-toks tok toks quotes)))
       ((eq? c #\")
-;; TODO: if there is a tok, read out prev token (see above ' and ) cases)
-       (let ((str (read-str fp '() ptbl))
-             (toks* (get-toks tok toks quotes)))
-         (define new-toks (add-tok str toks* quotes))
-         (if all?
-          (parse fp '() new-toks all? #f #f parens ptbl)
-          (reverse new-toks))))
+       (cond
+         ((and (not all?) (not (null? tok)))
+          ;; Reached a terminal char, read out previous token
+          (in-port:set-buf! ptbl c)
+          (car (add-tok (->tok tok) toks quotes)))
+         (else
+          (let ((str (read-str fp '() ptbl))
+                (toks* (get-toks tok toks quotes)))
+            (define new-toks (add-tok str toks* quotes))
+            (if all?
+             (parse fp '() new-toks all? #f #f parens ptbl)
+             (car new-toks))))))
       ((eq? c #\#)
        (if (null? tok)
          ;; # reader
@@ -238,7 +246,7 @@
                (let ((new-toks (cons (read-pound fp ptbl) toks)))
                  (if all?
                    (parse fp '() new-toks all? #f #f parens ptbl)
-                   (reverse new-toks))))
+                   (car new-toks))))
               (else
                 (parse-error "Unhandled input sequence" *line-num* *char-num*))))
          ;; just another char...
@@ -348,8 +356,8 @@
 ;(let ((fp (open-input-file "tests/begin.scm")))
 ;(let ((fp (open-input-file "tests/strings.scm")))
 ;(let ((fp (open-input-file "eval.scm")))
-;(let ((fp (open-input-file "dev2.scm")))
-;  (write (read-all fp)))
+(let ((fp (open-input-file "dev2.scm")))
+  (write (read-all fp)))
 ;  (write (cyc-read-all fp)))
 ;(let ((fp (current-input-port)))
 ; (write (cyc-read fp)))
