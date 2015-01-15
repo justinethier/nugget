@@ -171,24 +171,33 @@
       ((eq? c #\;)
        (parse/tok fp tok toks all? #t quotes parens ptbl c))
       ((eq? c #\')
-       (let ((quote-level (if quotes
-                              (+ quotes 1)
-                              1)))
-         (cond
-          ((null? tok)
-             (parse fp '() toks all? comment? quote-level parens ptbl))
-          (all?
-             (parse fp '() (add-tok (->tok tok) toks quotes) 
-                           all? comment? quote-level parens ptbl)
-          (else
-             (in-port:set-buf! ptbl c)
-             (let ((result (add-tok (->tok tok) toks quotes)))
-                 (write `(DEBUG ,result))
-                 (car (add-tok (->tok tok) toks quotes))))))))
+       (cond
+         ((and (not quotes) (not (null? tok)))
+           ;; Reached a terminal char, read out previous token
+           ;; TODO: would also need to do this if previous char was
+           ;;       not a quote!
+          (in-port:set-buf! ptbl c)
+          (car (add-tok (->tok tok) toks quotes)))
+         (else
+           (let ((quote-level (if quotes
+                                  (+ quotes 1)
+                                  1)))
+             (cond
+              ((null? tok)
+                 (parse fp '() toks all? comment? quote-level parens ptbl))
+              (else
+                 (parse fp '() (add-tok (->tok tok) toks quotes) 
+                               all? comment? quote-level parens ptbl)))))))
+              ;(else
+              ;   (in-port:set-buf! ptbl c)
+              ;   (let ((result (add-tok (->tok tok) toks quotes)))
+              ;       (write `(DEBUG ,result))
+              ;       (car (add-tok (->tok tok) toks quotes))))))))
       ((eq? c #\()
 ;; TODO: if not (all?) and we have a token, need to buffer ( and return what we have
        (cond
-         ((not (null? tok))
+         ((not (null? tok)) 
+          ;; Reached a terminal char, read out previous token
           (in-port:set-buf! ptbl c)
           (car (add-tok (->tok tok) toks quotes)))
          (else
@@ -340,8 +349,8 @@
 
 ;(let ((fp (open-input-file "tests/begin.scm")))
 ;(let ((fp (open-input-file "tests/strings.scm")))
-;(let ((fp (open-input-file "dev2.scm")))
 ;(let ((fp (open-input-file "eval.scm")))
+;(let ((fp (open-input-file "dev2.scm")))
 ;  (write (read-all fp)))
 ;  (write (cyc-read-all fp)))
 ;(let ((fp (current-input-port)))
