@@ -218,6 +218,7 @@
            (parse-error "unexpected closing parenthesis" *line-num* *char-num*))
        (reverse (get-toks tok toks quotes)))
       ((eq? c #\")
+;; TODO: if there is a tok, read out prev token (see above ' and ) cases)
        (let ((str (read-str fp '() ptbl))
              (toks* (get-toks tok toks quotes)))
          (define new-toks (add-tok str toks* quotes))
@@ -244,9 +245,6 @@
          (parse fp (cons c tok) toks all? #f quotes parens ptbl)))
       (else
         (parse fp (cons c tok) toks all? #f quotes parens ptbl)))))
-
-;(define (_cyc-read-all fp parens)
-;   (parse fp '() '() #f #f parens))
 
 ;; Read chars past a leading #\
 (define (read-pound fp ptbl)
