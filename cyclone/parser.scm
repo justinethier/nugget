@@ -192,7 +192,7 @@
                       (parse fp '() '() #t #f #f (+ parens 1) ptbl))
                  (toks* (get-toks tok toks quotes)))
              (define new-toks (add-tok 
-                                (if (and (list? sub) (dotted? sub))
+                                (if (and (pair? sub) (dotted? sub))
                                     (->dotted-list sub)
                                     sub)
                                 toks* 
@@ -333,6 +333,12 @@
         (reverse result)
         (loop fp (cons obj result)))))
   (loop fp '()))
+
+;; TODO: hangs the compiler - WTF?
+;;       also, does introducing (loop) break local loops above?
+;(define (loop)
+;  (loop))
+;(loop)
 
 ;; Test code
 ;(let ((fp (open-input-file "tests/begin.scm")))
