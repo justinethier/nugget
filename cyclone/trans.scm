@@ -1104,6 +1104,14 @@
 ;;     x)
 ;;    x)
 ;;
+;; algorithm needs to:
+;; - scan current context for any defines
+;; - mark each one it finds as renamed
+;; - convert the context using those renames
+;;   can we just call convert for this? hopefully.
+;; since a lambda is the only construct that can introduce a new
+;; scope, only the lambda body needs to perform this scan, I believe
+;;
        ;;(let ((var (define->var ast))
        ;;      (var* (gensym (define->var ast))))
        ;;  ;; Only internal defines at this point, and no longer in lambda form
