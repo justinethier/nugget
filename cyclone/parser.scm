@@ -312,26 +312,20 @@
 ;; parse-atom -> [chars] -> literal
 (define (parse-atom a)
   (cond 
-    ((or
-        (char-numeric? (car a))
-        (and (> (length a) 1)
-             (char-numeric? (cadr a))
-             (sign? (car a))))
-     (string->number  ;; TODO: this is cheating! need to do this, too.
-                      ;; but, it could be done by a library function
-                      ;; exposed as string->number... so, ok here
-       (list->string a)))
+    ((or (char-numeric? (car a))
+         (and (> (length a) 1)
+              (char-numeric? (cadr a))
+              (sign? (car a))))
+     (string->number (list->string a)))
     (else
-     (string->symbol
-       (list->string a)))))
+     (string->symbol (list->string a)))))
 
 ;; Main lexer/parser
 (define cyc-read ;; TODO: should be (read), but that is breaking on csi 4.8.0.5
   (lambda (fp)
-;TODO: longer term, replace *-num* globals with equivalents from tbl.
-;      may not be so bad since tbl will already be threaded through parse
     (parse fp '() '() #f #f #f 0 (reg-port fp))))
 
+;; read-all -> port -> [objects]
 (define (read-all fp)
   (define (loop fp result)
     (let ((obj (cyc-read fp)))
@@ -340,6 +334,7 @@
         (loop fp (cons obj result)))))
   (loop fp '()))
 
+;; Test code
 ;(let ((fp (open-input-file "tests/begin.scm")))
 ;(let ((fp (open-input-file "tests/strings.scm")))
 ;(let ((fp (open-input-file "eval.scm")))
