@@ -2,6 +2,48 @@
 ;; supported yet by cyclone
 ;;
 
+
+;;; GLOBAL SHADOWING ISSUE
+(define (add-tok tok toks quotes)
+  (define (loop i)
+    (if (= quotes i)
+      tok
+      (cons 'quote (cons (loop (+ i 1)) '()))))
+  (if quotes
+     (cons
+       (loop 0)
+       toks)
+     (cons tok toks)))
+
+(define (loop)
+  (loop))
+(loop)
+add-tok
+
+; loop version:
+; (define add-tok
+;   (lambda (tok toks quotes)
+;     (set! loop
+;       (lambda (i$896)
+;         (if (= quotes i$896)
+;           tok
+;           (cons 'quote (cons (loop (+ i$896 1)) '())))))
+;     (if quotes (cons (loop 0) toks) (cons tok toks))))
+
+; loop1 (no shadowing) version:
+; (define add-tok
+;   (lambda (tok toks quotes)
+;     ((lambda (loop$896)
+;        (set! loop$896
+;          (lambda (i$897)
+;            (if (= quotes i$897)
+;              tok
+;              (cons 'quote (cons (loop$896 (+ i$897 1)) '())))))
+;        (if quotes (cons (loop$896 0) toks) (cons tok toks)))
+;      #f)))
+;;; END GLOBAL SHADOWING ISSUE
+
+
 ;(
 ;123(list)
 ;1'b
