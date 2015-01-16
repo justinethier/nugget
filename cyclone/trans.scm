@@ -1088,10 +1088,22 @@
             (cdr renamed))
           (else ast))))
       ((define? ast)
-       ;; TODO: does not quite work right because any vars introduced using
-       ;;       internal defines are not able to shadow a global of the same
-       ;;       name, and are not initialized properly to #f. 
-       ;;
+;; TODO: does not quite work right because any vars introduced using
+;;       internal defines are not able to shadow a global of the same
+;;       name, and are not initialized properly to #f. 
+;;
+;;
+;; Cannot solve the problem here, need to scan for defines in a lambda body
+;; and rename them if encountered. need to be careful also of nested
+;; scopes, EG:
+;;  (lambda ()
+;;    (define x 1)
+;;    ((lambda ()
+;;      (define x 2)
+;;      x)
+;;     x)
+;;    x)
+;;
        ;;(let ((var (define->var ast))
        ;;      (var* (gensym (define->var ast))))
        ;;  ;; Only internal defines at this point, and no longer in lambda form

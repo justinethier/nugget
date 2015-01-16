@@ -4,42 +4,34 @@
 
 
 ;;; GLOBAL SHADOWING ISSUE
+;; Added TODO for this in trans.scm, alpha-convert
 (define (add-tok tok toks quotes)
-  (define (loop i)
-    (if (= quotes i)
-      tok
-      (cons 'quote (cons (loop (+ i 1)) '()))))
-  (if quotes
-     (cons
-       (loop 0)
-       toks)
-     (cons tok toks)))
+  (define loop 1)
+    loop)
+;  (define (loop i)
+;    (if (= quotes i)
+;      tok
+;      (cons 'quote (cons (loop (+ i 1)) '()))))
+;  (if quotes
+;     (cons
+;       (loop 0)
+;       toks)
+;     (cons tok toks)))
 
-(define (loop)
-  (loop))
-(loop)
+(define (loop1)
+  (loop1))
+(loop1)
 add-tok
 
 ; loop version:
 ; (define add-tok
-;   (lambda (tok toks quotes)
-;     (set! loop
-;       (lambda (i$896)
-;         (if (= quotes i$896)
-;           tok
-;           (cons 'quote (cons (loop (+ i$896 1)) '())))))
-;     (if quotes (cons (loop 0) toks) (cons tok toks))))
+;   (lambda (k$912 tok toks quotes)
+;     ((lambda (r$913) (k$912 loop)) (set! loop 1))))
 
 ; loop1 (no shadowing) version:
 ; (define add-tok
-;   (lambda (tok toks quotes)
-;     ((lambda (loop$896)
-;        (set! loop$896
-;          (lambda (i$897)
-;            (if (= quotes i$897)
-;              tok
-;              (cons 'quote (cons (loop$896 (+ i$897 1)) '())))))
-;        (if quotes (cons (loop$896 0) toks) (cons tok toks)))
+;   (lambda (k$913 tok toks quotes)
+;     ((lambda (loop$896) ((lambda (r$914) (k$913 loop$896)) (set! loop$896 1)))
 ;      #f)))
 ;;; END GLOBAL SHADOWING ISSUE
 
