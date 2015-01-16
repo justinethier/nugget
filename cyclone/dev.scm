@@ -30,7 +30,7 @@
 ; WIP TODO: move working functions above into the unit-test file
 ;
 ; Goals
-; 0) cleanup parser.scm from rework (still need to replace *char-num)
+; 0) cleanup parser.scm from rework
 ;    fix local/global shadowing issue; it is present in parser.scm when a top-level REPL is used (w/loop)
 ; 1) read - can this be derived from parser.scm implementation???
 ; 2) simple repl from parser module - read, print AST

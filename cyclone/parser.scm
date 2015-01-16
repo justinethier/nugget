@@ -26,16 +26,16 @@
 ;; TODO: unreg-port - delete fp entry from *in-port-table*
 ;; would want to do this when port is closed
 
+(define (in-port:read-buf! ptbl)
+ (let ((result (cadr ptbl)))
+   (in-port:set-buf! ptbl #f)
+   result))
 (define (in-port:get-buf ptbl) (cadr ptbl))
 (define (in-port:set-buf! ptbl buf) (set-car! (cdr ptbl) buf))
 (define (in-port:get-lnum ptbl) (caddr ptbl))
 (define (in-port:set-lnum! ptbl lnum) (set-car! (cddr ptbl) lnum))
 (define (in-port:get-cnum ptbl) (cadddr ptbl))
 (define (in-port:set-cnum! ptbl cnum) (set-car! (cdddr ptbl) cnum))
-(define (in-port:read-buf! ptbl)
- (let ((result (cadr ptbl)))
-   (in-port:set-buf! ptbl #f)
-   result))
 ;; END input port table
 
 ;; Helper functions
@@ -84,10 +84,6 @@
       "): "
       msg)))
 
-;; TODO: would be best if these did not have to be global
-(define *char-num* 0)
-
-
 ;; Add finished token, if there is one, and continue parsing
 (define (parse/tok fp tok toks all? comment? quotes parens ptbl curr-char)
   (cond
@@ -126,7 +122,9 @@
 ;; Output: next object, or list of objects (if read-all mode)
 ;; 
 (define (parse fp tok toks all? comment? quotes parens ptbl)
-  (set! *char-num* (+ 1 *char-num*))
+  (in-port:set-cnum! ptbl 
+    (+ 1 (in-port:get-cnum ptbl)))
+
   (let ((c (if (in-port:get-buf ptbl)
                (in-port:read-buf! ptbl) ;; Already buffered
                (read-char fp))))
@@ -139,7 +137,7 @@
        (if (> parens 0)
            (parse-error "missing closing parenthesis" 
              (in-port:get-lnum ptbl)
-             *char-num*))
+             (in-port:get-cnum ptbl)))
        (if all?
          (reverse (get-toks tok toks quotes))
          (let ((last (get-toks tok toks quotes)))
@@ -151,14 +149,15 @@
            (begin
               (in-port:set-lnum! ptbl 
                 (+ 1 (in-port:get-lnum ptbl)))
-              (set! *char-num* 0)
+              (in-port:set-cnum! ptbl 0)
               (parse fp '() toks all? #f quotes parens ptbl))
            (parse fp '() toks all? #t quotes parens ptbl)))
       ((char-whitespace? c)
        (if (equal? c #\newline)
            (in-port:set-lnum! ptbl 
              (+ 1 (in-port:get-lnum ptbl))))
-       (if (equal? c #\newline) (set! *char-num* 0))
+       (if (equal? c #\newline) 
+           (in-port:set-cnum! ptbl 0))
        (parse/tok fp tok toks all? #f quotes parens ptbl c))
       ((eq? c #\;)
        (parse/tok fp tok toks all? #t quotes parens ptbl c))
@@ -207,7 +206,7 @@
        (if (= parens 0)
            (parse-error "unexpected closing parenthesis" 
              (in-port:get-lnum ptbl)
-             *char-num*))
+             (in-port:get-cnum ptbl)))
        (reverse (get-toks tok toks quotes)))
       ((eq? c #\")
        (cond
@@ -226,7 +225,8 @@
        (if (null? tok)
          ;; # reader
          (let ((next-c (read-char fp)))
-            (set! *char-num* (+ 1 *char-num*))
+            (in-port:set-cnum! ptbl
+                (+ 1 (in-port:get-cnum ptbl)))
             (cond
               ;; Do not use add-tok below, no need to quote a bool
               ((eq? #\t next-c) (parse fp '() (cons #t toks) all? #f #f parens ptbl))
@@ -239,7 +239,7 @@
               (else
                 (parse-error "Unhandled input sequence" 
                   (in-port:get-lnum ptbl)
-                  *char-num*))))
+                  (in-port:get-cnum ptbl)))))
          ;; just another char...
          (parse fp (cons c tok) toks all? #f quotes parens ptbl)))
       (else
@@ -253,7 +253,7 @@
         ((= 0 (length buf))
          (parse-error "missing character" 
            (in-port:get-lnum ptbl)
-           *char-num*))
+           (in-port:get-cnum ptbl)))
         ((= 1 (length buf))
          (car buf))
         ((equal? buf '(#\a #\l #\a #\r #\m))
@@ -279,7 +279,7 @@
                         "unable to parse character: "
                         (list->string buf))
                       (in-port:get-lnum ptbl)
-                      *char-num*)))))
+                      (in-port:get-cnum ptbl))))))
   (define (loop buf)
     (let ((c (peek-char fp)))
       (if (or (eof-object? c)
@@ -298,7 +298,7 @@
       ((eof-object? c)
        (parse-error "missing closing double-quote" 
          (in-port:get-lnum ptbl)
-         *char-num*))
+         (in-port:get-cnum ptbl)))
       ((equal? #\" c)
        (list->string (reverse buf)))
       (else
@@ -333,7 +333,6 @@
     (parse fp '() '() #f #f #f 0 (reg-port fp))))
 
 (define (read-all fp)
-  (set! *char-num* 0)
   (define (loop fp result)
     (let ((obj (cyc-read fp)))
       (if (eof-object? obj)
