@@ -1077,6 +1077,23 @@
           ,@(map (lambda (_) #f) fv))
         ast))
 
+  ;; Find any defined variables in the given code block
+  (define (find-defined-vars ast)
+    (filter
+      (lambda (expr)
+        (not (null? expr)))
+      (map
+        (lambda (expr)
+          (if (define? expr)
+            (define->var expr)
+           '()))
+        ast)))
+
+  (define (make-a-lookup vars)
+    (map 
+      (lambda (a) (cons a (gensym a))) 
+      vars))
+
   (define (convert ast renamed)
 ;(write `(DEBUG convert ,ast))
 ;(write (newline))
@@ -1142,20 +1159,8 @@
               (ltype (lambda-formals-type ast))
               (a-lookup (map (lambda (a) (cons a (gensym a))) args))
               (body (lambda->exp ast))
-              (define-vars
-                (filter
-                  (lambda (expr)
-                    (not (null? expr)))
-                  (map
-                    (lambda (expr)
-                      (if (define? expr)
-                        (define->var expr)
-                       '()))
-                    body)))
-              (defines-a-lookup 
-                (map 
-                  (lambda (a) (cons a (gensym a))) 
-                  define-vars))
+              (define-vars (find-defined-vars body))
+              (defines-a-lookup (make-a-lookup define-vars))
              )
 ;(write `(DEBUG ,body ,define-vars ,defines-a-lookup))       
          `(lambda 
@@ -1191,20 +1196,8 @@
           ((lambda? body)
            (let* (
                   ;; TODO: what about renaming the lambda vars themselves?
-                  (define-vars
-                    (filter
-                      (lambda (expr)
-                        (not (null? expr)))
-                      (map
-                        (lambda (expr)
-                          (if (define? expr)
-                            (define->var expr)
-                           '()))
-                        (lambda->exp body))))
-                  (defines-a-lookup 
-                    (map 
-                      (lambda (a) (cons a (gensym a))) 
-                      define-vars))
+                  (define-vars (find-defined-vars (lambda-exp body)))
+                  (defines-a-lookup (make-a-lookup define-vars))
                  )
             ;; Any internal defines need to be initialized within the lambda,
             ;; so the lambda formals are preserved. So we need to deconstruct
