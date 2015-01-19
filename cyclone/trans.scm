@@ -1163,7 +1163,9 @@
                 (map (lambda (p) (cdr p)) a-lookup)  
                 ltype)
             ,@(convert body 
-                (append a-lookup defines-a-lookup renamed)))))
+                (append a-lookup renamed)))))
+                TODO: want to do below, but need to wrap any newly-introduced vars (??? why is this not already handled??)) - eg: ((lambda (...) ) #f ...)
+                ;(append a-lookup defines-a-lookup renamed)))))
       ((app? ast)
        (map (lambda (a) (convert a renamed)) ast))
       (else
