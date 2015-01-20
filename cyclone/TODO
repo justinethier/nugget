@@ -1,11 +1,5 @@
 
  - Globals - issue list
-   - alpha conversion broken for internal define shadowing global
-     this is a problem because if I have a global 'loop' and a local 'loop', the local will
-     be named such that it refers to the global definition.
-
-     alpha conversion needs to be more sophisticated to account properly for globals vs locals
-
    - call/cc may be broken for global define's, or at least is not optimal
      in that the code for call/cc will be added separately to each define.
      maybe this is OK, at least functionally
