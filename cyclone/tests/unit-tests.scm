@@ -4,10 +4,9 @@
       (error "Unit test failed [" msg "] actual [" actual "] expected [" expected "]")
       (set! *num-passed* (+ *num-passed* 1))))
 
-; TODO: this should pass:
-;(assert "numeric small reverse" (reverse '(1 2)) '(2 1))
+(assert "numeric small reverse" (reverse '(1 2)) '(2 1))
 (assert "small reverse" (reverse '(a b c)) '(c b a))
-;TODO: same as above -(assert "larger reverse" (reverse '((1 2 3 4 5 6 7 8 9 10))) '(10 9 8 7 6 5 4 3 2 1))
+(assert "larger reverse" (reverse '(1 2 3 4 5 6 7 8 9 10)) '(10 9 8 7 6 5 4 3 2 1))
 ;;  ;TODO: improper list, this is an error: (reverse '(1 . 2))
 (assert "char whitespace" (char-whitespace? #\space) #t)
 (assert "char whitespace" (char-whitespace? #\a) #f)
@@ -56,14 +55,14 @@
 
 ;; Global shadowing issue
 ;; Do not allow global define to shadow local ones
-;(define x 'global)
-;((lambda ()
-;  (define x 1)
-;  ((lambda ()
-;    (define x 2)
-;    (assert "local define of x" x 2)))
-;  (assert "another local define of x" x 1)))
-;(assert "global define of x" x 'global)
+(define x 'global)
+((lambda ()
+  (define x 1)
+  ((lambda ()
+    (define x 2)
+    (assert "local define of x" x 2)))
+  (assert "another local define of x" x 1)))
+(assert "global define of x" x 'global)
 
 
 ; TODO: use display, output without surrounding quotes
