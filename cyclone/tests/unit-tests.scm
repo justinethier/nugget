@@ -1,6 +1,8 @@
+(define *num-passed* 0)
 (define (assert msg actual expected)
   (if (not (equal? actual expected))
-      (error "Unit test failed [" msg "] actual [" actual "] expected [" expected "]")))
+      (error "Unit test failed [" msg "] actual [" actual "] expected [" expected "]")
+      (set! *num-passed* (+ *num-passed* 1))))
 
 ; TODO: this should pass:
 ;(assert "numeric small reverse" (reverse '(1 2)) '(2 1))
@@ -52,6 +54,18 @@
         (glob 1 2 3)
        '(1 2 3 4))
 
+;; Global shadowing issue
+;; Do not allow global define to shadow local ones
+;(define x 'global)
+;((lambda ()
+;  (define x 1)
+;  ((lambda ()
+;    (define x 2)
+;    (assert "local define of x" x 2)))
+;  (assert "another local define of x" x 1)))
+;(assert "global define of x" x 'global)
+
+
 ; TODO: use display, output without surrounding quotes
-(write "All test passed")
+(write (list *num-passed* " tests passed with no errors"))
 ;;
