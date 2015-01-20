@@ -1089,6 +1089,8 @@
            '()))
         ast)))
 
+  ;; Take a list of identifiers and generate a list of 
+  ;; renamed pairs, EG: (var . renamed-var)
   (define (make-a-lookup vars)
     (map 
       (lambda (a) (cons a (gensym a))) 
@@ -1101,6 +1103,7 @@
          ,@(map (lambda (_) #f) vars)))
        ast))
 
+  ;; Perform actual alpha conversion
   (define (convert ast renamed)
 ;(write `(DEBUG convert ,ast))
 ;(write (newline))
@@ -1114,36 +1117,7 @@
             (cdr renamed))
           (else ast))))
       ((define? ast)
-;; TODO: does not quite work right because any vars introduced using
-;;       internal defines are not able to shadow a global of the same
-;;       name, and are not initialized properly to #f. 
-;;
-;;
-;; Cannot solve the problem here, need to scan for defines in a lambda body
-;; and rename them if encountered. need to be careful also of nested
-;; scopes, EG:
-;;  (lambda ()
-;;    (define x 1)
-;;    ((lambda ()
-;;      (define x 2)
-;;      x)
-;;     x)
-;;    x)
-;;
-;; algorithm needs to:
-;; - scan current context for any defines
-;; - mark each one it finds as renamed
-;; - convert the context using those renames
-;;   can we just call convert for this? hopefully.
-;; since a lambda is the only construct that can introduce a new
-;; scope, only the lambda body needs to perform this scan, I believe
-;;
-       ;;(let ((var (define->var ast))
-       ;;      (var* (gensym (define->var ast))))
-       ;;  ;; Only internal defines at this point, and no longer in lambda form
-       ;;  `(set! ,var*
-       ;;     ,@(convert (define->exp ast)
-       ;;               (cons (cons var var*) renamed)))))
+       ;; Only internal defines at this point, of form: (define ident value)
        `(set! ,@(map (lambda (a) (convert a renamed)) (cdr ast))))
       ((set!? ast)
          ;; Without define, we have no way of knowing if this was a
@@ -1169,18 +1143,15 @@
               (define-vars (find-defined-vars body))
               (defines-a-lookup (make-a-lookup define-vars))
              )
-;(write `(DEBUG ,body ,define-vars ,defines-a-lookup))       
          `(lambda 
             ,(list->lambda-formals
                 (map (lambda (p) (cdr p)) a-lookup)  
                 ltype)
-            ,@(convert body 
-                (append a-lookup renamed)))))
-            ;,@(convert 
-            ;    (initialize-defined-vars 
-            ;        body
-            ;        (map (lambda (p) (cdr p)) defines-a-lookup))  
-            ;    (append a-lookup defines-a-lookup renamed)))))
+            ,@(initialize-defined-vars 
+                (convert 
+                    body 
+                   (append a-lookup defines-a-lookup renamed))
+                (map (lambda (p) (cdr p)) defines-a-lookup)))))
       ((app? ast)
        (map (lambda (a) (convert a renamed)) ast))
       (else
@@ -1228,7 +1199,6 @@
                                   ,@(map (lambda (_) #f) fv*)))
                                 ast*))
                             defines-a-lookup)))))
-                            ;(list))))))
           (else
             `(define 
                ,(define->var ast)

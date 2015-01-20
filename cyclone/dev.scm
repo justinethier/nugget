@@ -2,38 +2,46 @@
 ;; supported yet by cyclone
 ;;
 
+(define x 'global)
+((lambda ()
+  (define x 1)
+  ((lambda ()
+    (define x 2)
+    (write x)))
+  (write x)))
+(write x)
 
 ;;; GLOBAL SHADOWING ISSUE
 ;; Added TODO for this in trans.scm, alpha-convert
-(define (add-tok tok toks quotes)
-  (define loop 1)
-    loop)
-;  (define (loop i)
-;    (if (= quotes i)
-;      tok
-;      (cons 'quote (cons (loop (+ i 1)) '()))))
-;  (if quotes
-;     (cons
-;       (loop 0)
-;       toks)
-;     (cons tok toks)))
-
-(define (loop1)
-  (loop1))
-(loop1)
-add-tok
-
-; loop version:
-; (define add-tok
-;   (lambda (k$912 tok toks quotes)
-;     ((lambda (r$913) (k$912 loop)) (set! loop 1))))
-
-; loop1 (no shadowing) version:
-; (define add-tok
-;   (lambda (k$913 tok toks quotes)
-;     ((lambda (loop$896) ((lambda (r$914) (k$913 loop$896)) (set! loop$896 1)))
-;      #f)))
-;;; END GLOBAL SHADOWING ISSUE
+;(define (add-tok tok toks quotes)
+;  (define loop 1)
+;    loop)
+;;  (define (loop i)
+;;    (if (= quotes i)
+;;      tok
+;;      (cons 'quote (cons (loop (+ i 1)) '()))))
+;;  (if quotes
+;;     (cons
+;;       (loop 0)
+;;       toks)
+;;     (cons tok toks)))
+;
+;(define (loop1)
+;  (loop1))
+;(loop1)
+;add-tok
+;
+;; loop version:
+;; (define add-tok
+;;   (lambda (k$912 tok toks quotes)
+;;     ((lambda (r$913) (k$912 loop)) (set! loop 1))))
+;
+;; loop1 (no shadowing) version:
+;; (define add-tok
+;;   (lambda (k$913 tok toks quotes)
+;;     ((lambda (loop$896) ((lambda (r$914) (k$913 loop$896)) (set! loop$896 1)))
+;;      #f)))
+;;;; END GLOBAL SHADOWING ISSUE
 
 
 ;(
