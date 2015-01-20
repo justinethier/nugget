@@ -1175,8 +1175,9 @@
 ;(write `(DEBUG body ,body))
         (cond
           ((lambda? body)
-           (let* (
-                  ;; TODO: what about renaming the lambda vars themselves?
+           (let* ((args (lambda-formals->list body))
+                  (ltype (lambda-formals-type body))
+                  (a-lookup (map (lambda (a) (cons a (gensym a))) args))
                   (define-vars (find-defined-vars (lambda->exp body)))
                   (defines-a-lookup (make-a-lookup define-vars))
                  )
@@ -1189,7 +1190,10 @@
             ;; the required splicing.
             `(define 
                ,(define->var ast)
-               (lambda ,(lambda->formals body)
+               (lambda
+                 ,(list->lambda-formals
+                    (map (lambda (p) (cdr p)) a-lookup)  
+                    ltype)
                  ,@(convert (let ((fv* (union
                                          define-vars
                                          (difference fv (built-in-syms))))
@@ -1198,7 +1202,7 @@
                                `(((lambda ,fv* ,@ast*)
                                   ,@(map (lambda (_) #f) fv*)))
                                 ast*))
-                            defines-a-lookup)))))
+                            (append a-lookup defines-a-lookup))))))
           (else
             `(define 
                ,(define->var ast)
