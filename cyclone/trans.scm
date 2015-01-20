@@ -1094,6 +1094,13 @@
       (lambda (a) (cons a (gensym a))) 
       vars))
 
+  ;; Wrap any defined variables in a lambda, so they can be initialized
+  (define (initialize-defined-vars ast vars)
+    (if (> (length vars) 0)
+      `(((lambda ,vars ,@ast)
+         ,@(map (lambda (_) #f) vars)))
+       ast))
+
   (define (convert ast renamed)
 ;(write `(DEBUG convert ,ast))
 ;(write (newline))
@@ -1169,8 +1176,11 @@
                 ltype)
             ,@(convert body 
                 (append a-lookup renamed)))))
-                TODO: want to do below, but need to wrap any newly-introduced vars (??? why is this not already handled??)) - eg: ((lambda (...) ) #f ...)
-                ;(append a-lookup defines-a-lookup renamed)))))
+            ;,@(convert 
+            ;    (initialize-defined-vars 
+            ;        body
+            ;        (map (lambda (p) (cdr p)) defines-a-lookup))  
+            ;    (append a-lookup defines-a-lookup renamed)))))
       ((app? ast)
        (map (lambda (a) (convert a renamed)) ast))
       (else
@@ -1196,7 +1206,7 @@
           ((lambda? body)
            (let* (
                   ;; TODO: what about renaming the lambda vars themselves?
-                  (define-vars (find-defined-vars (lambda-exp body)))
+                  (define-vars (find-defined-vars (lambda->exp body)))
                   (defines-a-lookup (make-a-lookup define-vars))
                  )
             ;; Any internal defines need to be initialized within the lambda,
