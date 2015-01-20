@@ -334,18 +334,16 @@
         (loop fp (cons obj result)))))
   (loop fp '()))
 
-;; TODO: hangs the compiler - WTF?
-;;       also, does introducing (loop) break local loops above?
-;(define (loop)
-;  (loop))
-;(loop)
+(define (repl)
+    ;; Test code
+    ;(let ((fp (open-input-file "tests/begin.scm")))
+    ;(let ((fp (open-input-file "tests/strings.scm")))
+    ;(let ((fp (open-input-file "eval.scm")))
+    ;(let ((fp (open-input-file "dev.scm")))
+    ;  (write (read-all fp)))
+    (let ((fp (current-input-port)))
+     (write (cyc-read fp)))
+  (repl))
+;(repl)
 
-;; Test code
-;(let ((fp (open-input-file "tests/begin.scm")))
-;(let ((fp (open-input-file "tests/strings.scm")))
-;(let ((fp (open-input-file "eval.scm")))
-;(let ((fp (open-input-file "dev.scm")))
-;  (write (read-all fp)))
-;(let ((fp (current-input-port)))
-; (write (cyc-read fp)))
 
