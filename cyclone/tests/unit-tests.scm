@@ -39,6 +39,14 @@
 (assert "" (eq? (string->symbol "aa") 'aa) #t)
 (assert "" (equal? (string->symbol "aa") 'aa) #t)
 
+;; Map
+(assert "map 1" (map (lambda (x) (car x)) '((a . b) (1 . 2) (#\h #\w))) '(a 1 #\h))
+(assert "map 2" (map car '((a . b) (1 . 2) (#\h #\w))) '(a 1 #\h))
+(assert "map 3" (map cdr '((a . b) (1 . 2) (#\h #\w))) '(b 2 (#\w)))
+(assert "map length"
+  (map length '(() (1) (1 2) (1 2 3) (1 2 3 4)))
+ '(0 1 2 3 4))
+
 ;; Prove internal defines are compiled properly
 ;;
 ;; Illustrates an old problem with compiling parser.
