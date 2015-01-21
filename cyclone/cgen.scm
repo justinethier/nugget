@@ -360,6 +360,8 @@
 ;; item such as a list, to compile as a literal.
 (define (c-compile-const exp)
   (cond
+    ((null? exp)
+     (c-code "nil"))
     ((pair? exp)
      (c-compile-scalars exp))
     ((integer? exp) 
