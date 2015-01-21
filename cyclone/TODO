@@ -39,7 +39,9 @@
     otherwise it is too easy to miss failing test cases, unless they
     blow up the runtime
  - This has already been done, just need to incorporate other existing tests.
- - Should also print number of test passing if there were no failures
+
+- Parser
+  ;'a'c  ;; TODO: this is still an issue, try it
 
 - in regard to native apply support for primitives
   - do we need to create a table of primitives, like husk?

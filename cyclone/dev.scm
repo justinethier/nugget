@@ -2,19 +2,6 @@
 ;; supported yet by cyclone
 ;;
 
-;(
-;123(list)
-;1'b
-;'a'c  ;; TODO: this is still an issue, try it
-;(write
-;  (list
-;  1;2
-;  ))
-;1;2
-;3"four five"
-;#\space
-;)
-
 ; WIP TODO: move working functions above into the unit-test file
 ;
 ; Goals

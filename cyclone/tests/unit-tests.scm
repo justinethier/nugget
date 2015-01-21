@@ -72,6 +72,18 @@
   (assert "another local define of x" x 1)))
 (assert "global define of x" x 'global)
 
+; TODO: could add parser tests for these
+;(
+;123(list)
+;1'b
+;(write
+;  (list
+;  1;2
+;  ))
+;1;2
+;3"four five"
+;#\space
+;)
 
 ; TODO: use display, output without surrounding quotes
 (write (list *num-passed* " tests passed with no errors"))
