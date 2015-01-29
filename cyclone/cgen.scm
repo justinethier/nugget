@@ -423,7 +423,7 @@
             ((eq? p 'close-input-port)      "Cyc_io_close_input_port")
             ((eq? p 'read-char)             "Cyc_io_read_char")
             ((eq? p 'peek-char)             "Cyc_io_peek_char")
-            ((eq? p 'display)               "prin1")
+            ((eq? p 'display)               "Cyc_display")
             ((eq? p 'write)                 "write")
             ((eq? p 'car)           "car")
             ((eq? p 'cdr)           "cdr")

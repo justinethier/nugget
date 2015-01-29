@@ -295,7 +295,7 @@ static object cell_set(object cell, object value){
 
 static list mcons(object,object);
 static object terpri(void);
-static object prin1(object);
+static object Cyc_display(object);
 static int equal(object,object);
 static list assq(object,list);
 static object get(object,object);
@@ -415,7 +415,7 @@ static int equal(x, y) object x, y;
     }
 }
 
-static object prin1(x) object x;
+static object Cyc_display(x) object x;
 {object tmp = nil;
  if (nullp(x)) {printf("()"); return x;}
  if (obj_is_char(x)) {printf("%c", obj_obj2char(x)); return x;}
@@ -451,23 +451,25 @@ static object prin1(x) object x;
       break;
     case cons_tag:
       printf("("); 
-      prin1(car(x));
+      Cyc_display(car(x));
       for (tmp = cdr(x); tmp && ((closure) tmp)->tag == cons_tag; tmp = cdr(tmp)) {
           printf(" ");
-          prin1(car(tmp));
+          Cyc_display(car(tmp));
       }
       if (tmp) {
           printf(" . ");
-          prin1(tmp);
+          Cyc_display(tmp);
       }
       printf(")");
       break;
     default:
-      printf("prin1: bad tag x=%ld\n", ((closure)x)->tag); getchar(); exit(0);}
+      printf("Cyc_display: bad tag x=%ld\n", ((closure)x)->tag); getchar(); exit(0);}
  return x;}
 
+// TODO: no, write should have a different representation of certain objects.
+//       EG: "a" vs a
 static object write(x) object x;
-{prin1(x);
+{Cyc_display(x);
  printf("\n");
  return x;}
 
@@ -751,12 +753,12 @@ static object Cyc_error(int count, object obj1, ...) {
     
     va_start(ap, obj1);
     printf("Error: ");
-    prin1(obj1);
+    Cyc_display(obj1);
     printf("\n");
 
     for (i = 1; i < count; i++) {
         tmp = va_arg(ap, object);
-        prin1(tmp);
+        Cyc_display(tmp);
         printf("\n");
     }
 
@@ -768,7 +770,7 @@ static object Cyc_error(int count, object obj1, ...) {
 static void __halt(object obj) {
 #if DEBUG_SHOW_DIAG
     printf("\nhalt: ");
-    prin1(obj);
+    Cyc_display(obj);
     printf("\n");
 #endif
     my_exit(obj);
@@ -967,14 +969,14 @@ static void Cyc_apply(int argc, closure cont, object prim, ...){
         args[i].cons_cdr = (i == (argc-1)) ? nil : &args[i + 1];
     }
     //printf("DEBUG applying primitive to ");
-    //prin1((object)&args[0]);
+    //Cyc_display((object)&args[0]);
     //printf("\n");
 
     va_end(ap);
     {
      tmp = apply(&buf, prim, (object)&args[0]);
      //printf("RESULT = ");
-     //prin1(tmp); //(object)result);
+     //Cyc_display(tmp); //(object)result);
      //printf("\n");
 
      // Call into cont with single result
