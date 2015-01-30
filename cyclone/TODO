@@ -1,3 +1,29 @@
+Working TODO list:
+
+ - support for functions from parser.scm, eval.scm, etc
+   multiple module compilation. actually, do not really need that yet.
+   just need a way of saying OK, eval was used so load eval.scm and include
+   that with the complilation. would be the same for read or even (actually)
+   any of the lib functions/macros which could live in a separate scm file.
+ 
+   it may be simpler to start with a lib.scm file and load that in for some defs, then
+   do the same thing for the parser, then eval
+ 
+ - actual REPL by combining eval.scm and parser.scm.
+   can use load or just cat to combine initially, though
+   longer term they need to be distinct modules
+ 
+ - booleans
+   do we want to have a separate def macro for them? IE, have the
+   literals be something like bool_t / bool_f to prevent collisions
+   with, for example, 't ??
+  
+   yes, I think it is important to have them, and sooner rather than later. quote_t/quote_f will not work long term
+
+ - add real versions of write and display
+
+ - cyclone should return an error code (IE: 1) when compilation fails and a 0 when it is successful. that way it can be scripted via bash (for example)
+ - along the same lines, output should be controlled in a better way. or at minimum should print errors using stderr (possible with standard scheme, though??)
 
  - Globals - issue list
    - call/cc may be broken for global define's, or at least is not optimal
@@ -106,5 +132,8 @@ Original notes: Will probably also require apply, read, etc. will probably be ne
  JAE - Important point, that the heap must be reallocated during a major GC if there is too much data in the stack / old heap. Considered this but not sure if cyclone's GC does that right now:
 
 The smart reader might have noticed a small problem here: what if the amount of garbage cleaned up is less than the data on the stack? Then, the stack data can't be copied to the new heap because it simply is too small. Well, this is when a third GC mode is triggered: a reallocating GC. This causes a new heap to be allocated, twice as big as the current heap. This is also split in from- and tospace. Then, Cheney's algorithm is performed on the old heap's fromspace, using one half of the new heap as tospace. When it's finished, the new tospace is called fromspace, and the other half of the new heap is called tospace. Then, the old heap is de-allocated.
+
+- farther off but along the same lines, how to support compilation of
+  multiple scheme files into multiple C modules?
 
 - Just a thought: if this ever became self-hosting, could distribute compiled C files
