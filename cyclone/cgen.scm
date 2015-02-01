@@ -373,7 +373,7 @@
                 "make_int(" cvar-name ", " (number->string exp) ");")))))
     ((boolean? exp) 
       (c-code (string-append
-                (if exp "quote_t" "quote_f"))))
+                (if exp "boolean_t" "boolean_f"))))
     ((char? exp)
      (c-code (string-append "obj_char2obj(" 
                (number->string (char->integer exp)) ")")))
@@ -685,7 +685,7 @@
          (els (compile (if->else exp))))
   (c-code (string-append
    (c:allocs->str (c:allocs test) "  ")
-   "if( !eq(quote_f, "
+   "if( !eq(boolean_f, "
    (c:body test)
    ") ){ \n"
    (c:serialize then "  ")

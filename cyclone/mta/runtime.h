@@ -84,6 +84,7 @@ typedef long tag_type;
 #define primitive_tag 12
 #define eof_tag 13
 #define port_tag 14
+#define boolean_tag 15
 
 #define nil NULL
 #define eq(x,y) (x == y)
@@ -116,6 +117,16 @@ typedef void *object;
 /* Define function type. */
 
 typedef void (*function_type)();
+
+/* Define boolean type. */
+typedef struct {const tag_type tag; const char *pname;} boolean_type;
+typedef boolean_type *boolean;
+
+#define boolean_pname(x) (((boolean_type *) x)->pname)
+
+#define defboolean(name,pname) \
+static boolean_type name##_boolean = {boolean_tag, #pname}; \
+static const object boolean_##name = &name##_boolean
 
 /* Define symbol type. */
 
@@ -383,8 +394,8 @@ static jmp_buf jmp_main; /* Where to jump to. */
 
 /* Define the Lisp atoms that we need. */
 
-defsymbol(f,"f");
-defsymbol(t,"t");
+defboolean(f,"f");
+defboolean(t,"t");
 
 //static object quote_list_f;  /* Initialized by main to '(f) */
 //static object quote_list_t;  /* Initialized by main to '(t) */
@@ -437,6 +448,9 @@ static object Cyc_display(x) object x;
     case primitive_tag:
       printf("<primitive>");
       break;
+    case boolean_tag:
+      printf("#%s",((boolean_type *) x)->pname);
+      break;
     case symbol_tag:
       printf("%s",((symbol_type *) x)->pname);
       break;
@@ -476,8 +490,8 @@ static object write(x) object x;
 /* Some of these non-consing functions have been optimized from CPS. */
 
 static object memberp(x,l) object x; list l;
-{for (; !nullp(l); l = cdr(l)) if (quote_f != equalp(x,car(l))) return quote_t;
- return quote_f;}
+{for (; !nullp(l); l = cdr(l)) if (boolean_f != equalp(x,car(l))) return boolean_t;
+ return boolean_f;}
 
 static object get(x,i) object x,i;
 {register object plist; register object plistd;
@@ -491,28 +505,28 @@ static object get(x,i) object x,i;
 
 static object equalp(x,y) object x,y;
 {for (; ; x = cdr(x), y = cdr(y))
-   {if (equal(x,y)) return quote_t;
+   {if (equal(x,y)) return boolean_t;
     if (obj_is_char(x) || obj_is_char(y) || 
         nullp(x) || nullp(y) ||
-        type_of(x)!=cons_tag || type_of(y)!=cons_tag) return quote_f;
-    if (quote_f == equalp(car(x),car(y))) return quote_f;}}
+        type_of(x)!=cons_tag || type_of(y)!=cons_tag) return boolean_f;
+    if (boolean_f == equalp(car(x),car(y))) return boolean_f;}}
 
 static list assq(x,l) object x; list l;
 {for (; !nullp(l); l = cdr(l))
    {register list la = car(l); if (eq(x,car(la))) return la;}
- return quote_f;}
+ return boolean_f;}
 
 static list assoc(x,l) object x; list l;
 {for (; !nullp(l); l = cdr(l))
-   {register list la = car(l); if (quote_f != equalp(x,car(la))) return la;}
- return quote_f;}
+   {register list la = car(l); if (boolean_f != equalp(x,car(la))) return la;}
+ return boolean_f;}
 
 
 // TODO: generate these using macros???
 static object __num_eq(x, y) object x, y;
 {if (x && y && ((integer_type *)x)->value == ((integer_type *)y)->value)
-    return quote_t;
- return quote_f;}
+    return boolean_t;
+ return boolean_f;}
 
 static object __num_gt(x, y) object x, y;
 {//printf("DEBUG cmp %d, x %d, y %d, x tag %d, y tag %d\n", 
@@ -521,72 +535,72 @@ static object __num_gt(x, y) object x, y;
  //   ((list)x)->tag, ((list)y)->tag);
  //exit(1);
  if (((integer_type *)x)->value > ((integer_type *)y)->value)
-    return quote_t;
- return quote_f;}
+    return boolean_t;
+ return boolean_f;}
 
 static object __num_lt(x, y) object x, y;
 {if (((integer_type *)x)->value < ((integer_type *)y)->value)
-    return quote_t;
- return quote_f;}
+    return boolean_t;
+ return boolean_f;}
 
 static object __num_gte(x, y) object x, y;
 {if (((integer_type *)x)->value >= ((integer_type *)y)->value)
-    return quote_t;
- return quote_f;}
+    return boolean_t;
+ return boolean_f;}
 
 static object __num_lte(x, y) object x, y;
 {if (((integer_type *)x)->value <= ((integer_type *)y)->value)
-    return quote_t;
- return quote_f;}
+    return boolean_t;
+ return boolean_f;}
 
 // TODO: static object Cyc_is_eq(x, y) object x, y)
 static object Cyc_is_boolean(object o){
     if (!nullp(o) && 
         !is_value_type(o) &&
-        ((list)o)->tag == symbol_tag &&
-        (eq(quote_f, o) || eq(quote_t, o)))
-        return quote_t;
-    return quote_f;}
+        ((list)o)->tag == boolean_tag &&
+        (eq(boolean_f, o) || eq(boolean_t, o)))
+        return boolean_t;
+    return boolean_f;}
 
 static object Cyc_is_cons(object o){
     if (!nullp(o) && !is_value_type(o) && ((list)o)->tag == cons_tag)
-        return quote_t;
-    return quote_f;}
+        return boolean_t;
+    return boolean_f;}
 
 static object Cyc_is_null(object o){
     if (nullp(o)) 
-        return quote_t;
-    return quote_f;}
+        return boolean_t;
+    return boolean_f;}
 
 static object Cyc_is_number(object o){
     if (!nullp(o) && !is_value_type(o) && ((list)o)->tag == integer_tag)
-        return quote_t;
-    return quote_f;}
+        return boolean_t;
+    return boolean_f;}
 
 static object Cyc_is_symbol(object o){
     if (!nullp(o) && !is_value_type(o) && ((list)o)->tag == symbol_tag)
-        return quote_t;
-    return quote_f;}
+        return boolean_t;
+    return boolean_f;}
 
 static object Cyc_is_string(object o){
     if (!nullp(o) && !is_value_type(o) && ((list)o)->tag == string_tag)
-        return quote_t;
-    return quote_f;}
+        return boolean_t;
+    return boolean_f;}
 
 static object Cyc_is_char(object o){
     if (obj_is_char(o))
-        return quote_t;
-    return quote_f;}
+        return boolean_t;
+    return boolean_f;}
 
 static object Cyc_is_eof_object(object o) {
     if (!nullp(o) && !is_value_type(o) && type_of(o) == eof_tag)
-        return quote_t;
-    return quote_f;}
+        return boolean_t;
+    return boolean_f;}
 
 static object Cyc_eq(object x, object y) {
     if (eq(x, y))
-        return quote_t;
-    return quote_f;
+        return boolean_t;
+    return boolean_f;
 }
 
 static object Cyc_set_car(object l, object val) {
@@ -764,7 +778,7 @@ static object Cyc_error(int count, object obj1, ...) {
 
     va_end(ap);
     exit(1);
-    return quote_f;
+    return boolean_f;
 }
 
 static void __halt(object obj) {
@@ -1086,6 +1100,7 @@ static char *transport(x, gcgen) char *x; int gcgen;
        return (char *) forward(x);
     case eof_tag: break;
     case primitive_tag: break;
+    case boolean_tag: break;
     case symbol_tag: break; // JAE TODO: raise an error here? Should not be possible in real code, though (IE, without GC DEBUG flag)
     default:
       printf("transport: bad tag x=%p x.tag=%ld\n",(void *)x,type_of(x)); exit(0);}
@@ -1227,6 +1242,7 @@ static void GC_loop(int major, closure cont, object *ans, int num_ans)
       case eof_tag:
       case primitive_tag:
       case symbol_tag: 
+      case boolean_tag:
       default:
         printf("GC: bad tag scanp=%p scanp.tag=%ld\n",(void *)scanp,type_of(scanp));
         exit(0);}
@@ -1294,7 +1310,7 @@ static void main_main (stack_size,heap_size,stack_base)
  printf("main: Try different stack sizes from 4 K to 1 Meg.\n");
 #endif
  /* Do initializations of Lisp objects and rewrite rules.
- quote_list_f = mlist1(quote_f); quote_list_t = mlist1(quote_t); */
+ quote_list_f = mlist1(boolean_f); quote_list_t = mlist1(boolean_t); */
 
  /* Make temporary short names for certain atoms. */
  {
