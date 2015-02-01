@@ -13,13 +13,6 @@ Working TODO list:
    can use load or just cat to combine initially, though
    longer term they need to be distinct modules
  
- - booleans
-   do we want to have a separate def macro for them? IE, have the
-   literals be something like bool_t / bool_f to prevent collisions
-   with, for example, 't ??
-  
-   yes, I think it is important to have them, and sooner rather than later. quote_t/quote_f will not work long term
-
  - add real versions of write and display
 
  - cyclone should return an error code (IE: 1) when compilation fails and a 0 when it is successful. that way it can be scripted via bash (for example)
