@@ -394,8 +394,8 @@ static jmp_buf jmp_main; /* Where to jump to. */
 
 /* Define the Lisp atoms that we need. */
 
-defboolean(f,"f");
-defboolean(t,"t");
+defboolean(f,f);
+defboolean(t,t);
 
 //static object quote_list_f;  /* Initialized by main to '(f) */
 //static object quote_list_t;  /* Initialized by main to '(t) */
