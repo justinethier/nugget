@@ -889,7 +889,7 @@
           (apply string-append
             (map c-compile-program input-program))))
     (emit-c-macros)
-    (emit "#include \"mta/runtime.h\"")
+    (emit "#include \"runtime.h\"")
 
     ;; Emit symbols
     (for-each
