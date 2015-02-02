@@ -115,6 +115,15 @@
   (trace:info "---------------- C code:")
   (mta:code-gen input-program globals))
 
+;; TODO: longer-term, will be used to find where cyclone's data is installed
+(define (data-path)
+  ".")
+
+(define (eval-lib)
+  (call-with-input-file (string-append (data-path) "/eval.scm")
+    (lambda (port)
+      (read-all port))))
+
 ;; Compile and emit:
 (define (run-compiler args cc?)
   (let* ((in-file (car args))
@@ -123,11 +132,10 @@
     (call-with-input-file in-file
       (lambda (port)
         (let ((program (read-all port)))
-;; TODO: husk does not support with-output-to-file
-;; will be a problem bootstrapping from husk in the meantime...
           (with-output-to-file 
             src-file 
             (lambda ()
+              ;(c-compile-and-emit (append (eval-lib) program))))
               (c-compile-and-emit program)))
           (if cc?
             (system 
