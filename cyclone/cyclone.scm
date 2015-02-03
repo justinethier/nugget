@@ -116,11 +116,14 @@
   (mta:code-gen input-program globals))
 
 ;; TODO: longer-term, will be used to find where cyclone's data is installed
-(define (data-path)
+(define (get-data-path)
   ".")
 
-(define (eval-lib)
-  (call-with-input-file (string-append (data-path) "/eval.scm")
+(define (get-lib filename)
+  (string-append (get-data-path) "/" filename))
+
+(define (read-file filename)
+  (call-with-input-file filename
     (lambda (port)
       (read-all port))))
 
@@ -129,18 +132,18 @@
   (let* ((in-file (car args))
          (exec-file (basename in-file))
          (src-file (string-append exec-file ".c")))
-    (call-with-input-file in-file
-      (lambda (port)
-        (let ((program (read-all port)))
-          (with-output-to-file 
-            src-file 
-            (lambda ()
-              ;(c-compile-and-emit (append (eval-lib) program))))
-              (c-compile-and-emit program)))
-          (if cc?
-            (system 
-              ;; -I is a hack, real answer is to use 'make install' to place .h file
-              (string-append "gcc " src-file " -I. -g -o " exec-file))))))))
+    (with-output-to-file 
+      src-file
+      (lambda ()
+        ;; TODO: receive return value from this, if 'eval and/or 'read, then
+        ;; load in those modules and re-run the with-output-to-file code.
+        ;; obviously will need to restructure this function, too.
+        (c-compile-and-emit 
+          (read-file in-file))))
+    (if cc?
+      (system 
+        ;; -I is a hack, real answer is to use 'make install' to place .h file
+        (string-append "gcc " src-file " -I. -g -o " exec-file)))))
 
 ;; Handle command line arguments
 (let ((args (command-line-arguments))) ;; TODO: port (command-line-arguments) to husk??
