@@ -5,6 +5,7 @@ TESTFILES = $(addprefix tests/, $(addsuffix .scm, $(TESTSCM)))
 cyclone: cyclone.scm trans.scm cgen.scm
 	csc cyclone.scm
 
+.PHONY: test
 test: $(TESTFILES) cyclone
 	$(foreach f,$(TESTSCM), echo tests/$(f) ; ./cyclone tests/$(f).scm && tests/$(f) && rm -rf tests/$(f);)
 
