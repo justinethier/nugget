@@ -43,78 +43,80 @@
   
 ; c-compile-and-emit : (string -> A) exp -> void
 (define (c-compile-and-emit input-program)
-  (define globals '())
-  (emit *c-file-header-comment*) ; Guarantee placement at top of C file
-
-  (trace:info "---------------- input program:")
-  (trace:info input-program) ;pretty-print
-  
-  (set! input-program (add-libs input-program))
-
-  (set! input-program (expand input-program))
-  (trace:info "---------------- after macro expansion:")
-  (trace:info input-program) ;pretty-print
-
-  (set! input-program 
-    (filter-unused-variables
-      (isolate-globals input-program)))
-  (trace:info "---------------- after processing globals")
-  (trace:info input-program) ;pretty-print
-
-  ; Note alpha-conversion is overloaded to convert internal defines to 
-  ; set!'s below, since all remaining phases operate on set!, not define.
-  ;
-  ; TODO: consider moving some of this alpha-conv logic below back into trans?
-  (set! globals (global-vars input-program))
-  (set! input-program 
-    (map
-      (lambda (expr)
-        (alpha-convert expr globals))
-      input-program))
-  (trace:info "---------------- after alpha conversion:")
-  (trace:info input-program) ;pretty-print
-
-  (set! input-program 
-    (map 
-      (lambda (expr)
-        (cps-convert expr))
-      input-program))
-  (trace:info "---------------- after CPS:")
-  (trace:info input-program) ;pretty-print
-
-  (set! input-program
-    (map
-      (lambda (expr)
-        (clear-mutables)
-        (analyze-mutable-variables expr)
-        (wrap-mutables expr globals))
-      input-program))
-  (trace:info "---------------- after wrap-mutables:")
-  (trace:info input-program) ;pretty-print
-
-  (set! input-program 
-    (map
-      (lambda (expr)
-        (if (define? expr)
-          ;; Global
-         `(define ,(define->var expr)
-            ,@(caddr (closure-convert (define->exp expr) globals)))
-          (caddr ;; Strip off superfluous lambda
-            (closure-convert expr globals))))
-      input-program))
-;    (caddr ;; Strip off superfluous lambda
-;      (closure-convert input-program)))
-  (trace:info "---------------- after closure-convert:")
-  (trace:info input-program) ;pretty-print
-  
-  (if (not *do-code-gen*)
-    (begin
-      (trace:error "DEBUG, existing program")
-      (exit)))
-
-  (trace:info "---------------- C code:")
-  (mta:code-gen input-program globals)
-  '()) ;; No codes to return
+  (call/cc 
+    (lambda (return)
+      (define globals '())
+      (emit *c-file-header-comment*) ; Guarantee placement at top of C file
+    
+      (trace:info "---------------- input program:")
+      (trace:info input-program) ;pretty-print
+      
+      (set! input-program (add-libs input-program))
+    
+      (set! input-program (expand input-program))
+      (trace:info "---------------- after macro expansion:")
+      (trace:info input-program) ;pretty-print
+    
+      (set! input-program 
+        (filter-unused-variables
+          (isolate-globals input-program)))
+      (trace:info "---------------- after processing globals")
+      (trace:info input-program) ;pretty-print
+    
+      ; Note alpha-conversion is overloaded to convert internal defines to 
+      ; set!'s below, since all remaining phases operate on set!, not define.
+      ;
+      ; TODO: consider moving some of this alpha-conv logic below back into trans?
+      (set! globals (global-vars input-program))
+      (set! input-program 
+        (map
+          (lambda (expr)
+            (alpha-convert expr globals))
+          input-program))
+      (trace:info "---------------- after alpha conversion:")
+      (trace:info input-program) ;pretty-print
+    
+      (set! input-program 
+        (map 
+          (lambda (expr)
+            (cps-convert expr))
+          input-program))
+      (trace:info "---------------- after CPS:")
+      (trace:info input-program) ;pretty-print
+    
+      (set! input-program
+        (map
+          (lambda (expr)
+            (clear-mutables)
+            (analyze-mutable-variables expr)
+            (wrap-mutables expr globals))
+          input-program))
+      (trace:info "---------------- after wrap-mutables:")
+      (trace:info input-program) ;pretty-print
+    
+      (set! input-program 
+        (map
+          (lambda (expr)
+            (if (define? expr)
+              ;; Global
+             `(define ,(define->var expr)
+                ,@(caddr (closure-convert (define->exp expr) globals)))
+              (caddr ;; Strip off superfluous lambda
+                (closure-convert expr globals))))
+          input-program))
+    ;    (caddr ;; Strip off superfluous lambda
+    ;      (closure-convert input-program)))
+      (trace:info "---------------- after closure-convert:")
+      (trace:info input-program) ;pretty-print
+      
+      (if (not *do-code-gen*)
+        (begin
+          (trace:error "DEBUG, existing program")
+          (exit)))
+    
+      (trace:info "---------------- C code:")
+      (mta:code-gen input-program globals)
+      (return '())))) ;; No codes to return
 
 ;; TODO: longer-term, will be used to find where cyclone's data is installed
 (define (get-data-path)
