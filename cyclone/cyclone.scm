@@ -113,7 +113,8 @@
       (exit)))
 
   (trace:info "---------------- C code:")
-  (mta:code-gen input-program globals))
+  (mta:code-gen input-program globals)
+  '()) ;; No codes to return
 
 ;; TODO: longer-term, will be used to find where cyclone's data is installed
 (define (get-data-path)
@@ -130,16 +131,29 @@
 ;; Compile and emit:
 (define (run-compiler args cc?)
   (let* ((in-file (car args))
+         (in-prog (read-file in-file))
          (exec-file (basename in-file))
-         (src-file (string-append exec-file ".c")))
-    (with-output-to-file 
-      src-file
-      (lambda ()
-        ;; TODO: receive return value from this, if 'eval and/or 'read, then
-        ;; load in those modules and re-run the with-output-to-file code.
-        ;; obviously will need to restructure this function, too.
-        (c-compile-and-emit 
-          (read-file in-file))))
+         (src-file (string-append exec-file ".c"))
+;; TODO: receive return value from this, if 'eval and/or 'read, then
+;; load in those modules and re-run the with-output-to-file code.
+;; obviously will need to restructure this function, too.
+         (create-c-file 
+           (lambda () 
+             (with-output-to-file 
+               src-file
+               (lambda ()
+                 (c-compile-and-emit in-prog)))))
+         (result (create-c-file)))
+    ;; Necessary to load other libs?
+; TODO: pass return function (cont) to c-compile-and-emit, and then
+;       have that function check for eval/read.
+;;      then if those flags are seen, concat the libs and try again
+;TODO:    (cond
+;TODO:     ((not (null? result))
+;TODO:      (if (member 'eval result) #t)
+;TODO:      (if (member 'read result) #t)))
+
+    ;; Compile the generated C file
     (if cc?
       (system 
         ;; -I is a hack, real answer is to use 'make install' to place .h file
