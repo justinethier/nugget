@@ -1,6 +1,6 @@
 (define (loop)
   (display (eval (read)))
-  (display (newline))
+  (display #\newline)
   (loop))
 
 (loop)
