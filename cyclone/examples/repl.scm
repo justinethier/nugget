@@ -1,5 +1,5 @@
 (define (loop)
-  (display (eval (read)))
+  (display (eval (read (current-input-port))))
   (display #\newline)
   (loop))
 
