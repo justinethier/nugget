@@ -1068,7 +1068,7 @@
 ;;
 ;; TODO: does not properly handle renaming builtin functions, would probably need to
 ;; pass that renaming information downstream
-(define (alpha-convert ast globals)
+(define (alpha-convert ast globals return-unbound)
   ;; Initialize top-level variables
   (define (initialize-top-level-vars ast fv)
     (if (> (length fv) 0)
@@ -1167,7 +1167,16 @@
          )
     (cond
      ((> (length unknown-vars) 0)
-      (error "Unbound variable(s)" unknown-vars))
+      (let ((unbound-to-return (list)))
+        (if (member 'eval unknown-vars) 
+            (set! unbound-to-return (cons 'eval unbound-to-return)))
+        (if (member 'parse unknown-vars) 
+            (set! unbound-to-return (cons 'parse unbound-to-return)))
+        (if (and (> (length unbound-to-return) 0) 
+                 (= (length unknown-vars) (length unbound-to-return)))
+            (return-unbound unbound-to-return)
+            ;; TODO: should not report above (eval read) as errors
+            (error "Unbound variable(s)" unknown-vars))))
      ((define? ast)
       ;; Deconstruct define so underlying code can assume internal defines
       (let ((body (car ;; Only one member by now

@@ -71,7 +71,7 @@
       (set! input-program 
         (map
           (lambda (expr)
-            (alpha-convert expr globals))
+            (alpha-convert expr globals return))
           input-program))
       (trace:info "---------------- after alpha conversion:")
       (trace:info input-program) ;pretty-print
@@ -136,24 +136,22 @@
          (in-prog (read-file in-file))
          (exec-file (basename in-file))
          (src-file (string-append exec-file ".c"))
-;; TODO: receive return value from this, if 'eval and/or 'read, then
-;; load in those modules and re-run the with-output-to-file code.
-;; obviously will need to restructure this function, too.
          (create-c-file 
-           (lambda () 
+           (lambda (program) 
              (with-output-to-file 
                src-file
                (lambda ()
-                 (c-compile-and-emit in-prog)))))
-         (result (create-c-file)))
-    ;; Necessary to load other libs?
-; TODO: pass return function (cont) to c-compile-and-emit, and then
-;       have that function check for eval/read.
-;;      then if those flags are seen, concat the libs and try again
-;TODO:    (cond
-;TODO:     ((not (null? result))
-;TODO:      (if (member 'eval result) #t)
-;TODO:      (if (member 'read result) #t)))
+                 (c-compile-and-emit program)))))
+         (result (create-c-file in-prog)))
+    ;; Load other modules if necessary
+    (cond
+     ((not (null? result))
+      (let ((program
+              (append
+                (if (member 'eval result) (read-file (get-lib "eval.scm")) '())
+                (if (member 'read result) (read-file (get-lib "parse.scm")) '())
+                in-prog)))
+        (create-c-file program))))
 
     ;; Compile the generated C file
     (if cc?
