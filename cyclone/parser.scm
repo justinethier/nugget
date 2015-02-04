@@ -334,16 +334,19 @@
         (loop fp (cons obj result)))))
   (loop fp '()))
 
-(define (repl)
-    ;; Test code
-    ;(let ((fp (open-input-file "tests/begin.scm")))
-    ;(let ((fp (open-input-file "tests/strings.scm")))
-    ;(let ((fp (open-input-file "eval.scm")))
-    ;(let ((fp (open-input-file "dev.scm")))
-    ;  (write (read-all fp)))
-    (let ((fp (current-input-port)))
-     (write (cyc-read fp)))
-  (repl))
-;(repl)
+;; read -> port -> object
+(define read cyc-read)
+
+;(define (repl)
+;    ;; Test code
+;    ;(let ((fp (open-input-file "tests/begin.scm")))
+;    ;(let ((fp (open-input-file "tests/strings.scm")))
+;    ;(let ((fp (open-input-file "eval.scm")))
+;    ;(let ((fp (open-input-file "dev.scm")))
+;    ;  (write (read-all fp)))
+;    (let ((fp (current-input-port)))
+;     (write (cyc-read fp)))
+;  (repl))
+;;(repl)
 
 
