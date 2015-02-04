@@ -149,7 +149,7 @@
       (let ((program
               (append
                 (if (member 'eval result) (read-file (get-lib "eval.scm")) '())
-                (if (member 'read result) (read-file (get-lib "parse.scm")) '())
+                (if (member 'read result) (read-file (get-lib "parser.scm")) '())
                 in-prog)))
         (create-c-file program))))
 
