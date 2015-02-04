@@ -2,8 +2,10 @@
 ;; http://mitpress.mit.edu/sicp/full-text/book/book-Z-H-26.html#%_sec_4.1
 ;;
 
-(define (eval exp env)
-  ((analyze exp) env))
+(define (eval exp . env)
+  (if (null? env)
+      ((analyze exp) *global-environment*)
+      ((analyze exp) (car env))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Expression handling helper functions
@@ -347,16 +349,16 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; JAE - Testing, should work both with cyclone and other compilers (husk, chicken, etc)
 ;;       although, that may not be possible with (app) and possibly other forms. 
-(write (eval 2 *global-environment*))
-(write (eval ''(1 2) *global-environment*))
-(write (eval ''(1 . 2) *global-environment*))
-(write (eval '(if #t 'test-ok 'test-fail) *global-environment*))
-(write (eval '(if 1 'test-ok) *global-environment*))
-(write (eval '(if #f 'test-fail 'test-ok) *global-environment*))
-(write (eval '((lambda (x) (cons x 2) (cons #t x)) 1) *global-environment*))
-;(write (eval '((lambda () (cons 1 2) (cons #t #f))) *global-environment*))
-;(write (eval '(cons 1 2) *global-environment*)) ; TODO
-;(write (eval '(+ 1 2) *global-environment*)) ; TODO
+;(write (eval 2 *global-environment*))
+;(write (eval ''(1 2) *global-environment*))
+;(write (eval ''(1 . 2) *global-environment*))
+;(write (eval '(if #t 'test-ok 'test-fail) *global-environment*))
+;(write (eval '(if 1 'test-ok) *global-environment*))
+;(write (eval '(if #f 'test-fail 'test-ok) *global-environment*))
+;(write (eval '((lambda (x) (cons x 2) (cons #t x)) 1) *global-environment*))
+;;(write (eval '((lambda () (cons 1 2) (cons #t #f))) *global-environment*))
+;;(write (eval '(cons 1 2) *global-environment*)) ; TODO
+;;(write (eval '(+ 1 2) *global-environment*)) ; TODO
 
 ;(define (loop)
 ;  (display (eval (read) *global-environment*))
