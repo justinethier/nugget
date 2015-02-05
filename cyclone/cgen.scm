@@ -424,7 +424,7 @@
             ((eq? p 'read-char)             "Cyc_io_read_char")
             ((eq? p 'peek-char)             "Cyc_io_peek_char")
             ((eq? p 'display)               "Cyc_display")
-            ((eq? p 'write)                 "write")
+            ((eq? p 'write)                 "Cyc_write")
             ((eq? p 'car)           "car")
             ((eq? p 'cdr)           "cdr")
             ((eq? p 'caar)          "caar")
