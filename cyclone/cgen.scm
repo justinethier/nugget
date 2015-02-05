@@ -696,15 +696,20 @@
 ;; Global compilation
 (define *globals* '())
 (define *global-syms* '())
-(define (add-global var-sym code)
+(define (global-lambda? global) (cadr global))
+(define (global-not-lambda? global) (not (cadr global)))
+(define (add-global var-sym lambda? code)
   ;(write `(add-global ,var-sym ,code))
-  (set! *globals* (cons (cons var-sym code) *globals*)))
+  (set! *globals* (cons (list var-sym lambda? code) *globals*)))
 (define (c-compile-global exp append-preamble cont)
  (let ((var (define->var exp))
        (body (if (equal? 4 (length exp)) ; Simple var assignment contains superfluous %closure-ref
                  (cadddr exp)
                  (car (define->exp exp)))))
-   (add-global var (c-compile-exp body append-preamble cont))
+   (add-global 
+     var 
+     (lambda? body) 
+     (c-compile-exp body append-preamble cont))
    (c-code/vars "" (list ""))))
 
 ;; Symbol compilation
@@ -928,16 +933,17 @@
         *symbols*)
 
     ;; Initialize globals
-    (let ((prefix "  "))
-      (for-each
-        (lambda (global)
-          (emits (c:allocs->str2 (c:allocs (cdr global)) prefix " \n"))
-          (emits prefix)
-          (emits (mangle-global (car global)))
-          (emits " = ")
-          (emits (c:body (cdr global)))
-          (emit "; "))
-        *globals*)
+    (let* ((prefix "  ")
+           (emit-global
+             (lambda (global)
+               (emits (c:allocs->str2 (c:allocs (caddr global)) prefix " \n"))
+               (emits prefix)
+               (emits (mangle-global (car global)))
+               (emits " = ")
+               (emits (c:body (caddr global)))
+               (emit "; "))))
+      (for-each emit-global (filter global-lambda? *globals*))
+      (for-each emit-global (filter global-not-lambda? *globals*))
       (emit ""))
     (emit compiled-program)
     (emit "}")

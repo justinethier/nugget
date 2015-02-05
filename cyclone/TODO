@@ -1,17 +1,5 @@
 Working TODO list:
 
- - Compilation of this is broken:
-
-    (define cyc-read
-     ...
-    (define read cyc-read)
-
-   because __glo_read ends up being assigned (to nil) before __glo_cyc91read:
-
-    __glo_read = __glo_cyc_91read; 
-    mclosure0(c_734984, (function_type)__lambda_600); 
-    __glo_cyc_91read = &c_734984; 
-
  - Argument to (read) should be optional, and if no arg is specified default to: 
      (read (current-input-port))
 
