@@ -322,11 +322,11 @@
 
 ;; Main lexer/parser
 (define cyc-read ;; TODO: should be (read), but that is breaking on csi 4.8.0.5
-  (lambda (fp)
+  (lambda (fp) ;; TODO: fp should be an optional argument
     (parse fp '() '() #f #f #f 0 (reg-port fp))))
 
 ;; read-all -> port -> [objects]
-(define (read-all fp)
+(define (read-all fp) ;; TODO: fp should be an optional argument
   (define (loop fp result)
     (let ((obj (cyc-read fp)))
       (if (eof-object? obj)
@@ -334,8 +334,9 @@
         (loop fp (cons obj result)))))
   (loop fp '()))
 
+;; TODO: for some reason this causes trouble in chicken 4.8. WTF??
 ;; read -> port -> object
-(define read cyc-read)
+;(define read cyc-read)
 
 ;(define (repl)
 ;    ;; Test code
