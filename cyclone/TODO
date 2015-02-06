@@ -1,22 +1,6 @@
 Working TODO list:
 
- - Argument to (read) should be optional, and if no arg is specified default to: 
-     (read (current-input-port))
-
- - support for functions from parser.scm, eval.scm, etc
-   multiple module compilation. actually, do not really need that yet.
-   just need a way of saying OK, eval was used so load eval.scm and include
-   that with the complilation. would be the same for read or even (actually)
-   any of the lib functions/macros which could live in a separate scm file.
- 
-   it may be simpler to start with a lib.scm file and load that in for some defs, then
-   do the same thing for the parser, then eval
- 
- - actual REPL by combining eval.scm and parser.scm.
-   can use load or just cat to combine initially, though
-   longer term they need to be distinct modules
- 
- - add real versions of write and display
+ - Use a lib.scm for libs, similar to eval/parser modules?
 
  - cyclone should return an error code (IE: 1) when compilation fails and a 0 when it is successful. that way it can be scripted via bash (for example)
  - along the same lines, output should be controlled in a better way. or at minimum should print errors using stderr (possible with standard scheme, though??)
