@@ -9,12 +9,17 @@
  (chicken
    (require-extension extras) ;; pretty-print
    (require-extension chicken-syntax) ;; when
-))
-;(load "bootstrap-chicken.scm")
-;(load "bootstrap-husk.scm")
-(load "parser.scm")
-(load "trans.scm")
-(load "cgen.scm")
+   (load "parser.so")
+   (load "trans.so")
+   (load "cgen.so"))
+; (husk
+;   (import (husk pretty-print))
+;   ;; TODO: load files
+; )
+ (else
+   (load "parser.scm")
+   (load "trans.scm")
+   (load "cgen.scm")))
 
 ;; Code emission.
   

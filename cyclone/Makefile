@@ -2,7 +2,18 @@ TESTSCM = adder app apply begin call-cc-set call-cc-simple call-cc closure-1 clo
 # Cannot auto test tail-call-optimization because it runs forever
 TESTFILES = $(addprefix tests/, $(addsuffix .scm, $(TESTSCM)))
 
-cyclone: cyclone.scm trans.scm cgen.scm
+all: cyclone
+
+trans.so: trans.scm
+	csc -s trans.scm
+
+cgen.so: cgen.scm
+	csc -s cgen.scm
+
+parser.so: parser.scm
+	csc -s parser.scm
+
+cyclone: cyclone.scm trans.so cgen.so parser.so
 	csc cyclone.scm
 
 .PHONY: test
@@ -20,5 +31,5 @@ tags:
 
 .PHONY: clean
 clean:
-	rm -rf a.out *.o *.c *.out tags cyclone
+	rm -rf a.out *.o *.so *.c *.out tags cyclone
 	$(foreach f,$(TESTSCM), rm -rf $(f) $(f).c tests/$(f).c;)
