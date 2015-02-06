@@ -4,6 +4,8 @@ Cyclone is an experimental Scheme compiler that uses the [Cheney on the MTA](htt
 
 TODO: list of features, table of RxRS features (??), etc
 
+TODO: "how it works section", or a link to a document that provides a brief overview. Much of this would also involve tying together references
+
 Building
 ------------
 TBD: prereq's, how to build, etc
