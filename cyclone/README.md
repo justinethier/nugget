@@ -4,15 +4,15 @@ Cyclone is an experimental Scheme compiler that uses the [Cheney on the MTA](htt
 
 Building
 ------------
-TBD
+TBD: prereq's, how to build, etc
 
 Installation
 ------------
-TBD, no support for this at the moment.
+At the moment there is no support for a separate installation. Just run `cyclone` from the build directory.
 
 Documentation
 -------------
-TBD
+TBD: how to use compiler, interpreter, etc...
 
 References
 ----------
