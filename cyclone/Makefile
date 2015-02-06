@@ -20,10 +20,8 @@ cyclone: cyclone.scm trans.so cgen.so parser.so
 test: $(TESTFILES) cyclone
 	$(foreach f,$(TESTSCM), echo tests/$(f) ; ./cyclone tests/$(f).scm && tests/$(f) && rm -rf tests/$(f);)
 
-# TODO: some kind of repl, but requires eval
-#.PHONY: repl
-#repl:
-#	huski cyclone.scm
+repl: cyclone repl.scm
+	./cyclone repl.scm
 
 .PHONY: tags
 tags:
@@ -31,5 +29,5 @@ tags:
 
 .PHONY: clean
 clean:
-	rm -rf a.out *.o *.so *.c *.out tags cyclone
+	rm -rf a.out *.o *.so *.c *.out tags cyclone repl
 	$(foreach f,$(TESTSCM), rm -rf $(f) $(f).c tests/$(f).c;)
