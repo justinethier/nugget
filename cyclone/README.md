@@ -2,6 +2,8 @@
 
 Cyclone is an experimental Scheme compiler that uses the [Cheney on the MTA](http://www.pipeline.com/~hbaker1/CheneyMTA.html) technique to implement full tail recursion, continuations, and generational garbage collection.
 
+TODO: list of features, table of RxRS features (??), etc
+
 Building
 ------------
 TBD: prereq's, how to build, etc
