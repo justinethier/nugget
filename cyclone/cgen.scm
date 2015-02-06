@@ -28,6 +28,19 @@
         delim 
         (string-join (cdr lst) delim)))))
 
+;; Escape newlines in a string, to prevent issues with 
+;; compiling a multi-line string
+(define (escape-newlines str)
+  (letrec ((next (lambda (head tail)
+                   (cond
+                     ((null? head) (list->string (reverse tail)))
+                     ((equal? (car head) #\newline)
+                      (next (cdr head) 
+                            (cons #\n (cons #\\ tail))))
+                     (else
+                       (next (cdr head) (cons (car head) tail)))))))
+    (next (string->list str) '())))
+
 ;; Name-mangling.
 
 ;; We have to "mangle" Scheme identifiers into
@@ -395,11 +408,8 @@
 ;; Convert a "scheme" string to a corresponding representation in C.
 ;; Keep in mind scheme strings can span lines, contain chars that
 ;; might not be allowed in C, etc.
-;;
-;; TODO; this is a placeholder since it doesn't do anything right now
-;;
 (define (->cstr str) 
-  (string-append "\"" str "\""))
+  (string-append "\"" (escape-newlines str) "\""))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; c-compile-prim : prim-exp -> string
