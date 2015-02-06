@@ -5,7 +5,12 @@
 ;; This module contains a front-end for the compiler itself.
 ;;
 
-(load "bootstrap-chicken.scm")
+(cond-expand
+ (chicken
+   (require-extension extras) ;; pretty-print
+   (require-extension chicken-syntax) ;; when
+))
+;(load "bootstrap-chicken.scm")
 ;(load "bootstrap-husk.scm")
 (load "parser.scm")
 (load "trans.scm")
