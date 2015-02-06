@@ -1,4 +1,4 @@
-(write *Cyc-version-banner*)
+(display *Cyc-version-banner*)
 (define (loop)
   (display "cyclone> ")
   (display (eval (read (current-input-port))))
