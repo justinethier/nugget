@@ -1,6 +1,6 @@
 [<img src="https://github.com/justinethier/nugget/raw/master/cyclone/web/cyclone-logo-03-header.png" alt="cyclone-scheme">](http://justinethier.github.com/nugget/cyclone)
 
-Cyclone is an experimental Scheme compiler that uses the [Cheney on the MTA](http://www.pipeline.com/~hbaker1/CheneyMTA.html) technique to implement full tail recursion, continuations, and generational garbage collection.
+Cyclone is an experimental Scheme-to-C compiler that uses the [Cheney on the MTA](http://www.pipeline.com/~hbaker1/CheneyMTA.html) technique to implement full tail recursion, continuations, and generational garbage collection.
 
 TODO: list of features, table of RxRS features (??), etc
 
@@ -52,9 +52,9 @@ Prerequisites:
 - gcc
 - CHICKEN Scheme
 
-From the source directory:
+CHICKEN is required to bootstrap the Scheme parts of Cyclone. A long-term goal is for the compiler to be self-hosting.
 
-To build the compiler:
+From the source directory, to build and run the compiler:
 
     $ make
     ...
@@ -81,7 +81,7 @@ References
 - [The 90 minute Scheme to C compiler](http://churchturing.org/y/90-min-scc.pdf)
 - [R<sup>5</sup>RS Scheme Specification](http://www.schemers.org/Documents/Standards/R5RS/HTML/)
 - [R<sup>7</sup>RS Scheme Specification](http://trac.sacrideo.us/wg/wiki)
-- [CHICKEN](http://www.call-cc.org/)
+- [CHICKEN Scheme](http://www.call-cc.org/)
 - [Chibi Scheme](http://code.google.com/p/chibi-scheme/)
 - Lisp in Small Pieces, by Christian Queinnec
 
