@@ -1261,15 +1261,15 @@ static void GC_loop(int major, closure cont, object *ans, int num_ans)
 
 static void GC(cont,ans,num_ans) closure cont; object *ans; int num_ans;
 {
- // JAE - Only room for one more minor-GC, so do a major one.
- // Not sure this is the best strategy, it may be better to do major
- // ones sooner, perhaps after every x minor GC's.
- //
- // Also may need to consider dynamically increasing heap size, but
- // by how much (1.3x, 1.5x, etc) and when? I suppose when heap usage
- // after a collection is above a certain percentage, then it would be 
- // necessary to increase heap size the next time.
- //
+ /* Only room for one more minor-GC, so do a major one.
+  * Not sure this is the best strategy, it may be better to do major
+  * ones sooner, perhaps after every x minor GC's.
+  *
+  * Also may need to consider dynamically increasing heap size, but
+  * by how much (1.3x, 1.5x, etc) and when? I suppose when heap usage
+  * after a collection is above a certain percentage, then it would be 
+  * necessary to increase heap size the next time.
+  */
  if (allocp >= (bottom + (global_heap_size - global_stack_size))) {
      //printf("Possibly only room for one more minor GC. no_gcs = %ld\n", no_gcs);
      no_major_gcs++;
@@ -1278,7 +1278,8 @@ static void GC(cont,ans,num_ans) closure cont; object *ans; int num_ans;
      no_gcs++; /* Count the number of minor GC's. */
      GC_loop(0, cont, ans, num_ans);
  }
- // /JAE
+
+ /* You have to let it all go, Neo. Fear, doubt, and disbelief. Free your mind... */
  longjmp(jmp_main,1); /* Return globals gc_cont, gc_ans. */
 }
 
@@ -1346,7 +1347,8 @@ static void main_main (stack_size,heap_size,stack_base)
   printf("Starting...\n");
 #endif
   start = clock(); /* Start the timing clock. */
-  /* These two statements form the most obscure loop in the history of C! */
+
+  /* Tank, load the jump program... */
   setjmp(jmp_main);
   AFTER_LONGJMP
   /*                                                                      */
