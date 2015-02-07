@@ -45,7 +45,26 @@ TODO: "how it works section", or a link to a document that provides a brief over
 
 Building
 ------------
-TBD: prereq's, how to build, etc
+
+Prerequisites:
+
+- make
+- gcc
+- CHICKEN Scheme
+
+From the source directory:
+
+To build the compiler:
+
+    $ make
+    ...
+    $ ./cyclone
+    
+To build the interpreter:
+
+    $ make repl
+    ...
+    $ ./repl
 
 Installation
 ------------
@@ -53,12 +72,18 @@ At the moment there is no support for a separate installation. Just run `cyclone
 
 Documentation
 -------------
-TBD: how to use compiler, interpreter, etc...
+Run the `cyclone` command to compile a single Scheme file, and the `repl` command to start the interactive interpreter.
 
 References
 ----------
 
-TBD
+- [CONS Should Not CONS Its Arguments, Part II: Cheney on the M.T.A.](http://www.pipeline.com/~hbaker1/CheneyMTA.html)
+- [The 90 minute Scheme to C compiler](http://churchturing.org/y/90-min-scc.pdf)
+- [R<sup>5</sup>RS Scheme Specification](http://www.schemers.org/Documents/Standards/R5RS/HTML/)
+- [R<sup>7</sup>RS Scheme Specification](http://trac.sacrideo.us/wg/wiki)
+- [CHICKEN](http://www.call-cc.org/)
+- [Chibi Scheme](http://code.google.com/p/chibi-scheme/)
+- Lisp in Small Pieces, by Christian Queinnec
 
 License
 -------
