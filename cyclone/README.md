@@ -85,7 +85,7 @@ References
 - [CHICKEN Scheme](http://www.call-cc.org/)
 - [Chibi Scheme](http://code.google.com/p/chibi-scheme/)
 - [Structure and Interpretation of Computer Programs](https://mitpress.mit.edu/sicp/full-text/book/book.html), by Harold Abelson and Gerald Jay Sussman with Julie Sussman 
-- Lisp in Small Pieces, by Christian Queinnec
+- [Lisp in Small Pieces](http://pagesperso-systeme.lip6.fr/Christian.Queinnec/WWW/LiSP.html), by Christian Queinnec
 
 License
 -------
