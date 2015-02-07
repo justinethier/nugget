@@ -2,6 +2,37 @@
 
 Cyclone is an experimental Scheme-to-C compiler that uses the [Cheney on the MTA](http://www.pipeline.com/~hbaker1/CheneyMTA.html) technique to implement full tail recursion, continuations, and generational garbage collection.
 
+Building
+------------
+
+Prerequisites:
+
+- make
+- gcc
+- CHICKEN Scheme
+
+CHICKEN is required to bootstrap the Scheme parts of Cyclone. A long-term goal is for the compiler to be self-hosting.
+
+From the source directory, to build and run the compiler:
+
+    $ make
+    ...
+    $ ./cyclone
+    
+To build the interpreter:
+
+    $ make repl
+    ...
+    $ ./repl
+
+Installation
+------------
+At the moment there is no support for a separate installation. Just run `cyclone` from the build directory.
+
+Documentation
+-------------
+Run the `cyclone` command to compile a single Scheme file, and the `repl` command to start the interactive interpreter.
+
 TODO: list of features, table of RxRS features (??), etc
 
 R<sup>7</sup>RS Compliance
@@ -42,37 +73,6 @@ Section | Status | Comments
 6.14 System interface | |
 
 TODO: "how it works section", or a link to a document that provides a brief overview. Much of this would also involve tying together references
-
-Building
-------------
-
-Prerequisites:
-
-- make
-- gcc
-- CHICKEN Scheme
-
-CHICKEN is required to bootstrap the Scheme parts of Cyclone. A long-term goal is for the compiler to be self-hosting.
-
-From the source directory, to build and run the compiler:
-
-    $ make
-    ...
-    $ ./cyclone
-    
-To build the interpreter:
-
-    $ make repl
-    ...
-    $ ./repl
-
-Installation
-------------
-At the moment there is no support for a separate installation. Just run `cyclone` from the build directory.
-
-Documentation
--------------
-Run the `cyclone` command to compile a single Scheme file, and the `repl` command to start the interactive interpreter.
 
 References
 ----------
