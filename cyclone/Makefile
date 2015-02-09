@@ -20,7 +20,7 @@ cyclone: cyclone.scm trans.so cgen.so parser.so
 test: $(TESTFILES) cyclone
 	$(foreach f,$(TESTSCM), echo tests/$(f) ; ./cyclone tests/$(f).scm && tests/$(f) && rm -rf tests/$(f);)
 
-repl: cyclone repl.scm
+repl: cyclone repl.scm eval.scm parser.scm
 	./cyclone repl.scm
 
 .PHONY: tags
