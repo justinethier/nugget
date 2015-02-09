@@ -396,6 +396,7 @@ static jmp_buf jmp_main; /* Where to jump to. */
 
 defboolean(f,f);
 defboolean(t,t);
+defsymbol(Cyc_191procedure, procedure);
 
 //static object quote_list_f;  /* Initialized by main to '(f) */
 //static object quote_list_t;  /* Initialized by main to '(t) */
@@ -409,6 +410,7 @@ static object terpri() {printf("\n"); return nil;}
 static int equal(x, y) object x, y;
 {
     if (nullp(x)) return nullp(y);
+    if (nullp(y)) return nullp(x);
     if (obj_is_char(x)) return obj_is_char(y) && x == y;
     switch(type_of(x)) {
     case integer_tag:
@@ -466,6 +468,17 @@ static object Cyc_display(x) object x;
     case cons_tag:
       printf("("); 
       Cyc_display(car(x));
+
+      // Experimenting with displaying lambda defs in REPL
+      // not good enough but this is a start. would probably need
+      // the same code in write()
+      if (equal(quote_Cyc_191procedure, car(x))) {
+          printf(" ");
+          Cyc_display(cadr(x));
+          printf(")");
+          break;
+      }
+
       for (tmp = cdr(x); tmp && ((closure) tmp)->tag == cons_tag; tmp = cdr(tmp)) {
           printf(" ");
           Cyc_display(car(tmp));
