@@ -19,6 +19,7 @@
         ((boolean? exp) #t)
         ((string? exp) #t)
         ((char? exp) #t)
+        ((eof-object? exp) #t)
         (else #f)))
 
 (define (variable? exp) (symbol? exp))
