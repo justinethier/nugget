@@ -1,4 +1,4 @@
-;; A temporary test file, move everything to a test suite and/or docs once it works!
+;; This is a temporary test file, move everything to a test suite and/or docs once it works!
 
 ;; The purpose of this file is to test interactions between the interpreter
 ;; and compiled code.
@@ -8,6 +8,7 @@
 ;;   accessible by the interpreter (otherwise code would not compile)
 ;; - The interpreter should be able to access compiled variables, including
 ;;   functions
+;; - The interpreter should be able to call compiled functions
 ;; - The interpreter should be able to change variables that originate
 ;;   in compiled code
 ;; - If eval is never called, compiled code can be more efficient by omitting
@@ -17,6 +18,7 @@
 ;; Presumably the interpreter's global environment needs to include compiled globals as well. It should also be extended to include local vars, presumably prior to each call to eval??
 ;;
 ;; global env can be extended to include C globals and locals. their representations will be:
+;;
 ;; - globals are just C variables. problem is, we may need to include the locations of those vars. otherwise how can the interpreter mutate them? IE, if global 'x' is a list, need the memory location of 'x' not the list, if we want to mutate the list
 ;;   simple - add a new type for globals that includes the memory address,
 ;;            but whenever we look one up, return the obj at that address.
