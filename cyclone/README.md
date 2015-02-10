@@ -48,7 +48,7 @@ References
 - [R<sup>5</sup>RS Scheme Specification](http://www.schemers.org/Documents/Standards/R5RS/HTML/)
 - [R<sup>7</sup>RS Scheme Specification](http://trac.sacrideo.us/wg/wiki)
 - [Structure and Interpretation of Computer Programs](https://mitpress.mit.edu/sicp/full-text/book/book.html), by Harold Abelson and Gerald Jay Sussman with Julie Sussman 
-- [The 90 minute Scheme to C compiler](http://churchturing.org/y/90-min-scc.pdf)
+- [The 90 minute Scheme to C compiler](http://churchturing.org/y/90-min-scc.pdf), by Marc Feeley
 
 License
 -------
