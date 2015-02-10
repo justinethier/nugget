@@ -881,6 +881,7 @@ defprimitive(car);
 defprimitive(cdr);
 defprimitive(cadr);
 defprimitive(null_127);
+defprimitive(_87);
 
 // TODO: experimental apply support
 typedef union {
@@ -940,6 +941,9 @@ static object apply(common_type *alloced, object func, object args){
       } else if (func == primitive_null_127) {
           object tmp = car(args);
           return Cyc_is_null(tmp);
+      } else if (func == primitive__87) {
+          __sum(i, car(args), cadr(args));
+          alloced->integer_t = i;
       } else if (func == primitive_car) {
           return car(car(args));
       } else if (func == primitive_cdr) {
