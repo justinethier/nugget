@@ -413,7 +413,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; c-compile-prim : prim-exp -> string
-(define (c-compile-prim p)
+(define (c-compile-prim p cont)
   (let* ((c-func
           (cond
             ((eq? p '+)                     "__sum")
@@ -506,7 +506,13 @@
                   (list
                     (string-append 
                       type " " cv-name " = " c-func "("
-                      (if (eq? p 'apply) "&c, " "") ;; TODO: shouldn't hardcode "c"
+                      (if (eq? p 'apply) 
+;; TODO: not good enough, may need to create
+;; a closure if __lambda is passed, and then
+;; use the closure here
+                          (string-append cont ", ")
+                          "")
+                      ;(if (eq? p 'apply) "&c, " "") ;; TODO: shouldn't hardcode "c"
                       )))))))
     (cond
      ((prim/c-var-assign p)
@@ -599,25 +605,26 @@
         ((lambda? fun)
          (let* ((lid (allocate-lambda (c-compile-lambda fun))) ;; TODO: pass in free vars? may be needed to track closures
                                                                ;; properly, wait until this comes up in an example
+                (this-cont (string-append "__lambda_" (number->string lid)))
                 (cgen 
                   (c-compile-args
                      args 
                      append-preamble 
                      ""
-                     cont))
+                     this-cont))
                 (num-cargs (c:num-args cgen)))
            (set-c-call-arity! num-cargs)
            (c-code
              (string-append
                (c:allocs->str (c:allocs cgen))
                "return_check" (number->string num-cargs) 
-               "(__lambda_" (number->string lid)
+               "(" this-cont
                (if (> num-cargs 0) "," "") ; TODO: how to propagate continuation - cont " "
                   (c:body cgen) ");"))))
 
         ((prim? fun)
          (let* ((c-fun 
-                 (c-compile-prim fun))
+                 (c-compile-prim fun cont))
                 (c-args
                  (c-compile-args args append-preamble "" cont))
                 (num-args (length args))
