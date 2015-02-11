@@ -2,6 +2,8 @@ Working TODO list:
 
  - Use a lib.scm for libs, similar to eval/parser modules?
 
+ - Add the cond-expand macro to allow selective-inclusion of code for chicken/husk/cyclone
+
  - cyclone should return an error code (IE: 1) when compilation fails and a 0 when it is successful. that way it can be scripted via bash (for example)
  - along the same lines, output should be controlled in a better way. or at minimum should print errors using stderr (possible with standard scheme, though??)
 
