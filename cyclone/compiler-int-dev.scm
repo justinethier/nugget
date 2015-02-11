@@ -7,6 +7,8 @@ crazy idea - can apply be modified to take a closure as the first arg?
 that way we can allocate whatever we want when calling apply, and
 could easily return these lists to the interpreter
 
+it may be possible to modify c-compile-args for this purpose, by passing the continuation there and then modifying how apply is compiled. might be a big change though - htf does the cont get down to c-compile-prim?
+
 ;; The purpose of this file is to test interactions between the interpreter
 ;; and compiled code.
 ;;
