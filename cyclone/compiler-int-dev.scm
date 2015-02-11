@@ -11,6 +11,15 @@ it may be possible to modify c-compile-args for this purpose, by passing the con
 
 what is the cont parameter being used for? can we use it?
 
+test code:
+;(let ((x (apply length '((#t #f))))
+;      (y (apply length '((#t #f)))))
+;(if (apply length '((#t #f)))
+;  2
+;  #f))
+
+(write (cons (apply cons '(1 2)) (apply cons '(3 4))))
+
 ;; The purpose of this file is to test interactions between the interpreter
 ;; and compiled code.
 ;;
