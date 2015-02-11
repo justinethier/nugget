@@ -85,6 +85,7 @@ typedef long tag_type;
 #define eof_tag 13
 #define port_tag 14
 #define boolean_tag 15
+#define cvar_tag 16
 
 #define nil NULL
 #define eq(x,y) (x == y)
@@ -117,6 +118,18 @@ typedef void *object;
 /* Define function type. */
 
 typedef void (*function_type)();
+
+/* Define experimental c-variable integration type */
+/* EG: make_cvar(tmp3, (object *)&__glo_procedure_91tag);
+       Cyc_set_cvar(&tmp3, obj_char2obj('a')); */
+typedef struct {tag_type tag; object *pvar;} cvar_type;
+typedef cvar_type *cvar;
+#define make_cvar(n,v) cvar_type n; n.tag = cvar_tag; n.pvar = v;
+static object Cyc_get_cvar(cvar_type *var) {
+    return *(var->pvar); }
+static object Cyc_set_cvar(cvar_type *var, object value) {
+    *(var->pvar) = value;
+    return value;}
 
 /* Define boolean type. */
 typedef struct {const tag_type tag; const char *pname;} boolean_type;
@@ -1119,6 +1132,12 @@ static char *transport(x, gcgen) char *x; int gcgen;
        forward(x) = nx; type_of(x) = forward_tag;
        x = (char *) nx; allocp = ((char *) nx)+sizeof(port_type);
        return (char *) nx;}
+    case cvar_tag:
+      {register cvar_type *nx = (cvar_type *) allocp;
+       type_of(nx) = cvar_tag; nx->pvar = ((cvar_type *) x)->pvar;
+       forward(x) = nx; type_of(x) = forward_tag;
+       x = (char *) nx; allocp = ((char *) nx)+sizeof(cvar_type);
+       return (char *) nx;}
     case forward_tag:
        return (char *) forward(x);
     case eof_tag: break;
@@ -1262,6 +1281,11 @@ static void GC_loop(int major, closure cont, object *ans, int num_ans)
  printf("DEBUG transport port \n");
 #endif
         scanp += sizeof(port_type); break;
+      case cvar_tag:
+#if DEBUG_GC
+ printf("DEBUG transport cvar \n");
+#endif
+        scanp += sizeof(cvar_type); break;
       case eof_tag:
       case primitive_tag:
       case symbol_tag: 
