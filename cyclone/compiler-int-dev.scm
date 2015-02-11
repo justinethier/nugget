@@ -1,5 +1,9 @@
 ;; This is a temporary test file, move everything to a test suite and/or docs once it works!
 
+
+TODO: next step - create a function to export global (vars, values) to interpreter
+want to be able to call this when init'ing the global-env
+
 ;; The purpose of this file is to test interactions between the interpreter
 ;; and compiled code.
 ;;
