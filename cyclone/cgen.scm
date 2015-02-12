@@ -506,13 +506,13 @@
                   (list
                     (string-append 
                       type " " cv-name " = " c-func "("
-                      (if (eq? p 'apply) 
+;                      (if (eq? p 'apply) 
 ;; TODO: not good enough, may need to create
 ;; a closure if __lambda is passed, and then
 ;; use the closure here
-                          (string-append cont ", ")
-                          "")
-                      ;(if (eq? p 'apply) "&c, " "") ;; TODO: shouldn't hardcode "c"
+;                          (string-append cont ", ")
+;                          "")
+                      (if (eq? p 'apply) "&c, " "") ;; TODO: shouldn't hardcode "c"
                       )))))))
     (cond
      ((prim/c-var-assign p)
@@ -626,7 +626,7 @@
          (let* ((c-fun 
                  (c-compile-prim fun cont))
                 (c-args
-                 (c-compile-args args append-preamble "" cont))
+                 (c-compile-args args append-preamble "" ""))
                 (num-args (length args))
                 (num-args-str
                   (string-append 
@@ -661,22 +661,27 @@
 
         ;; TODO: may not be good enough, closure app could be from an elt
         ((tagged-list? '%closure-ref fun)
-         (let* ((comp (c-compile-args 
-                         args append-preamble "  " cont)))
-           (set-c-call-arity! (c:num-args comp))
+         (let* ((cfun (c-compile-args (list (car args)) append-preamble "  " cont))
+                (this-cont (c:body cfun))
+                (cargs (c-compile-args (cdr args) append-preamble "  " this-cont)))
+           (set-c-call-arity! (c:num-args cargs))
            (c-code 
              (string-append
-               (c:allocs->str (c:allocs comp) "\n")
-               "return_funcall" (number->string (- (c:num-args comp) 1))
+               (c:allocs->str (c:allocs cfun) "\n")
+               (c:allocs->str (c:allocs cargs) "\n")
+               "return_funcall" (number->string (c:num-args cargs))
                "("
-               (c:body comp)
+               this-cont
+               (if (> (c:num-args cargs) 0) "," "")
+               (c:body cargs)
                ");"))))
 
         ((tagged-list? '%closure fun)
          (let* ((cfun (c-compile-closure 
                         fun append-preamble cont))
+                (this-cont (string-append "(closure)" (c:body cfun)))
                 (cargs (c-compile-args
-                         args append-preamble "  " cont))
+                         args append-preamble "  " this-cont))
                 (num-cargs (c:num-args cargs)))
            (set-c-call-arity! num-cargs)
            (c-code
@@ -685,7 +690,7 @@
                 (c:allocs->str (c:allocs cargs) "\n")
                 "return_funcall" (number->string num-cargs)
                 "("
-                "(closure)" (c:body cfun) 
+                this-cont
                 (if (> num-cargs 0) "," "")
                 (c:body cargs)
                 ");"))))
