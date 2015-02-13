@@ -84,8 +84,10 @@
 ;; 
 ;; case #1 - pass a global variable to the interpreter
 (define x 1)
+(define y 2)
 (write (eval 'x))
-x ;; oh shit, otherwise it gets optimized out!
+(write (list 'after-eval 'x x 'y y))
+x ;; oh shit, need to reference x/y otherwise they get optimized out!
 
 ;; case #2 - pass a local (IE, lambda var)
 
