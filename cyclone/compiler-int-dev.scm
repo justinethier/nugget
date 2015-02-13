@@ -85,6 +85,7 @@
 ;; case #1 - pass a global variable to the interpreter
 (define x 1)
 (write (eval 'x))
+x ;; oh shit, otherwise it gets optimized out!
 
 ;; case #2 - pass a local (IE, lambda var)
 
