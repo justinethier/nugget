@@ -878,15 +878,15 @@ static object Cyc_io_peek_char(object port) {
     return Cyc_EOF;
 }
 
-#define CYC_GLOBAL_VARS \
-  make_cvar(v1, (object *)&__glo_x); \
-  make_cvar(v2, (object *)&__glo_y); \
-  make_cons(c2, v2, nil); \
-  make_cons(c1, v1, c2); \
-  return c1 // But how... ?
-static object Cyc_global_vars(){
-    CYC_GLOBAL_VARS
-}
+#define CYC_GLOBAL_VARS make_cons(c1,nil,nil);
+//#define CYC_GLOBAL_VARS \
+//  make_cvar(v1, (object *)&__glo_x); \
+//  make_cvar(v2, (object *)&__glo_y); \
+//  make_cons(c2, &v2, nil); \
+//  make_cons(c1, &v1, &c2); // c1 is the 'root'
+//static object Cyc_global_vars(){
+//    CYC_GLOBAL_VARS
+//}
 
 /* Primitive types */
 //typedef common_type (*prim_function_type)();
@@ -907,6 +907,7 @@ defprimitive(cdr);
 defprimitive(cadr);
 defprimitive(null_127);
 defprimitive(_87); // The plus symbol: +
+defprimitive(Cyc_91global_91vars);
 
 /* All constant-size objects */
 typedef union {
@@ -928,10 +929,11 @@ static object apply(object cont, object func, object args){
   object result;
   common_type buf;
 
-  if (nullp(args)) {
-      printf("Error: no arguments passed to apply\n");
-      exit(1);
-  }
+// TODO: consider passing an argc for just this purpose
+//  if (nullp(args)) {
+//      printf("Error: no arguments passed to apply\n");
+//      exit(1);
+//  }
 
   switch(type_of(func)) {
     case primitive_tag:
@@ -955,6 +957,9 @@ static object apply(object cont, object func, object args){
           result = cdr(car(args));
       } else if (func == primitive_cadr) {
           result = cadr(car(args));
+      } else if (func == primitive_Cyc_91global_91vars) {
+          CYC_GLOBAL_VARS
+          result = &c1;
 // caar(x) (car(car(x)))
 // cdar(x) (cdr(car(x)))
 // cddr(x) (cdr(cdr(x)))

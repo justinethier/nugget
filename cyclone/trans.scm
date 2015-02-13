@@ -467,6 +467,7 @@
 ; prim? : exp -> boolean
 (define (prim? exp)
   (member exp '(
+     Cyc-global-vars
      +
      -
      *
