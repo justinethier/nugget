@@ -317,6 +317,8 @@ static object cell_set(object cell, object value){
 
 /* Prototypes for Lisp built-in functions. */
 
+static object apply(object cont, object func, object args);
+static void Cyc_apply(int argc, closure cont, object prim, ...);
 static list mcons(object,object);
 static object terpri(void);
 static object Cyc_display(object);
@@ -894,9 +896,9 @@ defprimitive(car);
 defprimitive(cdr);
 defprimitive(cadr);
 defprimitive(null_127);
-defprimitive(_87);
+defprimitive(_87); // The plus symbol: +
 
-// TODO: experimental apply support
+/* All constant-size objects */
 typedef union {
   cons_type cons_t;
   symbol_type symbol_t;
@@ -906,39 +908,16 @@ typedef union {
   string_type string_t;
 } common_type;
 
-// TODO: in order to support both value and object types, I think this is
-//       going to have to return a pointer. that means apply is going to 
-//       have to return a pointer as well. Perhaps we can still get this to
-//       work by having the caller to apply allocate an object on the stack
-//       for the result, and pass a pointer to that object into apply. That
-//       way there is a place for the result to go. will require some rework
-//       in cgen to support, though.
-//       anyway, test cases are map.scm and tests/apply.scm
-//static common_type *obj2common(object obj, common_type *result) {
-//  common_type result;
-//  // TODO: if (nullp(obj)) ???
-//  if (obj_is_char(obj)){
-//      return (long)obj;
-//  }
-//
-//  switch(type_of(obj)){
-////  case cons_tag:
-////    *result.comm.cons_t.tag = ...
-//  default:
-//    printf("obj2common - unhandled tag %ld\n", type_of(obj));
-//    exit(1);
-//  }
-//  return result;
-//}
-
 /*
  *
- * @param alloced - A pre-allocated buffer used to store a new object
- *                  created by the applied function 
+ * @param cont - Continuation for the function to call into
  * @param func - Function to execute
  * @param args - A list of arguments to the function
  */
-static object apply(common_type *alloced, object func, object args){
+static object apply(object cont, object func, object args){
+  object result;
+  common_type buf;
+
   if (nullp(args)) {
       printf("Error: no arguments passed to apply\n");
       exit(1);
@@ -948,21 +927,24 @@ static object apply(common_type *alloced, object func, object args){
     case primitive_tag:
       if (func == primitive_cons) {
           make_cons(c, car(args), cadr(args));
-          alloced->cons_t = c;
+          buf.cons_t = c;
+          result = &buf;
       } else if (func == primitive_length) {
-          alloced->integer_t = Cyc_length(car (args));
+          buf.integer_t = Cyc_length(car (args));
+          result = &buf;
       } else if (func == primitive_null_127) {
           object tmp = car(args);
-          return Cyc_is_null(tmp);
+          result = Cyc_is_null(tmp);
       } else if (func == primitive__87) {
           __sum(i, car(args), cadr(args));
-          alloced->integer_t = i;
+          buf.integer_t = i;
+          result = &buf;
       } else if (func == primitive_car) {
-          return car(car(args));
+          result = car(car(args));
       } else if (func == primitive_cdr) {
-          return cdr(car(args));
+          result = cdr(car(args));
       } else if (func == primitive_cadr) {
-          return cadr(car(args));
+          result = cadr(car(args));
 // caar(x) (car(car(x)))
 // cdar(x) (cdr(car(x)))
 // cddr(x) (cdr(cdr(x)))
@@ -999,14 +981,17 @@ static object apply(common_type *alloced, object func, object args){
       printf("Invalid object type %ld\n", type_of(func));
       exit(1);
   }
-  return (object)alloced;
+  return_funcall1(cont, result);
+  return nil; // TODO: restructure to avoid this?
+              // would require emitting apply's such that they are not assigning a val,
+              // but instead they replace the final call to return_X.
+              // Like at the end of Cyc_apply
 }
 
 // Version of apply meant to be called from within compiled code
 static void Cyc_apply(int argc, closure cont, object prim, ...){
     va_list ap;
     object tmp;
-    common_type buf;
     int i;
     list args = alloca(sizeof(cons_type) * argc);
     
@@ -1023,15 +1008,7 @@ static void Cyc_apply(int argc, closure cont, object prim, ...){
     //printf("\n");
 
     va_end(ap);
-    {
-     tmp = apply(&buf, prim, (object)&args[0]);
-     //printf("RESULT = ");
-     //Cyc_display(tmp); //(object)result);
-     //printf("\n");
-
-     // Call into cont with single result
-     (cont->fn)(1, cont, tmp);
-    }
+    apply(cont, prim, (object)&args[0]);
 }
 // END apply
 
