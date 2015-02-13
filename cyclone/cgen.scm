@@ -970,6 +970,32 @@
     (emit "
   static void c_entry_pt(argc, env,cont) int argc; closure env,cont; { ")
 
+    ;; Initialize Cyc_global_variables
+;    (for-each
+;      (lambda (g)
+;        (let ((cvar-sym (mangle (gensym 'cvar)))
+;              (pair-sym (mangle (gensym 'pair))))
+;         (emits 
+;           (string-append 
+;             "  make_cvar(" cvar-sym 
+;             ", (object *)&" (mangle-global (car g)) ");"))
+;         (emits
+;           (string-append
+;             "make_cons(" pair-sym "," ; TODO: how to get EG: quote_x
+;             ", &" cvar-sym ");"))
+;      )
+;      *globals*)
+      ;; TODO: then output the list using make_cons to construct
+      ;; TODO: then assign head of list to Cyc_global_variables
+; Output should be similar to:
+;  make_cvar(cvar2, (object *)&__glo_y);
+;  make_cvar(cvar1, (object *)&__glo_x);
+;  make_cons(pair2, quote_y, &cvar2);
+;  make_cons(pair1, quote_x, &cvar1);
+;  make_cons(c2, &pair2, nil);
+;  make_cons(c1, &pair1, &c2);
+;  Cyc_global_variables = &c1;
+
     ;; Initialize symbol table
     (for-each
         (lambda (sym)
