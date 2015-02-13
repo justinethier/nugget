@@ -878,6 +878,16 @@ static object Cyc_io_peek_char(object port) {
     return Cyc_EOF;
 }
 
+#define CYC_GLOBAL_VARS \
+  make_cvar(v1, (object *)&__glo_x); \
+  make_cvar(v2, (object *)&__glo_y); \
+  make_cons(c2, v2, nil); \
+  make_cons(c1, v1, c2); \
+  return c1 // But how... ?
+static object Cyc_global_vars(){
+    CYC_GLOBAL_VARS
+}
+
 /* Primitive types */
 //typedef common_type (*prim_function_type)();
 //typedef void (*prim_function_type)();
