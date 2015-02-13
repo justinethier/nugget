@@ -317,6 +317,7 @@ static object cell_set(object cell, object value){
 
 /* Prototypes for Lisp built-in functions. */
 
+static object Cyc_global_variables = nil;
 static object apply(object cont, object func, object args);
 static void Cyc_apply(int argc, closure cont, object prim, ...);
 static list mcons(object,object);
@@ -464,6 +465,9 @@ static object Cyc_display(x) object x;
       break;
     case primitive_tag:
       printf("<primitive>");
+      break;
+    case cvar_tag:
+      printf("<internal object>");
       break;
     case boolean_tag:
       printf("#%s",((boolean_type *) x)->pname);
@@ -878,12 +882,15 @@ static object Cyc_io_peek_char(object port) {
     return Cyc_EOF;
 }
 
-#define CYC_GLOBAL_VARS make_cons(c1,nil,nil);
+//TODO: autogenerate this and stick it in c_entry_pt
+//#define CYC_GLOBAL_VARS make_cons(c1,nil,nil);
 //#define CYC_GLOBAL_VARS \
-//  make_cvar(v1, (object *)&__glo_x); \
-//  make_cvar(v2, (object *)&__glo_y); \
-//  make_cons(c2, &v2, nil); \
-//  make_cons(c1, &v1, &c2); // c1 is the 'root'
+//  make_cvar(cvar2, (object *)&__glo_y); \
+//  make_cvar(cvar1, (object *)&__glo_x); \
+//  make_cons(pair2, quote_y, &cvar2); \
+//  make_cons(pair1, quote_x, &cvar1); \
+//  make_cons(c2, &pair2, nil); \
+//  make_cons(c1, &pair1, &c2); // c1 is the 'root', assign Cyc_global_variables to it!
 //static object Cyc_global_vars(){
 //    CYC_GLOBAL_VARS
 //}
@@ -958,8 +965,7 @@ static object apply(object cont, object func, object args){
       } else if (func == primitive_cadr) {
           result = cadr(car(args));
       } else if (func == primitive_Cyc_91global_91vars) {
-          CYC_GLOBAL_VARS
-          result = &c1;
+          result = Cyc_global_variables;
 // caar(x) (car(car(x)))
 // cdar(x) (cdr(car(x)))
 // cddr(x) (cdr(cdr(x)))
@@ -1207,6 +1213,7 @@ static void GC_loop(int major, closure cont, object *ans, int num_ans)
 
  /* Transport global variables. */
  //transp(unify_subst);
+ transp(Cyc_global_variables); // Internal global used by the runtime
  GC_GLOBALS
  while (scanp<allocp)       /* Scan the newspace. */
    switch (type_of(scanp))
