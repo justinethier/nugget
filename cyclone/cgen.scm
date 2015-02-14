@@ -983,6 +983,12 @@
                  "  make_cvar(" cvar-sym 
                  ", (object *)&" (mangle-global (car g)) ");"))
              (emits
+TODO:
+; no, don't add a string. want to look up the string as a symbol, and either
+; get that symbol or add/get it if not found
+; need new runtime function based on:
+;static object find_symbol_by_name(const char *name);
+;static object add_symbol_by_name(const char *name);
                (string-append
                  "make_cons(" pair-sym ", \"" (mangle (car g))
                  "\", &" cvar-sym ");\n"))
