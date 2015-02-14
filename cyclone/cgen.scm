@@ -971,20 +971,47 @@
   static void c_entry_pt(argc, env,cont) int argc; closure env,cont; { ")
 
     ;; Initialize Cyc_global_variables
-;    (for-each
-;      (lambda (g)
-;        (let ((cvar-sym (mangle (gensym 'cvar)))
-;              (pair-sym (mangle (gensym 'pair))))
-;         (emits 
-;           (string-append 
-;             "  make_cvar(" cvar-sym 
-;             ", (object *)&" (mangle-global (car g)) ");"))
-;         (emits
-;           (string-append
-;             "make_cons(" pair-sym "," ; TODO: how to get EG: quote_x
-;             ", &" cvar-sym ");"))
-;      )
-;      *globals*)
+    ;; TODO: only need to do this if 'eval' was also compiled
+    (let ((pairs '())
+          (head-pair #f))
+        (for-each
+          (lambda (g)
+            (let ((cvar-sym (mangle (gensym 'cvar)))
+                  (pair-sym (mangle (gensym 'pair))))
+             (emits 
+               (string-append 
+                 "  make_cvar(" cvar-sym 
+                 ", (object *)&" (mangle-global (car g)) ");"))
+             (emits
+               (string-append
+                 "make_cons(" pair-sym ", \"" (mangle (car g))
+                 "\", &" cvar-sym ");\n"))
+             (set! pairs (cons pair-sym pairs))
+          ))
+          *globals*)
+        (let loop ((code '())
+                   (ps pairs)
+                   (cs (map (lambda (_) (mangle (gensym 'c))) pairs)))
+            (cond
+              ((null? ps) 
+               (for-each
+                 (lambda (str)
+                   (emits str))
+                 code))
+              ((null? (cdr ps))
+               (loop (cons (string-append "make_cons(" (car cs) ", &" (car ps) ",nil);\n") code)
+                     (cdr ps)
+                     (cdr cs)))
+              (else
+               (if (not head-pair)
+                   (set! head-pair (car cs)))
+               (loop (cons (string-append "make_cons(" (car cs) ", &" (car ps) ", &" (cadr cs) ");\n") code)
+                     (cdr ps) 
+                     (cdr cs)))))
+        (if head-pair
+            (emits
+              (string-append "Cyc_global_variables = &" head-pair ";"))))
+    
       ;; TODO: then output the list using make_cons to construct
       ;; TODO: then assign head of list to Cyc_global_variables
 ; Output should be similar to:
