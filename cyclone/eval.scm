@@ -194,7 +194,12 @@
          (extend-environment (primitive-procedure-names)
                              (primitive-procedure-objects)
                              the-empty-environment)))
-    initial-env))
+    ;; JAE - add compiled variables
+    ;; TODO: use (cond-expand) to only do this for cyclone
+    (extend-environment
+      (filter (lambda (v) (car v)) (Cyc_global_variables))
+      (filter (lambda (v) (cdr v)) (Cyc_global_variables))
+      initial-env)))
 (define *global-environment* (setup-environment))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
