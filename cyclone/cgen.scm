@@ -414,7 +414,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (prim->c-func p)
   (cond
-     ((eq? p 'Cyc-global-vars)       (error "Not supported by the compiler"))
+     ((eq? p 'Cyc-global-vars)       "Cyc_get_global_variables")
      ((eq? p '+)                     "__sum")
      ((eq? p '-)                     "__sub")
      ((eq? p '*)                     "__mul")
