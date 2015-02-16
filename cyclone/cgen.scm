@@ -970,6 +970,26 @@
     (emit "
   static void c_entry_pt(argc, env,cont) int argc; closure env,cont; { ")
 
+    ;; Initialize symbol table
+    (for-each
+        (lambda (sym)
+            (emit (string-append "  add_symbol(quote_" (mangle sym) ");")))
+        *symbols*)
+
+    ;; Initialize globals
+    (let* ((prefix "  ")
+           (emit-global
+             (lambda (global)
+               (emits (c:allocs->str2 (c:allocs (caddr global)) prefix " \n"))
+               (emits prefix)
+               (emits (mangle-global (car global)))
+               (emits " = ")
+               (emits (c:body (caddr global)))
+               (emit "; "))))
+      (for-each emit-global (filter global-lambda? *globals*))
+      (for-each emit-global (filter global-not-lambda? *globals*))
+      (emit ""))
+
     ;; Initialize Cyc_global_variables
     ;; TODO: only need to do this if 'eval' was also compiled
     (let ((pairs '())
@@ -1011,37 +1031,7 @@
         (if head-pair
             (emits
               (string-append "Cyc_global_variables = &" head-pair ";"))))
-    
-      ;; TODO: then output the list using make_cons to construct
-      ;; TODO: then assign head of list to Cyc_global_variables
-; Output should be similar to:
-;  make_cvar(cvar2, (object *)&__glo_y);
-;  make_cvar(cvar1, (object *)&__glo_x);
-;  make_cons(pair2, quote_y, &cvar2);
-;  make_cons(pair1, quote_x, &cvar1);
-;  make_cons(c2, &pair2, nil);
-;  make_cons(c1, &pair1, &c2);
-;  Cyc_global_variables = &c1;
 
-    ;; Initialize symbol table
-    (for-each
-        (lambda (sym)
-            (emit (string-append "  add_symbol(quote_" (mangle sym) ");")))
-        *symbols*)
-
-    ;; Initialize globals
-    (let* ((prefix "  ")
-           (emit-global
-             (lambda (global)
-               (emits (c:allocs->str2 (c:allocs (caddr global)) prefix " \n"))
-               (emits prefix)
-               (emits (mangle-global (car global)))
-               (emits " = ")
-               (emits (c:body (caddr global)))
-               (emit "; "))))
-      (for-each emit-global (filter global-lambda? *globals*))
-      (for-each emit-global (filter global-not-lambda? *globals*))
-      (emit ""))
     (emit compiled-program)
     (emit "}")
     (emit *c-main-function*)))

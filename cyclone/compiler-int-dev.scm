@@ -86,8 +86,6 @@
 (define x 1)
 (define y 2)
 (write (eval '(Cyc-global-vars)))
-TODO: is quote_x not the same as what find_or_add returns? need to run
-the debugging and see what is going on 
 (write (eval 'x))
 (write (list 'after-eval 'x x 'y y))
 x ;; oh shit, need to reference x/y otherwise they get optimized out!
