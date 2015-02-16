@@ -85,8 +85,10 @@
 ;; case #1 - pass a global variable to the interpreter
 (define x 1)
 (define y 2)
+(define *z* 3)
 (write (eval '(Cyc-global-vars)))
 (write (eval 'x))
+(write (eval '*z*))
 (write (list 'after-eval 'x x 'y y))
 x ;; oh shit, need to reference x/y otherwise they get optimized out!
 
