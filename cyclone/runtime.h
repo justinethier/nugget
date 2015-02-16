@@ -335,10 +335,22 @@ static void main_main(long stack_size,long heap_size,char *stack_base) never_ret
 static long long_arg(int argc,char **argv,char *name,long dval);
 
 /* Symbol Table */
+
+/* Notes for the symbol table
+
+ string->symbol can:
+  - lookup symbol in the table
+  - if found, return that pointer
+  - otherwise, allocate symbol in table and return ptr to it
+
+ For now, GC of symbols is missing. long-term it probably would be desirable
+*/
+
 char *_strdup (const char *s);
-static object find_symbol_by_name(const char *name);
 static object add_symbol(symbol_type *psym);
 static object add_symbol_by_name(const char *name);
+static object find_symbol_by_name(const char *name);
+static object find_or_add_symbol(const char *name);
 list symbol_table = nil;
 
 char *_strdup (const char *s) {
@@ -357,27 +369,25 @@ static object find_symbol_by_name(const char *name) {
 }
 
 static object add_symbol(symbol_type *psym) {
-   symbol_table = mcons(psym, symbol_table);
-   return psym;
+  symbol_table = mcons(psym, symbol_table);
+  return psym;
 }
 
 static object add_symbol_by_name(const char *name) {
-   symbol_type sym = {symbol_tag, _strdup(name), nil};
-   symbol_type *psym = malloc(sizeof(symbol_type));
-   memcpy(psym, &sym, sizeof(symbol_type));
-   return add_symbol(psym);
+  symbol_type sym = {symbol_tag, _strdup(name), nil};
+  symbol_type *psym = malloc(sizeof(symbol_type));
+  memcpy(psym, &sym, sizeof(symbol_type));
+  return add_symbol(psym);
 }
 
-/* TODO: symbol table
-
- string->symbol can:
-  - lookup symbol in the table
-  - if found, return that pointer
-  - otherwise, allocate symbol in table and return ptr to it
-
-
- For now, GC of symbols is missing. long-term it probably would be desirable
-*/
+static object find_or_add_symbol(const char *name){
+  object sym = find_symbol_by_name(name);
+  if (sym){
+    return sym;
+  } else {
+    return add_symbol_by_name(name);
+  }
+}
 
 /* Global variables. */
 
