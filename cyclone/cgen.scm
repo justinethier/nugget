@@ -1004,7 +1004,7 @@
                  ", (object *)&" (mangle-global (car g)) ");"))
              (emits
                (string-append
-                 "make_cons(" pair-sym ", find_or_add_symbol(\"" (mangle (car g))
+                 "make_cons(" pair-sym ", find_or_add_symbol(\"" (symbol->string (car g))
                  "\"), &" cvar-sym ");\n"))
              (set! pairs (cons pair-sym pairs))
           ))
