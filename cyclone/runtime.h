@@ -125,11 +125,6 @@ typedef void (*function_type)();
 typedef struct {tag_type tag; object *pvar;} cvar_type;
 typedef cvar_type *cvar;
 #define make_cvar(n,v) cvar_type n; n.tag = cvar_tag; n.pvar = v;
-static object Cyc_get_cvar(cvar_type *var) {
-    return *(var->pvar); }
-static object Cyc_set_cvar(cvar_type *var, object value) {
-    *(var->pvar) = value;
-    return value;}
 
 /* Define boolean type. */
 typedef struct {const tag_type tag; const char *pname;} boolean_type;
@@ -319,6 +314,8 @@ static object cell_set(object cell, object value){
 
 static object Cyc_global_variables = nil;
 static object Cyc_get_global_variables();
+static object Cyc_get_cvar(object var);
+static object Cyc_set_cvar(cvar_type *var, object value);
 static object apply(object cont, object func, object args);
 static void Cyc_apply(int argc, closure cont, object prim, ...);
 static list mcons(object,object);
@@ -459,6 +456,19 @@ static object Cyc_get_global_variables(){
     return Cyc_global_variables;
 }
 
+static object Cyc_get_cvar(object var) {
+    if (nullp(var) || obj_is_char(var)) return var;
+    if (type_of(var) == cvar_tag) {
+        return *(((cvar_type *)var)->pvar);
+    }
+    return var;
+}
+
+// TODO: need to build this out
+static object Cyc_set_cvar(cvar_type *var, object value) {
+    *(var->pvar) = value;
+    return value;}
+
 static object Cyc_display(x) object x;
 {object tmp = nil;
  if (nullp(x)) {printf("()"); return x;}
@@ -482,7 +492,7 @@ static object Cyc_display(x) object x;
       printf("<primitive>");
       break;
     case cvar_tag:
-      printf("<internal object>");
+      Cyc_display(Cyc_get_cvar(x));
       break;
     case boolean_tag:
       printf("#%s",((boolean_type *) x)->pname);

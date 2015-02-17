@@ -468,6 +468,7 @@
 (define (prim? exp)
   (member exp '(
      Cyc-global-vars
+     Cyc-get-cvar
      +
      -
      *

@@ -415,6 +415,7 @@
 (define (prim->c-func p)
   (cond
      ((eq? p 'Cyc-global-vars)       "Cyc_get_global_variables")
+     ((eq? p 'Cyc-get-cvar)          "Cyc_get_cvar")
      ((eq? p '+)                     "__sum")
      ((eq? p '-)                     "__sub")
      ((eq? p '*)                     "__mul")

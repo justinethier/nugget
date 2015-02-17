@@ -86,9 +86,9 @@
 (define x 1)
 (define y 2)
 (define *z* 3)
-(write (eval '(Cyc-global-vars)))
+;(write (eval '(Cyc-global-vars)))
 (write (eval 'x))
-(write (eval '*global-environment*))
+;(write (eval '*global-environment*))
 (write (eval '*z*))
 (write (list 'after-eval 'x x 'y y '*z* *z*))
 x ;; oh shit, need to reference x/y otherwise they get optimized out!

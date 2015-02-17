@@ -119,7 +119,8 @@
       (cond ((null? vars)
              (env-loop (enclosing-environment env)))
             ((eq? var (car vars))
-             (car vals))
+             (Cyc-get-cvar (car vals))) ;; TODO: use cond-expand for this
+             ;(car vals)) ;; TODO: direct access
             (else (scan (cdr vars) (cdr vals)))))
     (if (eq? env the-empty-environment)
         (error "Unbound variable" var)
