@@ -119,8 +119,11 @@
       (cond ((null? vars)
              (env-loop (enclosing-environment env)))
             ((eq? var (car vars))
-             (Cyc-get-cvar (car vals))) ;; TODO: use cond-expand for this
-             ;(car vals)) ;; TODO: direct access
+             (cond-expand
+               (cyclone
+                 (Cyc-get-cvar (car vals)))
+               (else 
+                 (car vals))))
             (else (scan (cdr vars) (cdr vals)))))
     (if (eq? env the-empty-environment)
         (error "Unbound variable" var)
@@ -195,12 +198,14 @@
          (extend-environment (primitive-procedure-names)
                              (primitive-procedure-objects)
                              the-empty-environment)))
-    ;; JAE - add compiled variables
-    ;; TODO: use (cond-expand) to only do this for cyclone
-    (extend-environment
-      (map (lambda (v) (car v)) (Cyc-global-vars))
-      (map (lambda (v) (cdr v)) (Cyc-global-vars))
-      initial-env)))
+    (cond-expand
+      (cyclone
+        ;; Also include compiled variables
+        (extend-environment
+          (map (lambda (v) (car v)) (Cyc-global-vars))
+          (map (lambda (v) (cdr v)) (Cyc-global-vars))
+          initial-env))
+      (else initial-env))))
 (define *global-environment* (setup-environment))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
