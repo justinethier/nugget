@@ -153,6 +153,10 @@
       (cond ((null? vars)
              (add-binding-to-frame! var val frame))
             ((eq? var (car vars))
+             ;; TODO: update compiled var
+             ;; cond-expand
+             ;;  if cvar
+             ;;     set-cvar
              (set-car! vals val))
             (else (scan (cdr vars) (cdr vals)))))
     (scan (frame-variables frame)
