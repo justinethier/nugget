@@ -88,6 +88,7 @@
 (define *z* 3)
 ;(write (eval '(Cyc-global-vars)))
 (write (eval 'x))
+(write (eval '(set! x 'mutated-x)))
 ;(write (eval '*global-environment*))
 (write (eval '*z*))
 (write (list 'after-eval 'x x 'y y '*z* *z*))
