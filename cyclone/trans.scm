@@ -7,6 +7,8 @@
 ;; various utility functions used by the compiler.
 ;;
 
+(define *features* '(cyclone))
+
 (define *version-banner* "
               :@ 
             @@@  
@@ -110,6 +112,27 @@
                                  (cons (rename 'begin) (cdr cl))
                                  (cons (rename 'cond) (cddr expr))))))
                  (cadr expr)))))
+    (cons 'cond-expand
+      ;; Based on the cond-expand macro from Chibi scheme
+      (lambda (expr rename compare)
+        (define (check x)
+          (if (pair? x)
+              (case (car x)
+                ((and) (every check (cdr x)))
+                ((or) (any check (cdr x)))
+                ((not) (not (check (cadr x))))
+                ;((library) (eval `(find-module ',(cadr x)) (%meta-env)))
+                (else (error "cond-expand: bad feature" x)))
+              (memq x *features*)))
+        (let expand ((ls (cdr expr)))
+          (cond ((null? ls))  ; (error "cond-expand: no expansions" expr)
+                ((not (pair? (car ls))) (error "cond-expand: bad clause" (car ls)))
+                ((eq? 'else (caar ls)) ;(identifier->symbol (caar ls)))
+                 (if (pair? (cdr ls))
+                     (error "cond-expand: else in non-final position")
+                     `(,(rename 'begin) ,@(cdar ls))))
+                ((check (caar ls)) `(,(rename 'begin) ,@(cdar ls)))
+                (else (expand (cdr ls)))))))
   ))
 
 
