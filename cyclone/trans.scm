@@ -497,6 +497,8 @@
   (member exp '(
      Cyc-global-vars
      Cyc-get-cvar
+     Cyc-set-cvar!
+     Cyc-cvar? ;; Cyclone-specific
      +
      -
      *

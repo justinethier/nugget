@@ -138,7 +138,14 @@
       (cond ((null? vars)
              (env-loop (enclosing-environment env)))
             ((eq? var (car vars))
-             (set-car! vals val))
+             (cond-expand
+               (cyclone
+                 (if (Cyc-cvar? (car vals))
+TODO: this is not implemented correctly yet in the runtime:
+                   (Cyc-set-cvar! (var vals) val)
+                   (set-car! vals val)))
+               (else
+                 (set-car! vals val))))
             (else (scan (cdr vars) (cdr vals)))))
     (if (eq? env the-empty-environment)
         (error "Unbound variable -- SET!" var)

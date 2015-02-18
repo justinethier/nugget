@@ -416,6 +416,8 @@
   (cond
      ((eq? p 'Cyc-global-vars)       "Cyc_get_global_variables")
      ((eq? p 'Cyc-get-cvar)          "Cyc_get_cvar")
+     ((eq? p 'Cyc-set-cvar!)         "Cyc_set_cvar")
+     ((eq? p 'Cyc-cvar?)             "Cyc_is_cvar")
      ((eq? p '+)                     "__sum")
      ((eq? p '-)                     "__sub")
      ((eq? p '*)                     "__mul")
