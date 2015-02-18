@@ -91,6 +91,9 @@
 (write (eval '(set! x 'mutated-x)))
 ;(write (eval '*global-environment*))
 (write (eval '*z*))
+; TODO: need a valid example of passing a local to eval (assume that is allowed)
+;((lambda (tmp)
+;  (write (eval 'tmp))) #f)
 (write (list 'after-eval 'x x 'y y '*z* *z*))
 x ;; oh shit, need to reference x/y otherwise they get optimized out!
 
