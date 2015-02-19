@@ -141,8 +141,7 @@
              (cond-expand
                (cyclone
                  (if (Cyc-cvar? (car vals))
-TODO: this is not implemented correctly yet in the runtime:
-                   (Cyc-set-cvar! (var vals) val)
+                   (Cyc-set-cvar! (car vals) val)
                    (set-car! vals val)))
                (else
                  (set-car! vals val))))

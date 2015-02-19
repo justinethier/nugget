@@ -114,14 +114,13 @@ typedef void *object;
 #define obj_char2obj(c) ((void *)(((c)<<1) | 1))
 
 #define is_value_type(x) obj_is_char(x)
+#define is_object_type(x) (x && is_value_type(x))
 
 /* Define function type. */
 
 typedef void (*function_type)();
 
-/* Define experimental c-variable integration type */
-/* EG: make_cvar(tmp3, (object *)&__glo_procedure_91tag);
-       Cyc_set_cvar(&tmp3, obj_char2obj('a')); */
+/* Define C-variable integration type */
 typedef struct {tag_type tag; object *pvar;} cvar_type;
 typedef cvar_type *cvar;
 #define make_cvar(n,v) cvar_type n; n.tag = cvar_tag; n.pvar = v;
@@ -315,7 +314,7 @@ static object cell_set(object cell, object value){
 static object Cyc_global_variables = nil;
 static object Cyc_get_global_variables();
 static object Cyc_get_cvar(object var);
-static object Cyc_set_cvar(cvar_type *var, object value);
+static object Cyc_set_cvar(object var, object value);
 static object apply(object cont, object func, object args);
 static void Cyc_apply(int argc, closure cont, object prim, ...);
 static list mcons(object,object);
@@ -457,17 +456,17 @@ static object Cyc_get_global_variables(){
 }
 
 static object Cyc_get_cvar(object var) {
-    if (nullp(var) || obj_is_char(var)) return var;
-    if (type_of(var) == cvar_tag) {
+    if (!is_object_type(var) && type_of(var) == cvar_tag) {
         return *(((cvar_type *)var)->pvar);
     }
     return var;
 }
 
-// TODO: need to build this out
-static object Cyc_set_cvar(cvar_type *var, object value) {
-    *(var->pvar) = value;
-    return value;}
+static object Cyc_set_cvar(object var, object value) {
+    if (!is_object_type(var) && type_of(var) == cvar_tag) {
+        *(((cvar_type *)var)->pvar) = value;
+    }
+    return var;}
 
 static object Cyc_display(x) object x;
 {object tmp = nil;
