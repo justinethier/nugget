@@ -199,8 +199,19 @@
 
 ;; Utilities.
 
-; void : -> void
-(define (void) (if #f #t))
+(cond-expand
+  (cyclone
+    ; member : symbol sorted-set[symbol] -> boolean
+    (define (member sym S)
+      (if (not (pair? S))
+          #f
+          (if (eq? sym (car S))
+              #t
+              (member sym (cdr S)))))
+
+    ; void : -> void
+    (define (void) (if #f #t)))
+  (else #f))
 
 ; tagged-list? : symbol value -> boolean
 (define (tagged-list? tag l)
@@ -237,14 +248,6 @@
                                             (car params))
                                         "$"
                                         (number->string gensym-count)))))))
-
-; member : symbol sorted-set[symbol] -> boolean
-(define (member sym S)
-  (if (not (pair? S))
-      #f
-      (if (eq? sym (car S))
-          #t
-          (member sym (cdr S)))))
 
 ; symbol<? : symbol symobl -> boolean
 (define (symbol<? sym1 sym2)
