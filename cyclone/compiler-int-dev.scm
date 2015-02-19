@@ -1,15 +1,5 @@
 ;; This is a temporary test file, move everything to a test suite and/or docs once it works!
 
-
-;TODO: next step - create a function to export global (vars, values) to interpreter
-;want to be able to call this when init'ing the global-env
-;crazy idea - can apply be modified to take a closure as the first arg?
-;that way we can allocate whatever we want when calling apply, and
-;could easily return these lists to the interpreter
-;
-;it may be possible to modify c-compile-args for this purpose, by passing the continuation there and then modifying how apply is compiled. might be a big change though - htf does the cont get down to c-compile-prim?
-;
-;what is the cont parameter being used for? can we use it?
 ;
 ;test code:
 ;(let ((x (apply length '((#t #f))))

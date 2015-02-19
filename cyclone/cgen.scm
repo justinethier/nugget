@@ -501,11 +501,15 @@
      (else
        (error "unhandled primitive: " p))))
 
-;; c-compile-prim : prim-exp -> string
+;; c-compile-prim : prim-exp -> string -> string
 (define (c-compile-prim p cont)
   (let* ((c-func (prim->c-func p))
          ;; Following closure defs are only used for apply, to
-         ;; create a new closure for the continuation, if needed
+         ;; create a new closure for the continuation, if needed.
+         ;;
+         ;; Apply is different in that it takes a continuation so that it can
+         ;; allocate arbitrary data as needed using alloca, and then call into
+         ;; the cont so allocations can remain on stack until GC.
          (closure-sym (mangle (gensym 'c)))
          (closure-def
            (cond
