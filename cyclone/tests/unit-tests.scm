@@ -85,6 +85,17 @@
 ;#\space
 ;)
 
+;; EVAL section
+(define x 1)
+(define y 2)
+(define *z* 3)
+;(write (eval '(Cyc-global-vars)))
+(assert "eval compiled - x" (eval 'x) x)
+(eval '(set! x 'mutated-x))
+(assert "Access var with a mangled name" (eval '*z*) *z*)
+(assert "Access compile var mutated by eval" x 'mutated-x)
+;; END eval
+
 ; TODO: use display, output without surrounding quotes
 (write (list *num-passed* " tests passed with no errors"))
 ;;
