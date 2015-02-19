@@ -88,6 +88,7 @@
 x ;; oh shit, need to reference x/y otherwise they get optimized out!
 
 ;; case #2 - pass a local (IE, lambda var)
+;; No, this is not allowed, see: http://stackoverflow.com/questions/3844196/how-can-i-use-external-variables-in-eval-in-scheme/3851284#3851284
 
 ;; case #3 - mutate global/local. or is this the same as previous?
 
