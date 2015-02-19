@@ -4,6 +4,83 @@
       (error "Unit test failed [" msg "] actual [" actual "] expected [" expected "]")
       (set! *num-passed* (+ *num-passed* 1))))
 
+;; Adder example
+(define (make-adder x)
+  (lambda (y) (+ x  y)))
+(define increment (make-adder +1))
+(assert "Adder #1" (increment 41) 42)
+(define decrement (make-adder -1))
+(assert "Adder #2" (decrement 42) 41)
+
+(assert "Application example"
+  ((lambda (x) x) (+ 41 1))
+  42)
+
+;; Apply section
+(assert "" (apply length '((#t #f))) 2)
+(assert "" (apply cons '(#t #f)) '(#t . #f))
+(assert "" (apply cadr (list (list 1 2 3 4))) 2)
+(assert "" (apply null? (list '())) #t)
+;; Varargs
+(define (list2 a b . objs) objs)
+(assert "apply varargs" (list 42 1) '(42 1))
+(assert "apply varargs" (list 42 1 2) '(42 1 2))
+(assert "apply varargs" (list2 42 1) '())
+(assert "apply varargs" (list2 42 1 2) '(2))
+
+(assert "begin" (begin 1 2 (+ 1 2) (+ 3 4)) 7)
+
+;; Closure section
+(assert "simple closure"
+  (((lambda (x.1) 
+    (lambda (y.2) 
+      (cons x.1 y.2))) #t) #f)
+ '(#t . #f))
+(assert "closure #2"
+  ((lambda (x y)
+    ((lambda () (- x y)))) 5 4)
+  1)
+
+;; Factorial
+(define (fac n) (if (= n 0) 1 (* n (fac (- n 1)))))
+(assert "Factorial example" (fac 10) 3628800)
+
+;; If section
+(assert "if example" (if #t 1 2) 1)
+(assert "if example" (if #f 1 2) 2)
+(assert "if example" (if (+ 1 2) (+ 3 4) (* 3 4)) 7)
+(assert "if" (if ((lambda (x) (+ x 1)) 0) (+ 1 1) (* 0 0)) 2)
+(assert "no else clause" (if #t 'no-else-clause) 'no-else-clause)
+
+(assert "" (+ (+ 1 1) (* 3 4)) 14)
+
+;; Set section
+((lambda (x)
+    (set! x #t) ; (+ 2 (* 3 4)))
+    (assert "set local x" x #t))
+ #f)
+
+(define a '(#f #f))
+(define b '(#f . #f))
+
+(set-car! a 1)
+(set-cdr! a '(2))
+(assert "set car/cdr a" a '(1 2))
+(set-cdr! a 2)
+(set-car! b '(#t))
+(set-cdr! b '#t)
+
+(assert "set a" a '(1 . 2))
+(assert "set b" b '((#t) . #t))
+
+;; Square example
+(let ((x 10) 
+      (y 20) 
+      (square (lambda (x) (* x x)))) 
+  (begin 
+    (assert "square x" (square x) 100) 
+    (assert "square y" (square y) 400)))
+
 (assert "numeric small reverse" (reverse '(1 2)) '(2 1))
 (assert "small reverse" (reverse '(a b c)) '(c b a))
 (assert "larger reverse" (reverse '(1 2 3 4 5 6 7 8 9 10)) '(10 9 8 7 6 5 4 3 2 1))
