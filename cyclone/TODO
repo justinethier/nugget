@@ -1,5 +1,21 @@
 Working TODO list:
 
+ - Try to detect cycles for printing and (equal?). EG: *global-environment* in the repl
+
+ possible starting point:
+
+(define (has-cycle? ls)
+  (cond
+    [(null? ls) #f]
+    [else (has-cycle-h ls (cdr ls))]))
+(define (has-cycle-h slow-ls fast-ls)
+  (cond
+   [(null? fast-ls) #f]
+   [(null? (cdr fast-ls)) #f]
+   [(eq? (car slow-ls) (car fast-ls)) #t]
+   [else (has-cycle-h (cdr slow-ls) (cddr fast-ls))]))
+
+
  - compiled/interpreted code integration
    * call a compiled function from eval
    * call an interpreted function from compiled code (or is eval good enough? maybe that is the answer?)
