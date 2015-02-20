@@ -10,8 +10,7 @@
   (let ((c (eval (read))))
     (cond
       ((not (eof-object? c))
-       (display c)
-       (display #\newline)
+       (write c)
        (repl))
       (else #f))))
 (repl)
