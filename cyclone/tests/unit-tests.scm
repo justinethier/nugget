@@ -103,7 +103,9 @@
     (assert "square y" (square y) 400)))
 
 ;; String section
-(define a "0123456789")
+(define a "a0123456789")
+(assert "string eq" a "a0123456789")
+;TODO: (assert-not-equal "string eq" a 'a0123456789)
 (define b "abcdefghijklmnopqrstuvwxyz")
 (define c "hello, world!")
 (define d '(#\( #\" #\a #\b #\c #\" #\)))
