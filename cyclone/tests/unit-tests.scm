@@ -37,6 +37,12 @@
       (lambda (k)
         (k 2)))
     2)
+(assert "escape continuation"
+    (call/cc
+      (lambda (return)
+        (begin
+          (return 'return))))
+    'return)
 
 ;; Closure section
 (assert "simple closure"

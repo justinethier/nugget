@@ -1,4 +1,4 @@
-TESTSCM = call-cc-set call-cc unit-tests
+TESTSCM = unit-tests
 # Cannot auto test tail-call-optimization because it runs forever
 TESTFILES = $(addprefix tests/, $(addsuffix .scm, $(TESTSCM)))
 
