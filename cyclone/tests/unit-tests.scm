@@ -30,6 +30,14 @@
 
 (assert "begin" (begin 1 2 (+ 1 2) (+ 3 4)) 7)
 
+;; Continuation section
+(assert
+    "simple call/cc"
+    (call/cc
+      (lambda (k)
+        (k 2)))
+    2)
+
 ;; Closure section
 (assert "simple closure"
   (((lambda (x.1) 
@@ -73,6 +81,13 @@
 (assert "set a" a '(1 . 2))
 (assert "set b" b '((#t) . #t))
 
+;; Scoping example
+(define scope #f)
+(assert "outer scope" scope #f)
+((lambda (scope)
+    (assert "inner scope" scope #t)
+ ) #t)
+
 ;; Square example
 (let ((x 10) 
       (y 20) 
@@ -80,6 +95,24 @@
   (begin 
     (assert "square x" (square x) 100) 
     (assert "square y" (square y) 400)))
+
+;; String section
+(define a "0123456789")
+(define b "abcdefghijklmnopqrstuvwxyz")
+(define c "hello, world!")
+(define d '(#\( #\" #\a #\b #\c #\" #\)))
+;(assert "strings" d "(\"abc\")")
+;(assert "strings" d "(\"abc\")") ;; Test GC
+;(assert "strings" d "(\"abc\")") ;; Test GC
+(set! a "hello 2")
+(assert "strings" a "hello 2")
+
+;; Recursion example:
+(letrec ((fnc (lambda (i) 
+                (begin
+                    ;(display i)
+                    (if (> i 0) (fnc (- i 1)) 0)))))
+    (fnc 10))
 
 (assert "numeric small reverse" (reverse '(1 2)) '(2 1))
 (assert "small reverse" (reverse '(a b c)) '(c b a))
