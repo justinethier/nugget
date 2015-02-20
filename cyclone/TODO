@@ -2,6 +2,8 @@ Working TODO list:
 
  - What is going on with strings in the evaluator, and the "abc" tests in the unit tests?
    seems as though both are being parsed into symbols
+   There is definitely a parsing problem accepting strings with quoted chars, like \". I think the parser is
+   overly simplistic WRT how it handles double-quotes, and does not take escaped ones into account.
 
  - Use a lib.scm for libs, similar to eval/parser modules?
 
