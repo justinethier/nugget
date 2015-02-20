@@ -172,7 +172,7 @@
 
 (define (cyc:error msg)
   (error msg)
-  (exit))
+  (exit 1))
 
 ;; File Utilities
 

@@ -1,13 +1,10 @@
 Working TODO list:
 
- - What is going on with strings in the evaluator, and the "abc" tests in the unit tests?
-   seems as though both are being parsed into symbols
-   There is definitely a parsing problem accepting strings with quoted chars, like \". I think the parser is
-   overly simplistic WRT how it handles double-quotes, and does not take escaped ones into account.
-
  - Use a lib.scm for libs, similar to eval/parser modules?
 
  - cyclone should return an error code (IE: 1) when compilation fails and a 0 when it is successful. that way it can be scripted via bash (for example)
+ or, does it already do this?
+
  - along the same lines, output should be controlled in a better way. or at minimum should print errors using stderr (possible with standard scheme, though??)
 
  - Globals - issue list
