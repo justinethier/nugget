@@ -1,5 +1,8 @@
 Working TODO list:
 
+ - What is going on with strings in the evaluator, and the "abc" tests in the unit tests?
+   seems as though both are being parsed into symbols
+
  - Use a lib.scm for libs, similar to eval/parser modules?
 
  - cyclone should return an error code (IE: 1) when compilation fails and a 0 when it is successful. that way it can be scripted via bash (for example)
