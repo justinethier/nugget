@@ -28,12 +28,15 @@
         delim 
         (string-join (cdr lst) delim)))))
 
-;; Escape newlines in a string, to prevent issues with 
-;; compiling a multi-line string
-(define (escape-newlines str)
+;; Escape chars in a C-string, so it can be safely written to a C file
+(define (cstr:escape-chars str)
   (letrec ((next (lambda (head tail)
                    (cond
                      ((null? head) (list->string (reverse tail)))
+                     ((equal? (car head) #\")
+                      (next (cdr head) (cons #\" (cons #\\ tail))))
+                     ((equal? (car head) #\\)
+                      (next (cdr head) (cons #\\ (cons #\\ tail))))
                      ((equal? (car head) #\newline)
                       (next (cdr head) 
                             (cons #\n (cons #\\ tail))))
@@ -409,7 +412,7 @@
 ;; Keep in mind scheme strings can span lines, contain chars that
 ;; might not be allowed in C, etc.
 (define (->cstr str) 
-  (string-append "\"" (escape-newlines str) "\""))
+  (string-append "\"" (cstr:escape-chars str) "\""))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (prim->c-func p)

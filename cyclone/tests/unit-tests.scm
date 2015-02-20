@@ -108,7 +108,7 @@
 ;TODO: (assert-not-equal "string eq" a 'a0123456789)
 (define b "abcdefghijklmnopqrstuvwxyz")
 (define c "hello, world!")
-(define d '(#\( #\" #\a #\b #\c #\" #\)))
+(define d (list->string '(#\( #\" #\a #\b #\c #\" #\))))
 (assert "strings" d "(\"abc\")")
 (assert "strings" d "(\"abc\")") ;; Test GC
 (assert "strings" d "(\"abc\")") ;; Test GC
