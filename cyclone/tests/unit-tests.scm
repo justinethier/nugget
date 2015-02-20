@@ -109,9 +109,9 @@
 (define b "abcdefghijklmnopqrstuvwxyz")
 (define c "hello, world!")
 (define d '(#\( #\" #\a #\b #\c #\" #\)))
-;(assert "strings" d "(\"abc\")")
-;(assert "strings" d "(\"abc\")") ;; Test GC
-;(assert "strings" d "(\"abc\")") ;; Test GC
+(assert "strings" d "(\"abc\")")
+(assert "strings" d "(\"abc\")") ;; Test GC
+(assert "strings" d "(\"abc\")") ;; Test GC
 (set! a "hello 2")
 (assert "strings" a "hello 2")
 
