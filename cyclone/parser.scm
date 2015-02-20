@@ -292,17 +292,34 @@
 
 (define (read-str fp buf ptbl)
   (let ((c (read-char fp)))
-    ;; TODO: for now, end on raw double-quote. real scheme
-    ;; strings are not quite this simple - see spec.
     (cond
       ((eof-object? c)
        (parse-error "missing closing double-quote" 
          (in-port:get-lnum ptbl)
          (in-port:get-cnum ptbl)))
+      ((equal? #\\ c)
+        (read-str fp (read-str-esc fp buf ptbl) ptbl))
       ((equal? #\" c)
        (list->string (reverse buf)))
       (else
         (read-str fp (cons c buf) ptbl)))))
+
+;; Read an escaped character within a string
+;; The escape '\' has already been read at this point
+(define (read-str-esc fp buf ptbl)
+  (let ((c (read-char fp)))
+    (cond
+      ((eof-object? c)
+       (parse-error "missing escaped character within string"
+         (in-port:get-lnum ptbl)
+         (in-port:get-cnum ptbl)))
+      ((or (equal? #\" c)
+           (equal? #\\ c))
+       (cons c buf))
+      (else
+        (parse-error "invalid escape character in string"
+         (in-port:get-lnum ptbl)
+         (in-port:get-cnum ptbl))))))
 
 (define (sign? c)
   (or
