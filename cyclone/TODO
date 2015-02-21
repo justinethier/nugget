@@ -15,6 +15,12 @@ Working TODO list:
    [(eq? (car slow-ls) (car fast-ls)) #t]
    [else (has-cycle-h (cdr slow-ls) (cddr fast-ls))]))
 
+;; Test code
+;; TODO: why is this broken when using C version of has-cycle?
+(define lst '(a b c d e))
+(set-cdr! lst lst)
+(write (has-cycle? lst))
+;(write (has-cycle? '(1 2)))
 
  - compiled/interpreted code integration
    * call a compiled function from eval
