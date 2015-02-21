@@ -177,6 +177,8 @@
   (list (list 'car car)
         (list 'cdr cdr)
         (list 'cons cons)
+        (list 'set-car! set-car!)
+        (list 'set-cdr! set-cdr!)
         (list 'null? null?)
         (list 'has-cycle? has-cycle?)
         (list 'Cyc-global-vars Cyc-global-vars)

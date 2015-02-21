@@ -552,7 +552,9 @@ static object Cyc_display(x) object x;
           printf(" ");
           Cyc_display(car(tmp));
       }
-      if (tmp && has_cycle == boolean_f) {
+      if (has_cycle == boolean_t) {
+          printf(" ...");
+      } else if (tmp) {
           printf(" . ");
           Cyc_display(tmp);
       }
@@ -955,6 +957,8 @@ defprimitive(length /*, Cyc_length*/);
 defprimitive(car);
 defprimitive(cdr);
 defprimitive(cadr);
+defprimitive(set_91car_67);
+defprimitive(set_91cdr_67);
 defprimitive(null_127);
 defprimitive(_87); // The plus symbol: +
 defprimitive(Cyc_91global_91vars);
@@ -1008,6 +1012,10 @@ static object apply(object cont, object func, object args){
           result = cdr(car(args));
       } else if (func == primitive_cadr) {
           result = cadr(car(args));
+      } else if (func == primitive_set_91car_67) {
+          result = Cyc_set_car(car(args), cadr(args));
+      } else if (func == primitive_set_91cdr_67) {
+          result = Cyc_set_cdr(car(args), cadr(args));
       } else if (func == primitive_Cyc_91global_91vars) {
           result = Cyc_global_variables;
       } else if (func == primitive_has_91cycle_127) {
