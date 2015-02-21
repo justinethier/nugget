@@ -1,26 +1,8 @@
 Working TODO list:
 
- - Try to detect cycles for printing and (equal?). EG: *global-environment* in the repl
-
- possible starting point:
-
-(define (has-cycle? ls)
-  (cond
-    [(null? ls) #f]
-    [else (has-cycle-h ls (cdr ls))]))
-(define (has-cycle-h slow-ls fast-ls)
-  (cond
-   [(null? fast-ls) #f]
-   [(null? (cdr fast-ls)) #f]
-   [(eq? (car slow-ls) (car fast-ls)) #t]
-   [else (has-cycle-h (cdr slow-ls) (cddr fast-ls))]))
-
-;; Test code
-;; TODO: why is this broken when using C version of has-cycle?
-(define lst '(a b c d e))
-(set-cdr! lst lst)
-(write (has-cycle? lst))
-;(write (has-cycle? '(1 2)))
+ - Issues with detecting cycles:
+   - (equal?) loops forever when comparing two different circular lists
+   - printing *global-environment* in the repl still loops forever
 
  - compiled/interpreted code integration
    * call a compiled function from eval
