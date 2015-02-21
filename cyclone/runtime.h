@@ -114,7 +114,7 @@ typedef void *object;
 #define obj_char2obj(c) ((void *)(((c)<<1) | 1))
 
 #define is_value_type(x) obj_is_char(x)
-#define is_object_type(x) (x && is_value_type(x))
+#define is_object_type(x) (x && !is_value_type(x))
 
 /* Define function type. */
 
@@ -456,33 +456,31 @@ static object Cyc_get_global_variables(){
 }
 
 static object Cyc_get_cvar(object var) {
-    if (!is_object_type(var) && type_of(var) == cvar_tag) {
+    if (is_object_type(var) && type_of(var) == cvar_tag) {
         return *(((cvar_type *)var)->pvar);
     }
     return var;
 }
 
 static object Cyc_set_cvar(object var, object value) {
-    if (!is_object_type(var) && type_of(var) == cvar_tag) {
+    if (is_object_type(var) && type_of(var) == cvar_tag) {
         *(((cvar_type *)var)->pvar) = value;
     }
     return var;}
 
 static object Cyc_has_cycle(object lst) {
     object slow_lst, fast_lst;
+    int is_obj = is_object_type(lst);
+    int type = type_of(lst);
     if (nullp(lst) || is_value_type(lst) ||
         (is_object_type(lst) && type_of(lst) != cons_tag)) {
         return (boolean_f);
     }
-printf("assign slow/fast\n");
     slow_lst = lst;
-    fast_lst = car(lst);
+    fast_lst = cdr(lst);
     while(1) {
-printf("while");
         if (nullp(fast_lst)) return boolean_f;
-printf("not nullp(fast\n");
         if (nullp(cdr(fast_lst))) return boolean_f;
-printf("not nullp(cdr(fast\n");
         if (eq(car(slow_lst), car(fast_lst))) return boolean_t;
 
         slow_lst = cdr(slow_lst);
@@ -492,6 +490,8 @@ printf("not nullp(cdr(fast\n");
 
 static object Cyc_display(x) object x;
 {object tmp = nil;
+ object has_cycle = boolean_f;
+ int i = 0;
  if (nullp(x)) {printf("()"); return x;}
  if (obj_is_char(x)) {printf("%c", obj_obj2char(x)); return x;}
  switch (type_of(x))
@@ -531,6 +531,7 @@ static object Cyc_display(x) object x;
       printf("%s", ((string_type *) x)->str);
       break;
     case cons_tag:
+      has_cycle = Cyc_has_cycle(x);
       printf("("); 
       Cyc_display(car(x));
 
@@ -545,10 +546,13 @@ static object Cyc_display(x) object x;
       }
 
       for (tmp = cdr(x); tmp && ((closure) tmp)->tag == cons_tag; tmp = cdr(tmp)) {
+          if (has_cycle == boolean_t) {
+              if (i++ > 20) break; /* arbitrary number, for now */
+          }
           printf(" ");
           Cyc_display(car(tmp));
       }
-      if (tmp) {
+      if (tmp && has_cycle == boolean_f) {
           printf(" . ");
           Cyc_display(tmp);
       }
@@ -945,6 +949,7 @@ static const object primitive_##name = &name##_primitive
 
 #define prim(x) (x && ((primitive)x)->tag == primitive_tag)
 
+// TODO: there has to be a better way:
 defprimitive(cons /*, Cyc_length*/);
 defprimitive(length /*, Cyc_length*/);
 defprimitive(car);
@@ -953,6 +958,7 @@ defprimitive(cadr);
 defprimitive(null_127);
 defprimitive(_87); // The plus symbol: +
 defprimitive(Cyc_91global_91vars);
+defprimitive(has_91cycle_127);
 
 /* All constant-size objects */
 typedef union {
@@ -1004,6 +1010,8 @@ static object apply(object cont, object func, object args){
           result = cadr(car(args));
       } else if (func == primitive_Cyc_91global_91vars) {
           result = Cyc_global_variables;
+      } else if (func == primitive_has_91cycle_127) {
+          result = Cyc_has_cycle(car(args));
 // caar(x) (car(car(x)))
 // cdar(x) (cdr(car(x)))
 // cddr(x) (cdr(cdr(x)))

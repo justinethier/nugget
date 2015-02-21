@@ -178,6 +178,7 @@
         (list 'cdr cdr)
         (list 'cons cons)
         (list 'null? null?)
+        (list 'has-cycle? has-cycle?)
         (list 'Cyc-global-vars Cyc-global-vars)
         (list '+ +)
         ; TODO: <more primitives>
