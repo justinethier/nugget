@@ -468,6 +468,28 @@ static object Cyc_set_cvar(object var, object value) {
     }
     return var;}
 
+static object Cyc_has_cycle(object lst) {
+    object slow_lst, fast_lst;
+    if (nullp(lst) || is_value_type(lst) ||
+        (is_object_type(lst) && type_of(lst) != cons_tag)) {
+        return (boolean_f);
+    }
+printf("assign slow/fast\n");
+    slow_lst = lst;
+    fast_lst = car(lst);
+    while(1) {
+printf("while");
+        if (nullp(fast_lst)) return boolean_f;
+printf("not nullp(fast\n");
+        if (nullp(cdr(fast_lst))) return boolean_f;
+printf("not nullp(cdr(fast\n");
+        if (eq(car(slow_lst), car(fast_lst))) return boolean_t;
+
+        slow_lst = cdr(slow_lst);
+        fast_lst = cddr(fast_lst);
+    }
+}
+
 static object Cyc_display(x) object x;
 {object tmp = nil;
  if (nullp(x)) {printf("()"); return x;}
