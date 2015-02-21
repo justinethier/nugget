@@ -959,6 +959,8 @@ defprimitive(cdr);
 defprimitive(cadr);
 defprimitive(set_91car_67);
 defprimitive(set_91cdr_67);
+defprimitive(eq_127);
+defprimitive(equal_127);
 defprimitive(null_127);
 defprimitive(_87); // The plus symbol: +
 defprimitive(Cyc_91global_91vars);
@@ -999,6 +1001,10 @@ static object apply(object cont, object func, object args){
       } else if (func == primitive_length) {
           buf.integer_t = Cyc_length(car (args));
           result = &buf;
+      } else if (func == primitive_eq_127) {
+          result = Cyc_eq(car(args), cadr(args));
+      } else if (func == primitive_equal_127) {
+          result = equalp(car(args), cadr(args));
       } else if (func == primitive_null_127) {
           object tmp = car(args);
           result = Cyc_is_null(tmp);

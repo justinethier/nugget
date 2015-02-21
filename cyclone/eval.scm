@@ -177,6 +177,8 @@
   (list (list 'car car)
         (list 'cdr cdr)
         (list 'cons cons)
+        (list 'eq? eq?)
+        (list 'equal? equal?)
         (list 'set-car! set-car!)
         (list 'set-cdr! set-cdr!)
         (list 'null? null?)
