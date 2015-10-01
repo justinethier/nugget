@@ -30,7 +30,7 @@ gc_heap_block *gc_heap_create(size_t size, size_t chunk_size)
   h->data = (char *)&(h->data); 
   h->next = NULL;
   free = h->free_list = (gc_free_list *)h->data;
-  next = (gc_free_list *)(((char *) free) + 
+  next = (gc_free_list *)(((char *) free) + gc_free_chunk_size);
   free->size = 0;
   free->next = 
   // TODO: free, next
