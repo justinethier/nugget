@@ -39,8 +39,11 @@ gc_heap *gc_heap_create(size_t size, size_t chunk_size)
   return h;
 }
 
-TODO: probably do want alignment after all... look into it, I assume this means we
+TODO: need to do alignment after all... look into it, I assume this means we
 would be allocating chunks on a word boundary or such.... ?
+need to review all of this code for alignment
+believe we want to word align allocations, which would be 
+
 
 void *gc_try_alloc(gc_heap *h, size_t size) 
 {
