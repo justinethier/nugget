@@ -82,6 +82,28 @@ void *gc_alloc(gc_heap *h, size_t size)
   return gc_try_alloc(h, size);
 }
 
+size_t gc_heap_total_size(gc_heap *h)
+{
+  size_t total_size = 0;
+  while(h) {
+    total_size += h->size;
+    h = h->next;
+  }
+  return total_size;
+}
+
+void gc_collect(gc_heap *h) 
+{
+  printf("%p (heap: %p size: %lu)", h, gc_heap_total_size(h));
+  // TODO: mark globals
+  // TODO: gc_mark(h, h);
+  // conservative mark?
+  // weak refs?
+  // finalize?
+  // sweep
+  // debug print free stats
+}
+
 // void gc_init()
 // {
 // }
