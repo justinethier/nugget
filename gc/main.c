@@ -1,4 +1,12 @@
-// TODO: a basic mark-sweep GC
+/* TODO: a basic mark-sweep GC
+ Goals of this project:
+ - write algorithms
+ - add test cases
+ - integrate with types
+ - integrate with cyclone
+ - extend to tri-color marking an on-the-fly collection
+ - etc...
+ */
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -134,7 +142,7 @@ void gc_mark(gc_heap *h, object obj)
  // TODO: will be more work in here the "real" implementation
 }
 
-object sexp_sweep(gc_heap *, size_t *sum_freed)
+object gc_sweep(gc_heap *, size_t *sum_freed)
 {
   // TODO: scan entire heap, freeing objects that have not been marked
 
