@@ -2,6 +2,29 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+// Types, eventually this has to be integrated with header file
+//#include "types.h"
+typedef void *object;
+typedef long tag_type;
+#define cons_tag 0
+#define integer_tag 9
+
+#define type_of(x) (((list) x)->tag)
+#define is_value_type(x) 0
+#define is_object_type(x) (x && !is_value_type(x))
+#define is_marked(x) (is_object_type(x) && ((list)x)->mark)
+
+typedef struct gc_header_type_t gc_header_type;
+struct gc_header_type_t {
+  unsigned char mark; // mark bits (only need 2)
+  // TODO: forwarding address (probably not needed for mark/sweep), anything else???
+};
+
+typedef struct {tag_type tag; object cons_car,cons_cdr;} cons_type;
+typedef cons_type *list;
+typedef struct {tag_type tag; int value;} integer_type;
+#define car(x) (((list) x)->cons_car)
+#define cdr(x) (((list) x)->cons_cdr)
 
 // HEAP definitions
 // experimenting with a heap based off of the one in Chibi scheme
@@ -76,8 +99,10 @@ void *gc_try_alloc(gc_heap *h, size_t size)
 
 void *gc_alloc(gc_heap *h, size_t size) 
 {
-  // TODO: check return value, if null then try growing heap.
-  // if heap cannot be grown then throw out of memory error
+  // TODO: check return value, if null (could not alloc) then 
+  // run a collection and check how much free space there is. if less
+  // the allowed ratio, try growing heap.
+  // then try realloc. if cannot alloc now, then throw out of memory error
   size = gc_heap_align(size);
   return gc_try_alloc(h, size);
 }
@@ -92,7 +117,32 @@ size_t gc_heap_total_size(gc_heap *h)
   return total_size;
 }
 
-void gc_collect(gc_heap *h) 
+void gc_mark(gc_heap *h, object obj)
+{
+  if (!obj || is_marked(obj))
+    return;
+
+ ((list)obj)->mark = 1;
+ // TODO: mark heap saves (??) 
+ // could this be a write barrier?
+ 
+ // Mark objects this one references
+ if (type_of(obj) == cons_tag) {
+   gc_mark(h, car(obj)); 
+   gc_mark(h, cdr(obj)); 
+ }
+ // TODO: will be more work in here the "real" implementation
+}
+
+object sexp_sweep(gc_heap *, size_t *sum_freed)
+{
+  // TODO: scan entire heap, freeing objects that have not been marked
+
+  // TODO: return amount freed via int ptr and scheme obj (???)
+  return NULL; // TODO
+}
+
+void gc_collect(gc_heap *h, size_t *sum_freed) 
 {
   printf("%p (heap: %p size: %lu)", h, gc_heap_total_size(h));
   // TODO: mark globals
@@ -100,8 +150,9 @@ void gc_collect(gc_heap *h)
   // conservative mark?
   // weak refs?
   // finalize?
-  // sweep
+  gc_sweep(h, sum_freed);
   // debug print free stats
+  // return value from sweep??
 }
 
 // void gc_init()
@@ -109,22 +160,7 @@ void gc_collect(gc_heap *h)
 // }
 // END heap definitions
 
-typedef struct {
-  unsigned char mark; // mark bits (only need 2)
-  // TODO: forwarding address (probably not needed for mark/sweep), anything else???
-} gc_header_type;
-
-///// subset of types we'll care about initially:
-//#include "types.h"
-typedef void *object;
-typedef long tag_type;
-#define cons_tag 0
-#define integer_tag 9
-typedef struct {tag_type tag; object cons_car,cons_cdr;} cons_type;
-typedef cons_type *list;
-typedef struct {tag_type tag; int value;} integer_type;
-/////
-
+/* tri-color GC stuff, we will care about this later...
 int colorWhite = 0;
 int colorGray  = 1;
 int colorBlack = 2;
@@ -142,10 +178,14 @@ static void *scanned;
 // TODO: extentions
 // TODO: proofs, etc
 // TODO: revist design using content from kolodner
+*/
+
 int main(int argc, char **argv) {
   gc_heap *h = gc_heap_create(8 * 1024 * 1024, 0);
   void *obj1 = gc_alloc(h, 1);
   void *obj2 = gc_alloc(h, 3);
   void *obj3 = gc_alloc(h, 1);
+
+  // Build up an object graph to test collection...
   return 0;
 }
