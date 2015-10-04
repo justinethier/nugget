@@ -1,4 +1,6 @@
 /* TODO: a basic mark-sweep GC
+   As of now, the GC code is based off the implementation from chibi scheme
+
  Goals of this project:
  - write algorithms
  - add test cases
@@ -20,7 +22,7 @@ typedef long tag_type;
 #define type_of(x) (((list) x)->tag)
 #define is_value_type(x) 0
 #define is_object_type(x) (x && !is_value_type(x))
-#define is_marked(x) (is_object_type(x) && ((list)x)->mark)
+#define is_marked(x) (is_object_type(x) && ((list)x)->hdr.mark)
 
 typedef struct gc_header_type_t gc_header_type;
 struct gc_header_type_t {
@@ -28,16 +30,18 @@ struct gc_header_type_t {
   // TODO: forwarding address (probably not needed for mark/sweep), anything else???
 };
 
-typedef struct {tag_type tag; object cons_car,cons_cdr;} cons_type;
+typedef struct {gc_header_type hdr; tag_type tag; object cons_car,cons_cdr;} cons_type;
 typedef cons_type *list;
-typedef struct {tag_type tag; int value;} integer_type;
+typedef struct {gc_header_type hdr; tag_type tag; int value;} integer_type;
 #define car(x) (((list) x)->cons_car)
 #define cdr(x) (((list) x)->cons_cdr)
 
 // HEAP definitions
 // experimenting with a heap based off of the one in Chibi scheme
+#define gc_heap_first_block(h) ((object)(h->data + gc_heap_align(gc_free_chunk_size)))
+#define gc_heap_last_block(h) ((object)((char*)h->data + h->size - gc_heap_align(gc_free_chunk_size)))
+#define gc_heap_end(h) ((object)((char*)h->data + h->size))
 #define gc_free_chunk_size (sizeof(gc_free_list))
-#define gc_heap_end(h) ((void *)((char *)h->data + h->size))
 
 #define gc_align(n, bits) (((n)+(1<<(bits))-1)&(((unsigned int)-1)-((1<<(bits))-1)))
 // 64-bit is 3, 32-bit is 2
@@ -115,6 +119,19 @@ void *gc_alloc(gc_heap *h, size_t size)
   return gc_try_alloc(h, size);
 }
 
+size_t gc_allocated_bytes(object obj)
+{
+  tag_type t;
+  if (is_value_type(obj))
+    return gc_heap_align(1);
+  t = type_of(obj); 
+  if (t == cons_tag) return sizeof(cons_type);
+  if (t == integer_tag) return sizeof(integer_type);
+  
+  fprintf(stderr, "cannot get size of object %ld\n", t);
+  return 0;
+}
+
 size_t gc_heap_total_size(gc_heap *h)
 {
   size_t total_size = 0;
@@ -130,7 +147,7 @@ void gc_mark(gc_heap *h, object obj)
   if (!obj || is_marked(obj))
     return;
 
- ((list)obj)->mark = 1;
+ ((list)obj)->hdr.mark = 1;
  // TODO: mark heap saves (??) 
  // could this be a write barrier?
  
@@ -142,17 +159,44 @@ void gc_mark(gc_heap *h, object obj)
  // TODO: will be more work in here the "real" implementation
 }
 
-object gc_sweep(gc_heap *, size_t *sum_freed)
+void gc_sweep(gc_heap *h, size_t *sum_freed_ptr)
 {
   // TODO: scan entire heap, freeing objects that have not been marked
+  size_t freed, max_freed=0, sum_freed=0, size;
+  object p, end;
+  gc_free_list *q, *r, *s;
+/*
+  for (; h; h = h->next) { // All heaps
+    p = gc_heap_first_block(h);
+    q = h->free_list;
+    end = gc_heap_end(h);
+    while (p < end) {
+      // find preceding/succeeding free list pointers
+      for (r = q->next; r && ((char *)r < (char *)p); q=r, r=r->next);
 
-  // TODO: return amount freed via int ptr and scheme obj (???)
-  return NULL; // TODO
+      if ((char *)r == (char *)p) { // this is a free block, skip it
+        p = (object) (((char *)p) + r->size);
+        continue;
+      }
+      size = gc_heap_align(gc_allocated_bytes(p));
+      if (!is_marked(p)) {
+        // TODO: free p
+      } else {
+        ((list)p)->mark = 0;
+        p = (object)(((char *)p) + size);
+      }
+    }
+  }
+
+*/
+  // FUTURE: return amount freed via int ptr AND scheme obj
+  if (sum_freed_ptr) *sum_freed_ptr = sum_freed;
+  return;
 }
 
 void gc_collect(gc_heap *h, size_t *sum_freed) 
 {
-  printf("%p (heap: %p size: %lu)", h, gc_heap_total_size(h));
+  printf("(heap: %p size: %d)", h, (unsigned int)gc_heap_total_size(h));
   // TODO: mark globals
   // TODO: gc_mark(h, h);
   // conservative mark?
