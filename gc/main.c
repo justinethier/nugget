@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#define GC_DEBUG_PRINTFS 0
+
 // Types, eventually this has to be integrated with header file
 //#include "types.h"
 typedef void *object;
@@ -90,6 +92,16 @@ printf("DEBUG h->data addr: %p\n", h->data);
   return h;
 }
 
+int gc_grow_heap(gc_heap *h, size_t size)
+{
+  size_t cur_size, new_size;
+  gc_heap *h_last = gc_heap_last(h);
+  cur_size = h_last->size;
+  new_size = gc_heap_align(((cur_size > size) ? cur_size : size) * 2);
+  h->next = gc_heap_create(new_size, 0); //h->max_size);
+  return (h->next != NULL);
+}
+
 void *gc_try_alloc(gc_heap *h, size_t size) 
 {
   gc_free_list *f1, *f2, *f3;
@@ -126,7 +138,12 @@ void *gc_alloc(gc_heap *h, size_t size)
   size = gc_heap_align(size);
   //return gc_try_alloc(h, size);
   result = gc_try_alloc(h, size);
+  if (!result) {
+    gc_grow_heap
+  }
+#if GC_DEBUG_PRINTFS
   fprintf(stdout, "alloc %p\n", result);
+#endif
   return result;
 }
 
@@ -139,8 +156,17 @@ size_t gc_allocated_bytes(object obj)
   if (t == cons_tag) return gc_heap_align(sizeof(cons_type));
   if (t == integer_tag) return gc_heap_align(sizeof(integer_type));
   
+#if GC_DEBUG_PRINTFS
   fprintf(stderr, "cannot get size of object %ld\n", t);
+#endif
   return 0;
+}
+
+gc_heap *gc_heap_last(gc_heap *h)
+{
+  while (h->next)
+    h = h->next;
+  return n;
 }
 
 size_t gc_heap_total_size(gc_heap *h)
@@ -158,7 +184,9 @@ void gc_mark(gc_heap *h, object obj)
   if (!obj || is_marked(obj))
     return;
 
+#if GC_DEBUG_PRINTFS
  fprintf(stdout, "gc_mark %p\n", obj);
+#endif
  ((list)obj)->hdr.mark = 1;
  // TODO: mark heap saves (??) 
  // could this be a write barrier?
@@ -191,6 +219,7 @@ size_t gc_sweep(gc_heap *h, size_t *sum_freed_ptr)
       }
       size = gc_heap_align(gc_allocated_bytes(p));
       
+#if GC_DEBUG_PRINTFS
       // DEBUG
       if (!is_object_type(p))
         fprintf(stderr, "sweep: invalid object at %p", p);
@@ -199,9 +228,12 @@ size_t gc_sweep(gc_heap *h, size_t *sum_freed_ptr)
       if (r && ((char *)p) + size > (char *)r)
         fprintf(stderr, "sweep: bad size at %p + %d > %p", p, size, r);
       // END DEBUG
+#endif
 
       if (!is_marked(p)) {
+#if GC_DEBUG_PRINTFS
         fprintf(stdout, "sweep: object is not marked %p\n", p);
+#endif
         // free p
         sum_freed += size;
         if (((((char *)q) + q->size) == (char *)p) && (q != h->free_list)) {
@@ -235,7 +267,9 @@ size_t gc_sweep(gc_heap *h, size_t *sum_freed_ptr)
         if (freed > max_freed)
           max_freed = freed;
       } else {
+#if GC_DEBUG_PRINTFS
         fprintf(stdout, "sweep: object is marked %p\n", p);
+#endif
         ((list)p)->hdr.mark = 0;
         p = (object)(((char *)p) + size);
       }
@@ -291,7 +325,7 @@ int main(int argc, char **argv) {
   void *obj2 = gc_alloc(h, sizeof(cons_type));
   void *objI = gc_alloc(h, sizeof(integer_type));
 
-  for (i = 0; i < 100; i++) {
+  for (i = 0; i < 1000000; i++) {
     gc_alloc(h, sizeof(integer_type));
     gc_alloc(h, sizeof(integer_type));
   }
@@ -301,15 +335,24 @@ int main(int argc, char **argv) {
   ((integer_type *)objI)->tag = integer_tag;
   ((integer_type *)objI)->value = 42;
 
+  ((list)obj2)->hdr.mark = 0;
+  ((list)obj2)->tag = cons_tag;
+  ((list)obj2)->cons_car = objI;
+  ((list)obj2)->cons_cdr = NULL;
+
   ((list)obj1)->hdr.mark = 0;
   ((list)obj1)->tag = cons_tag;
-  ((list)obj1)->cons_car = objI;
+  ((list)obj1)->cons_car = obj2;
   ((list)obj1)->cons_cdr = NULL;
 
   printf("(heap: %p size: %d)", h, (unsigned int)gc_heap_total_size(h));
   gc_mark(h, obj1);
   max_freed = gc_sweep(h, &freed);
   printf("done, freed = %d, max_freed = %d\n", freed, max_freed);
+  for (i = 0; i < 10; i++) {
+    gc_alloc(h, sizeof(integer_type));
+    gc_alloc(h, sizeof(integer_type));
+  }
   printf("(heap: %p size: %d)", h, (unsigned int)gc_heap_total_size(h));
   gc_mark(h, obj1);
   max_freed = gc_sweep(h, &freed);
