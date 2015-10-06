@@ -115,12 +115,16 @@ void *gc_try_alloc(gc_heap *h, size_t size)
 
 void *gc_alloc(gc_heap *h, size_t size) 
 {
+  void *result = NULL;
   // TODO: check return value, if null (could not alloc) then 
   // run a collection and check how much free space there is. if less
   // the allowed ratio, try growing heap.
   // then try realloc. if cannot alloc now, then throw out of memory error
   size = gc_heap_align(size);
-  return gc_try_alloc(h, size);
+  //return gc_try_alloc(h, size);
+  result = gc_try_alloc(h, size);
+  fprintf(stdout, "alloc %p\n", result);
+  return result;
 }
 
 size_t gc_allocated_bytes(object obj)
@@ -129,8 +133,8 @@ size_t gc_allocated_bytes(object obj)
   if (is_value_type(obj))
     return gc_heap_align(1);
   t = type_of(obj); 
-  if (t == cons_tag) return sizeof(cons_type);
-  if (t == integer_tag) return sizeof(integer_type);
+  if (t == cons_tag) return gc_heap_align(sizeof(cons_type));
+  if (t == integer_tag) return gc_heap_align(sizeof(integer_type));
   
   fprintf(stderr, "cannot get size of object %ld\n", t);
   return 0;
@@ -186,13 +190,14 @@ size_t gc_sweep(gc_heap *h, size_t *sum_freed_ptr)
       // DEBUG
       if (!is_object_type(p))
         fprintf(stderr, "sweep: invalid object at %p", p);
-      if ((char *)q + s->size > (char *)p)
+      if ((char *)q + q->size > (char *)p)
         fprintf(stderr, "bad size at %p < %p + %u", p, q, q->size);
       if (r && ((char *)p) + size > (char *)r)
         fprintf(stderr, "sweep: bad size at %p + %d > %p", p, size, r);
       // END DEBUG
 
       if (!is_marked(p)) {
+        fprintf(stdout, "not marked %p\n", p);
         // free p
         sum_freed += size;
         if (((((char *)q) + q->size) == (char *)p) && (q != h->free_list)) {
@@ -226,6 +231,7 @@ size_t gc_sweep(gc_heap *h, size_t *sum_freed_ptr)
         if (freed > max_freed)
           max_freed = freed;
       } else {
+        fprintf(stdout, "marked %p\n", p);
         ((list)p)->hdr.mark = 0;
         p = (object)(((char *)p) + size);
       }
@@ -237,7 +243,7 @@ size_t gc_sweep(gc_heap *h, size_t *sum_freed_ptr)
 
 void gc_collect(gc_heap *h, size_t *sum_freed) 
 {
-  printf("(heap: %p size: %d)", h, (unsigned int)gc_heap_total_size(h));
+  printf("(heap: %p size: %d)\n", h, (unsigned int)gc_heap_total_size(h));
   // TODO: mark globals
   // TODO: gc_mark(h, h);
   // conservative mark?
