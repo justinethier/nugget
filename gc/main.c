@@ -11,6 +11,7 @@
  */
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 // Types, eventually this has to be integrated with header file
 //#include "types.h"
@@ -106,6 +107,8 @@ void *gc_try_alloc(gc_heap *h, size_t size)
         } else { /* Take the whole chunk */
           f1->next = f2->next;
         }
+        // zero-out the header
+        memset((object)f2, 0, sizeof(gc_header_type));
         return f2;
       }
     }
@@ -155,6 +158,7 @@ void gc_mark(gc_heap *h, object obj)
   if (!obj || is_marked(obj))
     return;
 
+ fprintf(stdout, "gc_mark %p\n", obj);
  ((list)obj)->hdr.mark = 1;
  // TODO: mark heap saves (??) 
  // could this be a write barrier?
@@ -197,7 +201,7 @@ size_t gc_sweep(gc_heap *h, size_t *sum_freed_ptr)
       // END DEBUG
 
       if (!is_marked(p)) {
-        fprintf(stdout, "not marked %p\n", p);
+        fprintf(stdout, "sweep: object is not marked %p\n", p);
         // free p
         sum_freed += size;
         if (((((char *)q) + q->size) == (char *)p) && (q != h->free_list)) {
@@ -231,7 +235,7 @@ size_t gc_sweep(gc_heap *h, size_t *sum_freed_ptr)
         if (freed > max_freed)
           max_freed = freed;
       } else {
-        fprintf(stdout, "marked %p\n", p);
+        fprintf(stdout, "sweep: object is marked %p\n", p);
         ((list)p)->hdr.mark = 0;
         p = (object)(((char *)p) + size);
       }
@@ -280,11 +284,17 @@ static void *scanned;
 */
 
 int main(int argc, char **argv) {
+  int i;
   size_t freed = 0, max_freed = 0;
   gc_heap *h = gc_heap_create(8 * 1024 * 1024, 0);
   void *obj1 = gc_alloc(h, sizeof(cons_type));
   void *obj2 = gc_alloc(h, sizeof(cons_type));
   void *objI = gc_alloc(h, sizeof(integer_type));
+
+  for (i = 0; i < 100; i++) {
+    gc_alloc(h, sizeof(integer_type));
+    gc_alloc(h, sizeof(integer_type));
+  }
 
   // Build up an object graph to test collection...
   ((integer_type *)objI)->hdr.mark = 0;
@@ -296,6 +306,10 @@ int main(int argc, char **argv) {
   ((list)obj1)->cons_car = objI;
   ((list)obj1)->cons_cdr = NULL;
 
+  printf("(heap: %p size: %d)", h, (unsigned int)gc_heap_total_size(h));
+  gc_mark(h, obj1);
+  max_freed = gc_sweep(h, &freed);
+  printf("done, freed = %d, max_freed = %d\n", freed, max_freed);
   printf("(heap: %p size: %d)", h, (unsigned int)gc_heap_total_size(h));
   gc_mark(h, obj1);
   max_freed = gc_sweep(h, &freed);
