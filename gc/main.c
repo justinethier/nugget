@@ -159,19 +159,18 @@ void gc_mark(gc_heap *h, object obj)
  // TODO: will be more work in here the "real" implementation
 }
 
-void gc_sweep(gc_heap *h, size_t *sum_freed_ptr)
+size_t gc_sweep(gc_heap *h, size_t *sum_freed_ptr)
 {
   // TODO: scan entire heap, freeing objects that have not been marked
   size_t freed, max_freed=0, sum_freed=0, size;
   object p, end;
   gc_free_list *q, *r, *s;
-/*
   for (; h; h = h->next) { // All heaps
     p = gc_heap_first_block(h);
     q = h->free_list;
     end = gc_heap_end(h);
     while (p < end) {
-      // find preceding/succeeding free list pointers
+      // find preceding/succeeding free list pointers for p
       for (r = q->next; r && ((char *)r < (char *)p); q=r, r=r->next);
 
       if ((char *)r == (char *)p) { // this is a free block, skip it
@@ -179,19 +178,57 @@ void gc_sweep(gc_heap *h, size_t *sum_freed_ptr)
         continue;
       }
       size = gc_heap_align(gc_allocated_bytes(p));
+      
+      // DEBUG
+      if (!is_object_type(p))
+        fprintf(stderr, "sweep: invalid object at %p", p);
+      if ((char *)q + s->size > (char *)p)
+        fprintf(stderr, "bad size at %p < %p + %u", p, q, q->size);
+      if (r && ((char *)p) + size > (char *)r)
+        fprintf(stderr, "sweep: bad size at %p + %d > %p", p, size, r);
+      // END DEBUG
+
       if (!is_marked(p)) {
-        // TODO: free p
+        // free p
+        sum_freed += size;
+        if (((((char *)q) + q->size) == (char *)p) && (q != h->free_list)) {
+          /* merge q with p */
+          if (r && r->size && ((((char *)p)+size) == (char *)r)) {
+            // ... and with r
+            q->next = r->next;
+            freed = q->size + size + r->size;
+            p = (object) (((char *)p) + size + r->size);
+          } else {
+            freed = q->size + size;
+            p = (object) (((char *)p) + size);
+          }
+          q->size = freed;
+        } else {
+          s = (gc_free_list *)p;
+          if (r && r->size && ((((char *)p) + size) == (char *)r)) {
+            // merge p with r
+            s->size = size + r->size;
+            s->next = r->next;
+            q->next = s;
+            freed = size + r->size;
+          } else {
+            s->size = size;
+            s->next = r;
+            q->next = s;
+            freed = size;
+          }
+          p = (object) (((char *)p) + freed);
+        }
+        if (freed > max_freed)
+          max_freed = freed;
       } else {
-        ((list)p)->mark = 0;
+        ((list)p)->hdr.mark = 0;
         p = (object)(((char *)p) + size);
       }
     }
   }
-
-*/
-  // FUTURE: return amount freed via int ptr AND scheme obj
   if (sum_freed_ptr) *sum_freed_ptr = sum_freed;
-  return;
+  return max_freed;
 }
 
 void gc_collect(gc_heap *h, size_t *sum_freed) 
