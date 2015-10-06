@@ -17,9 +17,7 @@ TBD what would be used in other compilers such as LLVM
 #define ATOMIC_INC(ptr) __sync_fetch_and_add((ptr),1)
 #define ATOMIC_DEC(ptr) __sync_fetch_and_sub((ptr),1)
 #define ATOMIC_GET(ptr) __sync_fetch_and_add((ptr),0)
-// TODO:
-//#define ATOMIC_SET(ptr)
-//and __sync_val_compare_and_swap() for storing
+#define ATOMIC_SET_IF_EQ(ptr, oldv, newv) __sync_val_compare_and_swap(ptr, oldv, newv)
 
 int main(int argc, char **argv)
 {
@@ -29,7 +27,7 @@ int main(int argc, char **argv)
   printf("i = %d\n", i);
   ATOMIC_DEC(&i);
   printf("i = %d\n", ATOMIC_GET(&i));
-  ATOMIC_SET(&i, ??);
+  ATOMIC_SET_IF_EQ(&i, 0, 10);
   printf("i = %d\n", i);
   return 0;
 }
