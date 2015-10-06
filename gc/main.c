@@ -33,6 +33,10 @@ struct gc_header_type_t {
 typedef struct {gc_header_type hdr; tag_type tag; object cons_car,cons_cdr;} cons_type;
 typedef cons_type *list;
 typedef struct {gc_header_type hdr; tag_type tag; int value;} integer_type;
+
+//#define make_cons(n,a,d) \
+//cons_type n; n.hdr.mark = 0; n.tag = cons_tag; n.cons_car = a; n.cons_cdr = d;
+//#define make_int(n,v) integer_type n; n.hdr.mark = 0; n.tag = integer_tag; n.value = v;
 #define car(x) (((list) x)->cons_car)
 #define cdr(x) (((list) x)->cons_cdr)
 
@@ -270,11 +274,26 @@ static void *scanned;
 */
 
 int main(int argc, char **argv) {
+  size_t freed = 0, max_freed = 0;
   gc_heap *h = gc_heap_create(8 * 1024 * 1024, 0);
-  void *obj1 = gc_alloc(h, 1);
-  void *obj2 = gc_alloc(h, 3);
-  void *obj3 = gc_alloc(h, 1);
+  void *obj1 = gc_alloc(h, sizeof(cons_type));
+  void *obj2 = gc_alloc(h, sizeof(cons_type));
+  void *objI = gc_alloc(h, sizeof(integer_type));
 
   // Build up an object graph to test collection...
+  ((integer_type *)objI)->hdr.mark = 0;
+  ((integer_type *)objI)->tag = integer_tag;
+  ((integer_type *)objI)->value = 42;
+
+  ((list)obj1)->hdr.mark = 0;
+  ((list)obj1)->tag = cons_tag;
+  ((list)obj1)->cons_car = objI;
+  ((list)obj1)->cons_cdr = NULL;
+
+  printf("(heap: %p size: %d)", h, (unsigned int)gc_heap_total_size(h));
+  gc_mark(h, obj1);
+  max_freed = gc_sweep(h, &freed);
+  printf("done, freed = %d, max_freed = %d\n", freed, max_freed);
+
   return 0;
 }
