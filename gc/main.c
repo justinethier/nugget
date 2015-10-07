@@ -65,12 +65,24 @@ typedef struct gc_heap_t gc_heap;
 struct gc_heap_t {
   unsigned int size;
   unsigned int chunk_size; // 0 for any size, other and heap will only alloc chunks of that size
+  unsigned int max_size;
   gc_free_list *free_list; // TBD
   gc_heap *next; // TBD, linked list is not very efficient, but easy to work with as a start
   char *data;
 };
 
-gc_heap *gc_heap_create(size_t size, size_t chunk_size)
+gc_heap *gc_heap_create(size_t size, size_t max_size, size_t chunk_size);
+int gc_grow_heap(gc_heap *h, size_t size, size_t chunk_size);
+void *gc_try_alloc(gc_heap *h, size_t size);
+void *gc_alloc(gc_heap *h, size_t size);
+size_t gc_allocated_bytes(object obj);
+gc_heap *gc_heap_last(gc_heap *h);
+size_t gc_heap_total_size(gc_heap *h);
+void gc_mark(gc_heap *h, object obj);
+size_t gc_sweep(gc_heap *h, size_t *sum_freed_ptr);
+//void gc_collect(gc_heap *h, size_t *sum_freed) 
+
+gc_heap *gc_heap_create(size_t size, size_t max_size, size_t chunk_size)
 {
   gc_free_list *free, *next;
   gc_heap *h;
@@ -79,6 +91,7 @@ gc_heap *gc_heap_create(size_t size, size_t chunk_size)
   if (!h) return NULL;
   h->size = size;
   h->chunk_size = chunk_size;
+  h->max_size = max_size;
 printf("DEBUG h->data addr: %p\n", &(h->data));
   h->data = (char *) gc_heap_align(sizeof(h->data) + (uint)&(h->data)); 
 printf("DEBUG h->data addr: %p\n", h->data);
@@ -92,13 +105,13 @@ printf("DEBUG h->data addr: %p\n", h->data);
   return h;
 }
 
-int gc_grow_heap(gc_heap *h, size_t size)
+int gc_grow_heap(gc_heap *h, size_t size, size_t chunk_size)
 {
   size_t cur_size, new_size;
   gc_heap *h_last = gc_heap_last(h);
   cur_size = h_last->size;
   new_size = gc_heap_align(((cur_size > size) ? cur_size : size) * 2);
-  h->next = gc_heap_create(new_size, 0); //h->max_size);
+  h->next = gc_heap_create(new_size, h->max_size, chunk_size);
   return (h->next != NULL);
 }
 
@@ -131,6 +144,7 @@ void *gc_try_alloc(gc_heap *h, size_t size)
 void *gc_alloc(gc_heap *h, size_t size) 
 {
   void *result = NULL;
+  size_t max_freed, sum_freed, total_size;
   // TODO: check return value, if null (could not alloc) then 
   // run a collection and check how much free space there is. if less
   // the allowed ratio, try growing heap.
@@ -139,7 +153,24 @@ void *gc_alloc(gc_heap *h, size_t size)
   //return gc_try_alloc(h, size);
   result = gc_try_alloc(h, size);
   if (!result) {
-    gc_grow_heap
+    // TODO: may want to consider not doing this now, and implementing gc_collect as
+    // part of the runtime, since we would have all of the roots, stack args, 
+    // etc available there.
+    max_freed = gc_collect(h); TODO: this does not work yet!
+//max_freed = 0;
+
+    total_size = gc_heap_total_size(h);
+    if (((max_freed < size) ||
+         ((total_size > sum_freed) &&
+          (total_size - sum_freed) > (total_size * 0.75))) // Grow ratio
+        && ((!h->max_size) || (total_size < h->max_size))) {
+      gc_grow_heap(h, size, 0);
+    }
+    result = gc_try_alloc(h, size);
+    if (!result) {
+      fprintf(stderr, "out of memory error allocating %d bytes\n", size);
+      exit(1); // TODO: throw error???
+    }
   }
 #if GC_DEBUG_PRINTFS
   fprintf(stdout, "alloc %p\n", result);
@@ -166,7 +197,7 @@ gc_heap *gc_heap_last(gc_heap *h)
 {
   while (h->next)
     h = h->next;
-  return n;
+  return h;
 }
 
 size_t gc_heap_total_size(gc_heap *h)
@@ -320,7 +351,7 @@ static void *scanned;
 int main(int argc, char **argv) {
   int i;
   size_t freed = 0, max_freed = 0;
-  gc_heap *h = gc_heap_create(8 * 1024 * 1024, 0);
+  gc_heap *h = gc_heap_create(8 * 1024 * 1024, 0, 0);
   void *obj1 = gc_alloc(h, sizeof(cons_type));
   void *obj2 = gc_alloc(h, sizeof(cons_type));
   void *objI = gc_alloc(h, sizeof(integer_type));
