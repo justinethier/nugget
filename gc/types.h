@@ -185,20 +185,22 @@ typedef struct {gc_header_type hdr; tag_type tag; double value;} double_type;
 #define double_value(x) (((double_type *) x)->value)
 
 /* Define string type */
-typedef struct {gc_header_type hdr; tag_type tag; char *str;} string_type;
-// TODO: all of the dhalloc below needs to go away for this GC. maybe
-// just plan on having strings be allocated separately like vectors.
-#define make_string(cv,s) string_type cv; cv.tag = string_tag; \
-{ int len = strlen(s); cv.str = dhallocp; \
-  if ((dhallocp + len + 1) >= dhbottom + global_heap_size) { \
-      printf("Fatal error: data heap overflow\n"); exit(1); } \
-  memcpy(dhallocp, s, len + 1); dhallocp += len + 1; }
-#define make_stringn(cv,s,len) string_type cv; cv.tag = string_tag; \
-{ cv.str = dhallocp; \
-  if ((dhallocp + len + 1) >= dhbottom + global_heap_size) { \
-      printf("Fatal error: data heap overflow\n"); exit(1); } \
-  memcpy(dhallocp, s, len); dhallocp += len; \
-  *dhallocp = '\0'; dhallocp += 1;}
+typedef struct {gc_header_type hdr; tag_type tag; int len; char *str;} string_type;
+#define make_cstring(cs, len, s) \
+  string_type cs; cs.tag = string_tag; cs.len = len; cs.str = s;
+//// TODO: all of the dhalloc below needs to go away for this GC. maybe
+//// just plan on having strings be allocated separately like vectors.
+//#define make_string(cv,s) string_type cv; cv.tag = string_tag; \
+//{ int len = strlen(s); cv.str = dhallocp; \
+//  if ((dhallocp + len + 1) >= dhbottom + global_heap_size) { \
+//      printf("Fatal error: data heap overflow\n"); exit(1); } \
+//  memcpy(dhallocp, s, len + 1); dhallocp += len + 1; }
+//#define make_stringn(cv,s,len) string_type cv; cv.tag = string_tag; \
+//{ cv.str = dhallocp; \
+//  if ((dhallocp + len + 1) >= dhbottom + global_heap_size) { \
+//      printf("Fatal error: data heap overflow\n"); exit(1); } \
+//  memcpy(dhallocp, s, len); dhallocp += len; \
+//  *dhallocp = '\0'; dhallocp += 1;}
 
 #define string_str(x) (((string_type *) x)->str)
 
