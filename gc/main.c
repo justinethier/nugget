@@ -13,74 +13,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define GC_DEBUG_PRINTFS 0
-
-// Types, eventually this has to be integrated with header file
-//#include "types.h"
-typedef void *object;
-typedef long tag_type;
-#define cons_tag 0
-#define integer_tag 9
-
-#define type_of(x) (((list) x)->tag)
-#define is_value_type(x) 0
-#define is_object_type(x) (x && !is_value_type(x))
-#define is_marked(x) (is_object_type(x) && ((list)x)->hdr.mark)
-
-typedef struct gc_header_type_t gc_header_type;
-struct gc_header_type_t {
-  unsigned char mark; // mark bits (only need 2)
-  // TODO: forwarding address (probably not needed for mark/sweep), anything else???
-};
-
-typedef struct {gc_header_type hdr; tag_type tag; object cons_car,cons_cdr;} cons_type;
-typedef cons_type *list;
-typedef struct {gc_header_type hdr; tag_type tag; int value;} integer_type;
-
-//#define make_cons(n,a,d) \
-//cons_type n; n.hdr.mark = 0; n.tag = cons_tag; n.cons_car = a; n.cons_cdr = d;
-//#define make_int(n,v) integer_type n; n.hdr.mark = 0; n.tag = integer_tag; n.value = v;
-#define car(x) (((list) x)->cons_car)
-#define cdr(x) (((list) x)->cons_cdr)
-
-// HEAP definitions
-// experimenting with a heap based off of the one in Chibi scheme
-#define gc_heap_first_block(h) ((object)(h->data + gc_heap_align(gc_free_chunk_size)))
-#define gc_heap_last_block(h) ((object)((char*)h->data + h->size - gc_heap_align(gc_free_chunk_size)))
-#define gc_heap_end(h) ((object)((char*)h->data + h->size))
-#define gc_free_chunk_size (sizeof(gc_free_list))
-
-#define gc_align(n, bits) (((n)+(1<<(bits))-1)&(((unsigned int)-1)-((1<<(bits))-1)))
-// 64-bit is 3, 32-bit is 2
-#define gc_word_align(n) gc_align((n), 2)
-#define gc_heap_align(n) gc_align(n, 5)
-
-typedef struct gc_free_list_t gc_free_list;
-struct gc_free_list_t {
-  unsigned int size;
-  gc_free_list *next;
-};
-
-typedef struct gc_heap_t gc_heap;
-struct gc_heap_t {
-  unsigned int size;
-  unsigned int chunk_size; // 0 for any size, other and heap will only alloc chunks of that size
-  unsigned int max_size;
-  gc_free_list *free_list; // TBD
-  gc_heap *next; // TBD, linked list is not very efficient, but easy to work with as a start
-  char *data;
-};
-
-gc_heap *gc_heap_create(size_t size, size_t max_size, size_t chunk_size);
-int gc_grow_heap(gc_heap *h, size_t size, size_t chunk_size);
-void *gc_try_alloc(gc_heap *h, size_t size);
-void *gc_alloc(gc_heap *h, size_t size);
-size_t gc_allocated_bytes(object obj);
-gc_heap *gc_heap_last(gc_heap *h);
-size_t gc_heap_total_size(gc_heap *h);
-void gc_mark(gc_heap *h, object obj);
-size_t gc_sweep(gc_heap *h, size_t *sum_freed_ptr);
-//void gc_collect(gc_heap *h, size_t *sum_freed) 
+#include "types.h"
 
 gc_heap *gc_heap_create(size_t size, size_t max_size, size_t chunk_size)
 {
@@ -156,8 +89,8 @@ void *gc_alloc(gc_heap *h, size_t size)
     // TODO: may want to consider not doing this now, and implementing gc_collect as
     // part of the runtime, since we would have all of the roots, stack args, 
     // etc available there.
-    max_freed = gc_collect(h); TODO: this does not work yet!
-//max_freed = 0;
+//    max_freed = gc_collect(h); TODO: this does not work yet!
+max_freed = 0;
 
     total_size = gc_heap_total_size(h);
     if (((max_freed < size) ||
