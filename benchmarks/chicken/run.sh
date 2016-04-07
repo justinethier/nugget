@@ -13,16 +13,23 @@
 #csc cpstak.scm      && time ./cpstak      < ~/Documents/larceny/test/Benchmarking/R7RS/inputs/cpstak.input
 #csc ctak.scm        && time ./ctak        < ~/Documents/larceny/test/Benchmarking/R7RS/inputs/ctak.input
 
-#csc ack.scm         && time ./ack         < ~/Documents/larceny/test/Benchmarking/R7RS/inputs/ack.input
 #csc peval.scm       && time ./peval       < ~/Documents/larceny/test/Benchmarking/R7RS/inputs/peval.input
 #csc simplex.scm     && time ./simplex     < ~/Documents/larceny/test/Benchmarking/R7RS/inputs/simplex.input
 #csc fib.scm         && time ./fib         < ~/Documents/larceny/test/Benchmarking/R7RS/inputs/fib.input
 #csc fibc.scm        && time ./fibc        < ~/Documents/larceny/test/Benchmarking/R7RS/inputs/fibc.input
 #csc fibfp.scm       && time ./fibfp       < ~/Documents/larceny/test/Benchmarking/R7RS/inputs/fibfp.input
 #csc nboyer-test.scm && time ./nboyer-test < ~/Documents/larceny/test/Benchmarking/R7RS/inputs/nboyer-test.input
-csc nboyer.scm      && time ./nboyer      < ~/Documents/larceny/test/Benchmarking/R7RS/inputs/nboyer.input
-csc sboyer.scm      && time ./sboyer      < ~/Documents/larceny/test/Benchmarking/R7RS/inputs/sboyer.input
-csc gcbench.scm     && time ./gcbench     < ~/Documents/larceny/test/Benchmarking/R7RS/inputs/gcbench.input
-csc mperm.scm     && time ./mperm     < ~/Documents/larceny/test/Benchmarking/R7RS/inputs/mperm.input
+#csc nboyer.scm      && time ./nboyer      < ~/Documents/larceny/test/Benchmarking/R7RS/inputs/nboyer.input
+#csc sboyer.scm      && time ./sboyer      < ~/Documents/larceny/test/Benchmarking/R7RS/inputs/sboyer.input
+#csc gcbench.scm     && time ./gcbench     < ~/Documents/larceny/test/Benchmarking/R7RS/inputs/gcbench.input
+#csc mperm.scm     && time ./mperm     < ~/Documents/larceny/test/Benchmarking/R7RS/inputs/mperm.input
 #csc nqueens.scm     && time ./nqueens     < ~/Documents/larceny/test/Benchmarking/R7RS/inputs/nqueens.input
 
+# KVW
+csc ack.scm         && time ./ack         < ~/Documents/larceny/test/Benchmarking/R7RS/inputs/ack.input
+csc array1  && time ./array1         < ~/Documents/larceny/test/Benchmarking/R7RS/inputs/array1.input
+csc string  && time ./string         < ~/Documents/larceny/test/Benchmarking/R7RS/inputs/string.input
+csc sum1    && time ./sum1           < ~/Documents/larceny/test/Benchmarking/R7RS/inputs/sum1.input
+csc cat     && time ./cat            < ~/Documents/larceny/test/Benchmarking/R7RS/inputs/cat.input
+csc tail    && time ./tail           < ~/Documents/larceny/test/Benchmarking/R7RS/inputs/tail.input
+csc wc      && time ./wc             < ~/Documents/larceny/test/Benchmarking/R7RS/inputs/wc.input
