@@ -158,7 +158,7 @@
              (let ((array (make-vector kArraySize 0.0)))
                (do ((i 0 (+ i 1)))
                    ((>= i (quotient kArraySize 2)))
-                 (vector-set! array i (/ 1.0 (inexact (+ i 1)))))
+                 (vector-set! array i (/ 1.0 (exact->inexact (+ i 1)))))
                (PrintDiagnostics)
                              
                (do ((d kMinTreeDepth (+ d 2)))
@@ -171,7 +171,7 @@
                                                   2)
                                         1))))
                          (not (= (vector-ref array n)
-                                 (/ 1.0 (inexact (+ n 1)))))))
+                                 (/ 1.0 (exact->inexact (+ n 1)))))))
                    (begin (display "Failed") (newline)))
                ;  fake reference to LongLivedTree
                ;  and array
